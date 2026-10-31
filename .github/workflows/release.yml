@@ -111,9 +111,7 @@ jobs:
           target: all-in-one
           push: true
           provenance: false
-          tags: |
-            ${{ env.IMAGE }}:${{ needs.meta.outputs.version }}-aio-${{ matrix.suffix }}
-            ${{ env.IMAGE }}:${{ needs.meta.outputs.version }}-api-${{ matrix.suffix }}
+          tags: ${{ env.IMAGE }}:${{ needs.meta.outputs.version }}-aio-${{ matrix.suffix }}
       - name: Export digests (文件名不带冒号)
         run: |
           mkdir -p /tmp/digests
@@ -172,7 +170,7 @@ jobs:
           ARGS=""
           while read -r d; do
             ARGS="$ARGS ${{ env.IMAGE }}@sha256:$d"
-          done < <(ls)
+          done < <(ls *-aio.txt)
           docker buildx imagetools create \
             -t ${{ env.IMAGE }}:${{ needs.meta.outputs.version }}-aio \
             ${{ needs.meta.outputs.latest == 'true' && format('-t {0}:latest', env.IMAGE) || '' }} \
