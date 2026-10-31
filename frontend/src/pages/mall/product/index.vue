@@ -79,11 +79,14 @@
           <el-input v-model="createForm.defaultSku" placeholder="留空自动生成" style="width:240px" />
         </el-form-item>
         <el-form-item label="描述">
-          <el-input v-model="createForm.description" type="textarea" :rows="3" placeholder="商品描述, 显示在店面详情页" />
+          <RichEditor v-model="createForm.description" style="width:100%" height="220px" />
         </el-form-item>
         <el-form-item label="SEO 描述">
           <el-input v-model="createForm.seoDescription" type="textarea" :rows="2"
                     placeholder="搜索引擎优化描述, 留空取描述前 160 字" />
+        </el-form-item>
+        <el-form-item label="SEO 关键词">
+          <el-input v-model="createForm.seoKeywords" placeholder="逗号分隔: jade, necklace, jewelry" />
         </el-form-item>
         <el-form-item label="直接上架">
           <el-switch v-model="createForm.active" />
@@ -96,7 +99,7 @@
     </el-dialog>
 
     <!-- 商品编辑抽屉 -->
-    <el-drawer v-model="detailVisible" :title="detail?.title || '商品编辑'" size="680px" top="4vh">
+    <el-drawer v-model="detailVisible" :title="detail?.title || '商品编辑'" size="60%" top="4vh">
       <template v-if="detail">
         <h4>基本信息</h4>
         <el-form label-width="90">
@@ -112,10 +115,13 @@
             </el-select>
           </el-form-item>
           <el-form-item label="描述">
-            <el-input v-model="detail.description" type="textarea" :rows="3" />
+            <RichEditor v-model="detail.description" style="width:100%" height="220px" />
           </el-form-item>
           <el-form-item label="SEO 描述">
             <el-input v-model="detail.seoDescription" type="textarea" :rows="2" />
+          </el-form-item>
+          <el-form-item label="SEO 关键词">
+            <el-input v-model="detail.seoKeywords" placeholder="逗号分隔: jade, necklace, jewelry" />
           </el-form-item>
           <el-form-item label="状态 / 精选">
             <el-select v-model="detail.status" style="width:130px">
@@ -198,6 +204,7 @@
 import { onMounted, reactive, ref } from 'vue'
 import { ElMessage } from 'element-plus'
 import request from '@/utils/request'
+import RichEditor from '@/components/RichEditor.vue'
 
 const rows = ref<any[]>([])
 const categories = ref<any[]>([])
@@ -209,7 +216,7 @@ const saving = ref(false)
 const createUploading = ref(false)
 const createForm = reactive({
   title: '', categoryIds: [] as number[], priceYuan: 0, defaultSku: '',
-  description: '', seoDescription: '', mainImagePath: '', active: true,
+  description: '', seoDescription: '', seoKeywords: '', mainImagePath: '', active: true,
 })
 const detailVisible = ref(false)
 const detail = ref<any>(null)
@@ -236,7 +243,7 @@ async function loadCategories() {
 function openCreate() {
   Object.assign(createForm, {
     title: '', categoryIds: [], priceYuan: 0, defaultSku: '',
-    description: '', seoDescription: '', mainImagePath: '', active: true,
+    description: '', seoDescription: '', seoKeywords: '', mainImagePath: '', active: true,
   })
   createVisible.value = true
 }
@@ -261,6 +268,7 @@ async function create() {
       title: createForm.title,
       description: createForm.description || undefined,
       seoDescription: createForm.seoDescription || undefined,
+      seoKeywords: createForm.seoKeywords || undefined,
       defaultPriceCents: Math.round(createForm.priceYuan * 100),
       defaultSku: createForm.defaultSku || undefined,
       mainImagePath: createForm.mainImagePath || undefined,
@@ -290,6 +298,7 @@ async function saveBasic() {
       title: detail.value.title,
       description: detail.value.description,
       seoDescription: detail.value.seoDescription,
+      seoKeywords: detail.value.seoKeywords,
       status: detail.value.status,
       featured: detail.value.featured,
     })

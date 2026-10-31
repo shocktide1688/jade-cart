@@ -38,10 +38,10 @@ public class AdminProductController {
 
     public record CreateReq(String title, String slug, String description, String seoDescription,
                             String status, Boolean featured, Long defaultPriceCents, String defaultSku,
-                            String mainImagePath) {}
+                            String mainImagePath, String seoKeywords) {}
 
     public record UpdateReq(String title, String slug, String description, String seoDescription,
-                            String status, Boolean featured, String mainImagePath) {}
+                            String status, Boolean featured, String mainImagePath, String seoKeywords) {}
 
     public record OptionReq(String optionKey, String displayName, List<String> values) {}
 
@@ -78,7 +78,7 @@ public class AdminProductController {
         return R.ok(catalogService.toView(catalogService.createProduct(
                 req.title(), req.slug(), req.description(), req.seoDescription(),
                 req.status(), req.featured(), req.defaultPriceCents(), req.defaultSku(),
-                req.mainImagePath())));
+                req.mainImagePath(), req.seoKeywords())));
     }
 
     @GET
@@ -101,7 +101,7 @@ public class AdminProductController {
     public R<ProductView> update(@PathParam("id") Long id, UpdateReq req) {
         return R.ok(catalogService.toView(catalogService.updateProduct(
                 id, req.title(), req.slug(), req.description(), req.seoDescription(),
-                req.status(), req.featured(), req.mainImagePath())));
+                req.status(), req.featured(), req.mainImagePath(), req.seoKeywords())));
     }
 
     @DELETE

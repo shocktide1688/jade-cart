@@ -198,7 +198,7 @@ public class StorefrontPages {
                 .data("p", view)
                 .data("related", related)
                 .data("storeName", storeName).data("baseUrl", baseUrl)
-                .data("theme", themeService.tokens()).data("seo", seo(desc, ogImage, false, "product", "/products/" + entity.slug))
+                .data("theme", themeService.tokens()).data("seo", seo(desc, ogImage, false, "product", "/products/" + entity.slug, entity.seoKeywords))
                 .data("jsonLd", jsonLd)
                 .render()).build();
     }
@@ -470,20 +470,25 @@ public class StorefrontPages {
 
     /** 页面级 SEO 元数据 (desc/image/noindex/ogType), 经 seo=seo 传给布局标签 */
     private Map<String, Object> seo(String desc, String image, boolean noindex) {
-        return seo(desc, image, noindex, "website", null);
+        return seo(desc, image, noindex, "website", null, null);
     }
 
     private Map<String, Object> seo(String desc, String image, boolean noindex, String ogType) {
-        return seo(desc, image, noindex, ogType, null);
+        return seo(desc, image, noindex, ogType, null, null);
     }
 
     private Map<String, Object> seo(String desc, String image, boolean noindex, String ogType, String canon) {
+        return seo(desc, image, noindex, ogType, canon, null);
+    }
+
+    private Map<String, Object> seo(String desc, String image, boolean noindex, String ogType, String canon, String keywords) {
         Map<String, Object> m = new java.util.LinkedHashMap<>();
         m.put("desc", desc == null ? "" : desc);
         m.put("image", (image == null || image.isBlank()) ? null : image);
         m.put("noindex", noindex);
         m.put("ogType", ogType);
         m.put("canon", canon);
+        m.put("keywords", keywords == null ? "" : keywords);
         return m;
     }
 

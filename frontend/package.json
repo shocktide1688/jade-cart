@@ -16,6 +16,8 @@
     "@element-plus/icons-vue": "^2.3.2",
     "@tanstack/vue-query": "^5.102.7",
     "@vueuse/core": "^14.4.0",
+    "@wangeditor/editor": "^5.1.23",
+    "@wangeditor/editor-for-vue": "^5.1.12",
     "axios": "^1.20.0",
     "dayjs": "^1.11.23",
     "element-plus": "^2.14.5",

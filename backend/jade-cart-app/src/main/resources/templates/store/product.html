@@ -14,7 +14,7 @@
   </div>
   <div>
     {#if p.description}
-    <p>{p.description}</p>
+    <div class="content">{p.description.raw}</div>
     {/if}
 
     {#if p.variants.isEmpty()}

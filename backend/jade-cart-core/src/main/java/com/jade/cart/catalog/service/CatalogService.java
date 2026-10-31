@@ -9,6 +9,7 @@ import com.jade.cart.catalog.entity.ProductOption;
 import com.jade.cart.catalog.entity.ProductOptionValue;
 import com.jade.cart.catalog.entity.Variant;
 import com.jade.cart.catalog.entity.VariantOptionValue;
+import com.jade.cart.catalog.service.HtmlSanitizer;
 import com.jade.common.exception.BizException;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.transaction.Transactional;
@@ -123,7 +124,8 @@ public class CatalogService {
     @Transactional
     public Product createProduct(String title, String slug, String description,
                                  String seoDescription, String status, Boolean featured,
-                                 Long defaultPriceCents, String defaultSku, String mainImagePath) {
+                                 Long defaultPriceCents, String defaultSku, String mainImagePath,
+                                 String seoKeywords) {
         Product product = new Product();
         product.title = title;
         product.slug = uniqueSlug(slug, title, s -> Product.findBySlug(s) != null);
@@ -132,6 +134,8 @@ public class CatalogService {
         product.status = validStatus(status, Product.STATUS_DRAFT);
         product.featured = Boolean.TRUE.equals(featured);
         product.mainImagePath = (mainImagePath == null || mainImagePath.isBlank()) ? null : mainImagePath;
+        product.seoKeywords = seoKeywords;
+        product.description = HtmlSanitizer.sanitize(product.description);
         product.persist();
 
         // 无变体商品自动带一条默认变体 (kartwo 语义: 商品必有 >=1 变体)
@@ -142,7 +146,7 @@ public class CatalogService {
     @Transactional
     public Product updateProduct(Long id, String title, String slug, String description,
                                  String seoDescription, String status, Boolean featured,
-                                 String mainImagePath) {
+                                 String mainImagePath, String seoKeywords) {
         Product product = Product.findById(id);
         if (product == null || product.deleted) {
             throw new BizException("商品不存在");
@@ -154,7 +158,7 @@ public class CatalogService {
             product.slug = uniqueSlug(slug, title, s -> Product.findBySlug(s) != null);
         }
         if (description != null) {
-            product.description = description;
+            product.description = HtmlSanitizer.sanitize(description);
         }
         if (seoDescription != null) {
             product.seoDescription = seoDescription;
@@ -167,6 +171,9 @@ public class CatalogService {
         }
         if (mainImagePath != null) {
             product.mainImagePath = mainImagePath.isBlank() ? null : mainImagePath;
+        }
+        if (seoKeywords != null) {
+            product.seoKeywords = seoKeywords.isBlank() ? null : seoKeywords;
         }
         product.persist();
         return product;
@@ -436,7 +443,7 @@ public class CatalogService {
                 .toList();
 
         return new ProductView(product.id, product.publicId, product.title, product.slug,
-                product.description, product.seoDescription, product.status, product.featured,
+                product.description, product.seoDescription, product.seoKeywords, product.status, product.featured,
                 product.mainImagePath, product.createdAt, categoryIdsOf(product.id), options, variants);
     }
 
