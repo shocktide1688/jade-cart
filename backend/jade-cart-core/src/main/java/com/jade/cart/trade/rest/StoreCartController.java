@@ -22,9 +22,7 @@ import jakarta.ws.rs.core.Response;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 
-/**
- * 店面购物车 API (公开, 匿名 cookie token 会话)
- */
+/** 店面购物车 API (公开, 匿名 cookie token 会话) */
 @Path("/api/store/cart")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
@@ -35,8 +33,7 @@ public class StoreCartController {
     /** 30 天有效 */
     private static final int COOKIE_MAX_AGE = 60 * 60 * 24 * 30;
 
-    @Inject
-    CartService cartService;
+    @Inject CartService cartService;
 
     public record ItemReq(Long variantId, Integer quantity) {}
 
@@ -66,8 +63,8 @@ public class StoreCartController {
     @Path("/items/{variantId}")
     @Transactional
     @Operation(summary = "改数量 (0 = 移除)")
-    public Response update(@Context HttpHeaders headers, @PathParam("variantId") Long variantId,
-                           UpdateReq req) {
+    public Response update(
+            @Context HttpHeaders headers, @PathParam("variantId") Long variantId, UpdateReq req) {
         TokenBox box = resolve(headers);
         int qty = req.quantity() == null ? 1 : req.quantity();
         return wrap(box, cartService.updateItem(box.token, variantId, qty));
@@ -95,12 +92,13 @@ public class StoreCartController {
     private Response wrap(TokenBox box, CartView view) {
         Response.ResponseBuilder builder = Response.ok(R.ok(view));
         if (box.isNew()) {
-            builder.cookie(new NewCookie.Builder(CartService.CART_COOKIE)
-                    .value(box.token())
-                    .path("/")
-                    .maxAge(COOKIE_MAX_AGE)
-                    .httpOnly(true)
-                    .build());
+            builder.cookie(
+                    new NewCookie.Builder(CartService.CART_COOKIE)
+                            .value(box.token())
+                            .path("/")
+                            .maxAge(COOKIE_MAX_AGE)
+                            .httpOnly(true)
+                            .build());
         }
         return builder.build();
     }

@@ -12,17 +12,14 @@ import jakarta.ws.rs.PUT;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
-import org.eclipse.microprofile.openapi.annotations.Operation;
-import org.eclipse.microprofile.openapi.annotations.tags.Tag;
-
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import org.eclipse.microprofile.openapi.annotations.Operation;
+import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 
-/**
- * 店面装修 (管理端): 区块列表 + 整体保存 (position = 数组顺序)
- */
+/** 店面装修 (管理端): 区块列表 + 整体保存 (position = 数组顺序) */
 @Path("/api/v1/storefront")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
@@ -30,8 +27,15 @@ import java.util.Map;
 @Tag(name = "店面装修")
 public class AdminStorefrontController {
 
-    private static final List<String> TYPES = List.of(
-            "hero", "featured", "category_grid", "usp", "rich_text", "blog_latest", "banner_strip");
+    private static final List<String> TYPES =
+            List.of(
+                    "hero",
+                    "featured",
+                    "category_grid",
+                    "usp",
+                    "rich_text",
+                    "blog_latest",
+                    "banner_strip");
 
     private final ObjectMapper mapper = new ObjectMapper();
 
@@ -80,7 +84,9 @@ public class AdminStorefrontController {
             keep.add(s);
         }
         StorefrontSection.delete("page", "home");
-        keep.forEach(s -> s.persist());
+        for (StorefrontSection s : keep) {
+            s.persist();
+        }
         return R.ok();
     }
 

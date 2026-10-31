@@ -7,16 +7,13 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import java.time.LocalDateTime;
+import java.util.Optional;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import org.hibernate.annotations.CreationTimestamp;
 
-import java.time.LocalDateTime;
-import java.util.Optional;
-
-/**
- * 发货追踪 (单次履约: 一单一shipment)
- */
+/** 发货追踪 (单次履约: 一单一shipment) */
 @Data
 @EqualsAndHashCode(callSuper = false)
 @Entity

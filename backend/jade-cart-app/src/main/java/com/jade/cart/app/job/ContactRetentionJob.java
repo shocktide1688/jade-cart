@@ -6,14 +6,11 @@ import io.quarkus.scheduler.Scheduled;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 
-/**
- * 客服留言保留期任务: 每日 03:00 匿名化过期留言的 IP (不删除)
- */
+/** 客服留言保留期任务: 每日 03:00 匿名化过期留言的 IP (不删除) */
 @ApplicationScoped
 public class ContactRetentionJob {
 
-    @Inject
-    ContactService contactService;
+    @Inject ContactService contactService;
 
     @Scheduled(cron = "0 0 3 * * ?")
     void anonymizeExpired() {

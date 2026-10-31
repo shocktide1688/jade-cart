@@ -22,20 +22,19 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.inject.Instance;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
-import org.eclipse.microprofile.config.inject.ConfigProperty;
-
 import java.security.SecureRandom;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
 
 /**
- * 订单: 结算单事务 (预留库存→运费快照→客户 upsert→订单快照→购物车 CONVERTED)
- * 支付回调: webhook 幂等表 + 金额/币种复核 + 条件状态流转 + 预留转实扣 + 邮件入队
- * 渠道选择: stripe 已配置 → paypal 已配置 → mock 兜底
+ * 订单: 结算单事务 (预留库存→运费快照→客户 upsert→订单快照→购物车 CONVERTED) 支付回调: webhook 幂等表 + 金额/币种复核 + 条件状态流转 + 预留转实扣 +
+ * 邮件入队 渠道选择: stripe 已配置 → paypal 已配置 → mock 兜底
  */
 @ApplicationScoped
 public class OrderService {
@@ -43,23 +42,17 @@ public class OrderService {
     private static final SecureRandom RANDOM = new SecureRandom();
     private static final DateTimeFormatter NUM_FMT = DateTimeFormatter.ofPattern("yyyyMMddHHmmss");
 
-    @Inject
-    CatalogService catalogService;
+    @Inject CatalogService catalogService;
 
-    @Inject
-    ShippingService shippingService;
+    @Inject ShippingService shippingService;
 
-    @Inject
-    PaymentSettings paymentSettings;
+    @Inject PaymentSettings paymentSettings;
 
-    @Inject
-    com.jade.cart.settings.service.MarketService marketService;
+    @Inject com.jade.cart.settings.service.MarketService marketService;
 
-    @Inject
-    OutboxService outboxService;
+    @Inject OutboxService outboxService;
 
-    @Inject
-    Instance<PaymentProvider> paymentProviders;
+    @Inject Instance<PaymentProvider> paymentProviders;
 
     @ConfigProperty(name = "jade.cart.reservation-minutes", defaultValue = "30")
     int reservationMinutes;
@@ -94,13 +87,10 @@ public class OrderService {
 
     // ---------- 结算 ----------
 
-    /**
-     * 结算 (单事务): 逐行条件 UPDATE 预留, 任一行不足整单回滚 (防超卖)
-     */
+    /** 结算 (单事务): 逐行条件 UPDATE 预留, 任一行不足整单回滚 (防超卖) */
     @Transactional
     public Order checkout(String token, String email, String shipName, String country) {
-        Cart cart = Cart.activeByToken(token)
-                .orElseThrow(() -> new BizException("购物车为空"));
+        Cart cart = Cart.activeByToken(token).orElseThrow(() -> new BizException("购物车为空"));
         List<CartItem> items = cart.items();
         if (items.isEmpty()) {
             throw new BizException("购物车为空");
@@ -108,7 +98,10 @@ public class OrderService {
         if (email == null || email.isBlank() || !email.contains("@")) {
             throw new BizException("请输入有效邮箱");
         }
-        String shipCountry = country == null || country.isBlank() ? "US" : country.trim().toUpperCase();
+        String shipCountry =
+                country == null || country.isBlank()
+                        ? "US"
+                        : country.trim().toUpperCase(Locale.ROOT);
 
         long subtotal = 0;
         Order order = new Order();
@@ -146,13 +139,16 @@ public class OrderService {
         order.totalCents = subtotal + order.shippingCents;
 
         // ③ 客户 upsert (按邮箱)
-        Customer customer = Customer.byEmail(order.email).orElseGet(() -> {
-            Customer c = new Customer();
-            c.email = order.email;
-            c.name = shipName;
-            c.persist();
-            return c;
-        });
+        Customer customer =
+                Customer.byEmail(order.email)
+                        .orElseGet(
+                                () -> {
+                                    Customer c = new Customer();
+                                    c.email = order.email;
+                                    c.name = shipName;
+                                    c.persist();
+                                    return c;
+                                });
 
         // ④ 订单落库 (30 分钟预留期限)
         order.customerId = customer.id;
@@ -174,7 +170,8 @@ public class OrderService {
         // ⑦ 下单确认邮件入队 (同事务, outbox 唯一约束幂等)
         outboxService.enqueueOrderConfirm(order);
 
-        Log.infof("checkout ok: order=%s amount=%d (ship=%d) via %s",
+        Log.infof(
+                "checkout ok: order=%s amount=%d (ship=%d) via %s",
                 order.orderNumber, order.totalCents, order.shippingCents, order.paymentProvider);
         return order;
     }
@@ -182,15 +179,22 @@ public class OrderService {
     // ---------- 支付回调 ----------
 
     /**
-     * markPaid (kartwo 同款路径):
-     * ① webhook 幂等表去重 → ② 金额/币种复核 → ③ 条件流转 PENDING→PAID
-     * → ④ 预留转实扣 → ⑤ 支付确认邮件入队; 迟到款转 PAYMENT_REVIEW
+     * markPaid (kartwo 同款路径): ① webhook 幂等表去重 → ② 金额/币种复核 → ③ 条件流转 PENDING→PAID → ④ 预留转实扣 → ⑤
+     * 支付确认邮件入队; 迟到款转 PAYMENT_REVIEW
      */
     @Transactional
-    public boolean markPaid(String provider, String eventId, String orderPublicId,
-                            long amountCents, String webhookCurrency, String paymentRef) {
+    public boolean markPaid(
+            String provider,
+            String eventId,
+            String orderPublicId,
+            long amountCents,
+            String webhookCurrency,
+            String paymentRef) {
         // ① 幂等: 已处理过直接成功
-        if (!WebhookEvent.insertIfAbsent(provider, eventId, orderPublicId,
+        if (!WebhookEvent.insertIfAbsent(
+                provider,
+                eventId,
+                orderPublicId,
                 "amount=" + amountCents + " currency=" + webhookCurrency)) {
             Log.infof("webhook duplicate ignored: %s/%s", provider, eventId);
             return true;
@@ -198,29 +202,40 @@ public class OrderService {
 
         Optional<Order> found = Order.byPublicId(orderPublicId);
         if (found.isEmpty()) {
-            Log.errorf("webhook for unknown order: %s/%s order=%s", provider, eventId, orderPublicId);
+            Log.errorf(
+                    "webhook for unknown order: %s/%s order=%s", provider, eventId, orderPublicId);
             return true;
         }
         Order order = found.get();
 
         // ② 金额/币种第二道校验
         if (order.totalCents != amountCents) {
-            Log.errorf("webhook amount mismatch: order=%s expect=%d got=%d (需人工核对)",
+            Log.errorf(
+                    "webhook amount mismatch: order=%s expect=%d got=%d (需人工核对)",
                     order.orderNumber, order.totalCents, amountCents);
             return true;
         }
 
         // ③ 条件流转 PENDING → PAID
-        boolean paid = Order.transition(order.id, Order.STATUS_PENDING, Order.STATUS_PAID, LocalDateTime.now());
+        boolean paid =
+                Order.transition(
+                        order.id, Order.STATUS_PENDING, Order.STATUS_PAID, LocalDateTime.now());
         if (!paid) {
             if (Order.STATUS_CANCELLED.equals(order.status)) {
-                boolean review = Order.transition(order.id, Order.STATUS_CANCELLED,
-                        Order.STATUS_PAYMENT_REVIEW, LocalDateTime.now());
-                Log.warnf("late payment on cancelled order=%s -> PAYMENT_REVIEW=%b (需人工退款, 禁止发货)",
+                boolean review =
+                        Order.transition(
+                                order.id,
+                                Order.STATUS_CANCELLED,
+                                Order.STATUS_PAYMENT_REVIEW,
+                                LocalDateTime.now());
+                Log.warnf(
+                        "late payment on cancelled order=%s -> PAYMENT_REVIEW=%b (需人工退款, 禁止发货)",
                         order.orderNumber, review);
                 return true;
             }
-            Log.warnf("webhook on non-pending order=%s status=%s ignored", order.orderNumber, order.status);
+            Log.warnf(
+                    "webhook on non-pending order=%s status=%s ignored",
+                    order.orderNumber, order.status);
             return true;
         }
         // 条件 UPDATE 绕过持久化上下文, 同步内存实体避免脏检查把旧状态刷回去
@@ -229,8 +244,10 @@ public class OrderService {
 
         // ④ 预留转实扣
         for (OrderItem line : order.items()) {
-            if (line.variantId != null && !Inventory.commitReserved(line.variantId, line.quantity)) {
-                Log.errorf("commit reserved failed: order=%s variant=%d qty=%d (需人工修库存)",
+            if (line.variantId != null
+                    && !Inventory.commitReserved(line.variantId, line.quantity)) {
+                Log.errorf(
+                        "commit reserved failed: order=%s variant=%d qty=%d (需人工修库存)",
                         order.orderNumber, line.variantId, line.quantity);
             }
         }
@@ -249,9 +266,11 @@ public class OrderService {
 
     /** 履约: PAID → FULFILLED + 发货追踪 + 邮件入队 */
     @Transactional
-    public Order fulfill(String publicId, String carrier, String trackingNumber, String trackingUrl) {
+    public Order fulfill(
+            String publicId, String carrier, String trackingNumber, String trackingUrl) {
         Order order = mustFind(publicId);
-        if (!Order.transition(order.id, Order.STATUS_PAID, Order.STATUS_FULFILLED, LocalDateTime.now())) {
+        if (!Order.transition(
+                order.id, Order.STATUS_PAID, Order.STATUS_FULFILLED, LocalDateTime.now())) {
             throw new BizException("只有已支付订单才能履约 (当前: " + order.status + ")");
         }
         order.status = Order.STATUS_FULFILLED;
@@ -265,14 +284,17 @@ public class OrderService {
         shipment.persist();
 
         outboxService.enqueueShipped(order, carrier, trackingNumber, trackingUrl);
-        Log.infof("order fulfilled: %s carrier=%s tracking=%s", order.orderNumber, carrier, trackingNumber);
+        Log.infof(
+                "order fulfilled: %s carrier=%s tracking=%s",
+                order.orderNumber, carrier, trackingNumber);
         return Order.findById(order.id);
     }
 
     @Transactional
     public Order cancel(String publicId) {
         Order order = mustFind(publicId);
-        if (!Order.transition(order.id, Order.STATUS_PENDING, Order.STATUS_CANCELLED, LocalDateTime.now())) {
+        if (!Order.transition(
+                order.id, Order.STATUS_PENDING, Order.STATUS_CANCELLED, LocalDateTime.now())) {
             throw new BizException("只有待支付订单才能取消 (当前: " + order.status + ")");
         }
         order.status = Order.STATUS_CANCELLED;
@@ -286,36 +308,49 @@ public class OrderService {
     @Transactional
     public Order refund(String publicId) {
         Order order = mustFind(publicId);
-        boolean canRefund = Order.STATUS_PAID.equals(order.status)
-                || Order.STATUS_PAYMENT_REVIEW.equals(order.status);
+        boolean canRefund =
+                Order.STATUS_PAID.equals(order.status)
+                        || Order.STATUS_PAYMENT_REVIEW.equals(order.status);
         if (!canRefund) {
             throw new BizException("只有已支付/待审核订单才能退款 (当前: " + order.status + ")");
         }
         PaymentProvider gateway = providerOf(order);
         PaymentProvider.RefundResult result = gateway.refund(order); // 抛异常 = 退款失败, 状态不变
 
-        boolean ok = Order.transition(order.id, Order.STATUS_PAID, Order.STATUS_REFUNDED, LocalDateTime.now());
+        boolean ok =
+                Order.transition(
+                        order.id, Order.STATUS_PAID, Order.STATUS_REFUNDED, LocalDateTime.now());
         if (!ok) {
-            ok = Order.transition(order.id, Order.STATUS_PAYMENT_REVIEW, Order.STATUS_REFUNDED, LocalDateTime.now());
+            ok =
+                    Order.transition(
+                            order.id,
+                            Order.STATUS_PAYMENT_REVIEW,
+                            Order.STATUS_REFUNDED,
+                            LocalDateTime.now());
         }
         if (!ok) {
             throw new BizException("订单状态已变化, 请刷新重试");
         }
         order.status = Order.STATUS_REFUNDED;
         order.refundedAt = LocalDateTime.now();
-        Log.infof("order refunded: %s via %s refund=%s", order.orderNumber, gateway.name(), result.providerRefundId());
+        Log.infof(
+                "order refunded: %s via %s refund=%s",
+                order.orderNumber, gateway.name(), result.providerRefundId());
         return Order.findById(order.id);
     }
 
     /** 预留过期清扫: 过期 PENDING → CANCELLED + 释放 reserved */
     @Transactional
     public int cancelExpiredReservations() {
-        List<Order> expired = Order.<Order>find(
-                        "status = ?1 and reservationExpiresAt < ?2",
-                        Order.STATUS_PENDING, LocalDateTime.now())
-                .list();
+        List<Order> expired =
+                Order.<Order>find(
+                                "status = ?1 and reservationExpiresAt < ?2",
+                                Order.STATUS_PENDING,
+                                LocalDateTime.now())
+                        .list();
         for (Order order : expired) {
-            if (Order.transition(order.id, Order.STATUS_PENDING, Order.STATUS_CANCELLED, LocalDateTime.now())) {
+            if (Order.transition(
+                    order.id, Order.STATUS_PENDING, Order.STATUS_CANCELLED, LocalDateTime.now())) {
                 releaseReserved(order);
                 Log.infof("order reservation expired, cancelled: %s", order.orderNumber);
             }
@@ -334,10 +369,11 @@ public class OrderService {
         }
         if (keyword != null && !keyword.isBlank()) {
             where.append(" and (lower(orderNumber) like :kw or lower(email) like :kw)");
-            params.put("kw", "%" + keyword.toLowerCase(java.util.Locale.ROOT) + "%");
+            params.put("kw", "%" + keyword.toLowerCase(Locale.ROOT) + "%");
         }
         return Order.find(where.toString() + " order by createdAt desc", params)
-                .page(Math.max(page - 1, 0), size).list();
+                .page(Math.max(page - 1, 0), size)
+                .list();
     }
 
     public long countOrders(String status, String keyword) {
@@ -349,23 +385,48 @@ public class OrderService {
         }
         if (keyword != null && !keyword.isBlank()) {
             where.append(" and (lower(orderNumber) like :kw or lower(email) like :kw)");
-            params.put("kw", "%" + keyword.toLowerCase(java.util.Locale.ROOT) + "%");
+            params.put("kw", "%" + keyword.toLowerCase(Locale.ROOT) + "%");
         }
         return Order.count(where.toString(), params);
     }
 
     public OrderView toView(Order order) {
         Shipment shipment = Shipment.byOrder(order.id).orElse(null);
-        return new OrderView(order.publicId, order.orderNumber, order.email, order.shipName,
-                order.status, order.subtotalCents, order.shippingCents, order.totalCents,
-                order.currency, order.shippingCountry, order.paymentProvider, order.paymentRef,
-                order.reservationExpiresAt, order.paidAt, order.fulfilledAt,
-                order.cancelledAt, order.refundedAt, order.createdAt,
-                order.items().stream().map(line -> new OrderView.ItemView(
-                        line.variantId, line.productTitle, line.variantSpec, line.sku,
-                        line.unitPriceCents, line.quantity, line.lineTotalCents)).toList(),
-                shipment == null ? null : new OrderView.ShipmentView(
-                        shipment.carrier, shipment.trackingNumber, shipment.trackingUrl));
+        return new OrderView(
+                order.publicId,
+                order.orderNumber,
+                order.email,
+                order.shipName,
+                order.status,
+                order.subtotalCents,
+                order.shippingCents,
+                order.totalCents,
+                order.currency,
+                order.shippingCountry,
+                order.paymentProvider,
+                order.paymentRef,
+                order.reservationExpiresAt,
+                order.paidAt,
+                order.fulfilledAt,
+                order.cancelledAt,
+                order.refundedAt,
+                order.createdAt,
+                order.items().stream()
+                        .map(
+                                line ->
+                                        new OrderView.ItemView(
+                                                line.variantId,
+                                                line.productTitle,
+                                                line.variantSpec,
+                                                line.sku,
+                                                line.unitPriceCents,
+                                                line.quantity,
+                                                line.lineTotalCents))
+                        .toList(),
+                shipment == null
+                        ? null
+                        : new OrderView.ShipmentView(
+                                shipment.carrier, shipment.trackingNumber, shipment.trackingUrl));
     }
 
     // ---------- 内部 ----------
@@ -384,8 +445,10 @@ public class OrderService {
 
     private String nextOrderNumber() {
         for (int i = 0; i < 5; i++) {
-            String candidate = "JC" + LocalDateTime.now().format(NUM_FMT)
-                    + String.format("%04d", RANDOM.nextInt(10000));
+            String candidate =
+                    "JC"
+                            + LocalDateTime.now().format(NUM_FMT)
+                            + String.format("%04d", RANDOM.nextInt(10000));
             if (Order.count("orderNumber", candidate) == 0) {
                 return candidate;
             }

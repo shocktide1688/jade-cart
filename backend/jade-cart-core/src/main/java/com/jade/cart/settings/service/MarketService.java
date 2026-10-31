@@ -2,20 +2,19 @@ package com.jade.cart.settings.service;
 
 import com.jade.cart.settings.entity.StoreSetting;
 import jakarta.enterprise.context.ApplicationScoped;
-import org.eclipse.microprofile.config.inject.ConfigProperty;
-
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
 
 /**
- * 市场注册表 (kartwo market 对齐, P3-17 最小实现):
- * 配置驱动 `jade.cart.markets` (格式 "CODE:CURRENCY,CODE:CURRENCY"), 店铺当前经营市场存设置 KV `market`
+ * 市场注册表 (kartwo market 对齐, P3-17 最小实现): 配置驱动 `jade.cart.markets` (格式
+ * "CODE:CURRENCY,CODE:CURRENCY"), 店铺当前经营市场存设置 KV `market`
  *
- * 当前: 单市场结账 (order.currency 按经营市场解析);
- * 扩展点: 多市场店面路由 / 按市场选支付方式时, 复用 registry 即可
+ * <p>当前: 单市场结账 (order.currency 按经营市场解析); 扩展点: 多市场店面路由 / 按市场选支付方式时, 复用 registry 即可
  */
 @ApplicationScoped
 public class MarketService {
@@ -34,8 +33,12 @@ public class MarketService {
         for (String entry : marketsConfig.split(",")) {
             String[] parts = entry.trim().split(":");
             if (parts.length >= 1 && !parts[0].isBlank()) {
-                out.add(new Market(parts[0].trim().toUpperCase(),
-                        (parts.length > 1 ? parts[1] : fallbackCurrency).trim().toUpperCase()));
+                out.add(
+                        new Market(
+                                parts[0].trim().toUpperCase(Locale.ROOT),
+                                (parts.length > 1 ? parts[1] : fallbackCurrency)
+                                        .trim()
+                                        .toUpperCase(Locale.ROOT)));
             }
         }
         if (out.isEmpty()) {
@@ -46,11 +49,11 @@ public class MarketService {
 
     /** 店铺当前经营市场 (设置 KV `market`, 未配置 = 注册表首个) */
     public Market current() {
-        Optional<String> configured = StoreSetting.getValue("market")
-                .map(m -> m.trim().toUpperCase());
+        Optional<String> configured =
+                StoreSetting.getValue("market").map(m -> m.trim().toUpperCase(Locale.ROOT));
         if (configured.isPresent()) {
-            Optional<Market> hit = registry().stream()
-                    .filter(m -> m.code().equals(configured.get())).findFirst();
+            Optional<Market> hit =
+                    registry().stream().filter(m -> m.code().equals(configured.get())).findFirst();
             if (hit.isPresent()) {
                 return hit.get();
             }

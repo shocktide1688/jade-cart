@@ -5,10 +5,6 @@ import com.jade.common.exception.BizException;
 import io.quarkus.logging.Log;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.transaction.Transactional;
-import net.coobird.thumbnailator.Thumbnails;
-import org.eclipse.microprofile.config.inject.ConfigProperty;
-
-import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
@@ -16,12 +12,14 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.MessageDigest;
 import java.util.HexFormat;
-import java.util.Locale;
+import javax.imageio.ImageIO;
+import net.coobird.thumbnailator.Thumbnails;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
 
 /**
  * 媒体库: 上传校验 (magic bytes/大小/磁盘护栏) → 内容哈希去重 → 原图落盘 → 多尺寸派生图
  *
- * 说明: 派生图保持原格式 (JPEG/PNG); WebP 无 JDK 编码器, 原样存储不派生。
+ * <p>说明: 派生图保持原格式 (JPEG/PNG); WebP 无 JDK 编码器, 原样存储不派生。
  */
 @ApplicationScoped
 public class MediaService {
@@ -42,7 +40,9 @@ public class MediaService {
         try {
             bytes = in.readAllBytes();
         } catch (Exception e) {
-            throw new BizException("读取上传内容失败");
+            BizException ex = new BizException("读取上传内容失败");
+            ex.initCause(e);
+            throw ex;
         }
         if (bytes.length == 0) {
             throw new BizException("文件为空");
@@ -53,7 +53,9 @@ public class MediaService {
         try {
             Files.createDirectories(root());
         } catch (Exception e) {
-            throw new BizException("媒体目录创建失败: " + e.getMessage());
+            BizException ex = new BizException("媒体目录创建失败: " + e.getMessage());
+            ex.initCause(e);
+            throw ex;
         }
         // 目录不存在时 getUsableSpace() 返回 0 → 先建目录, 仍为 0 才是真没空间
         long usable = root().toFile().getUsableSpace();
@@ -72,13 +74,15 @@ public class MediaService {
             return existing; // 内容去重
         }
 
-        String ext = switch (type) {
-            case "image/jpeg" -> ".jpg";
-            case "image/png" -> ".png";
-            default -> ".webp";
-        };
-        String safeName = (filename == null || filename.isBlank() ? "image" : filename)
-                .replaceAll("[^a-zA-Z0-9._-]", "_");
+        String ext =
+                switch (type) {
+                    case "image/jpeg" -> ".jpg";
+                    case "image/png" -> ".png";
+                    default -> ".webp";
+                };
+        String safeName =
+                (filename == null || filename.isBlank() ? "image" : filename)
+                        .replaceAll("[^a-zA-Z0-9._-]", "_");
         try {
             Path original = root().resolve(hash + ext);
             Files.createDirectories(original.getParent());
@@ -113,12 +117,16 @@ public class MediaService {
             asset.height = height;
             asset.path = root().relativize(original).toString().replace('\\', '/');
             asset.persist();
-            Log.infof("media uploaded: %s (%d bytes, %dx%d)", asset.path, bytes.length, width, height);
+            Log.infof(
+                    "media uploaded: %s (%d bytes, %dx%d)",
+                    asset.path, bytes.length, width, height);
             return asset;
         } catch (BizException e) {
             throw e;
         } catch (Exception e) {
-            throw new BizException("保存媒体失败: " + e.getMessage());
+            BizException ex = new BizException("保存媒体失败: " + e.getMessage());
+            ex.initCause(e);
+            throw ex;
         }
     }
 
@@ -143,7 +151,9 @@ public class MediaService {
         if (Files.exists(target)) {
             return;
         }
-        Thumbnails.of(img).size(size, size).keepAspectRatio(true)
+        Thumbnails.of(img)
+                .size(size, size)
+                .keepAspectRatio(true)
                 .outputFormat("jpg".equals(extOf(type)) ? "jpg" : "png")
                 .toFile(target.toFile());
     }
@@ -157,11 +167,21 @@ public class MediaService {
         if (b.length >= 12 && (b[0] & 0xFF) == 0x89 && b[1] == 'P' && b[2] == 'N' && b[3] == 'G') {
             return "image/png";
         }
-        if (b.length >= 3 && (b[0] & 0xFF) == 0xFF && (b[1] & 0xFF) == 0xD8 && (b[2] & 0xFF) == 0xFF) {
+        if (b.length >= 3
+                && (b[0] & 0xFF) == 0xFF
+                && (b[1] & 0xFF) == 0xD8
+                && (b[2] & 0xFF) == 0xFF) {
             return "image/jpeg";
         }
-        if (b.length >= 12 && b[0] == 'R' && b[1] == 'I' && b[2] == 'F' && b[3] == 'F'
-                && b[8] == 'W' && b[9] == 'E' && b[10] == 'B' && b[11] == 'P') {
+        if (b.length >= 12
+                && b[0] == 'R'
+                && b[1] == 'I'
+                && b[2] == 'F'
+                && b[3] == 'F'
+                && b[8] == 'W'
+                && b[9] == 'E'
+                && b[10] == 'B'
+                && b[11] == 'P') {
             return "image/webp";
         }
         return null;
@@ -169,8 +189,7 @@ public class MediaService {
 
     private String sha256Hex(byte[] bytes) {
         try {
-            return HexFormat.of().formatHex(
-                    MessageDigest.getInstance("SHA-256").digest(bytes));
+            return HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(bytes));
         } catch (Exception e) {
             throw new IllegalStateException(e);
         }

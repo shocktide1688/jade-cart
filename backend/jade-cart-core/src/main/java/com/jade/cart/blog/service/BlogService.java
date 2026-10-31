@@ -1,38 +1,42 @@
 package com.jade.cart.blog.service;
 
 import com.jade.cart.blog.entity.BlogPost;
-import com.jade.cart.content.service.ContentService;
 import com.jade.cart.catalog.service.HtmlSanitizer;
+import com.jade.cart.content.service.ContentService;
 import com.jade.common.exception.BizException;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
-
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Locale;
 import java.util.UUID;
 
-/**
- * 博客: CRUD + 受限 Markdown 渲染 (复用 ContentService 渲染器)
- */
+/** 博客: CRUD + 受限 Markdown 渲染 (复用 ContentService 渲染器) */
 @ApplicationScoped
 public class BlogService {
 
-    @Inject
-    ContentService contentService;
+    @Inject ContentService contentService;
 
     public List<BlogPost> posts() {
         return BlogPost.list("1=1 order by id desc");
     }
 
     @Transactional
-    public BlogPost create(String slug, String title, String excerpt, String bodyMarkdown,
-                           String bodyHtml, String coverPath, String seoDescription,
-                           String seoKeywords, boolean publish) {
-        String normalized = slug == null || slug.isBlank()
-                ? slugify(title) + "-" + UUID.randomUUID().toString().substring(0, 6)
-                : slug.trim().toLowerCase(Locale.ROOT).replaceAll("[^a-z0-9-]", "-");
+    public BlogPost create(
+            String slug,
+            String title,
+            String excerpt,
+            String bodyMarkdown,
+            String bodyHtml,
+            String coverPath,
+            String seoDescription,
+            String seoKeywords,
+            boolean publish) {
+        String normalized =
+                slug == null || slug.isBlank()
+                        ? slugify(title) + "-" + UUID.randomUUID().toString().substring(0, 6)
+                        : slug.trim().toLowerCase(Locale.ROOT).replaceAll("[^a-z0-9-]", "-");
         if (BlogPost.count("slug", normalized) > 0) {
             throw new BizException("slug 已存在: " + normalized);
         }
@@ -56,9 +60,16 @@ public class BlogService {
     }
 
     @Transactional
-    public BlogPost update(Long id, String title, String excerpt, String bodyMarkdown,
-                           String bodyHtml, String coverPath, String seoDescription,
-                           String seoKeywords, String status) {
+    public BlogPost update(
+            Long id,
+            String title,
+            String excerpt,
+            String bodyMarkdown,
+            String bodyHtml,
+            String coverPath,
+            String seoDescription,
+            String seoKeywords,
+            String status) {
         BlogPost post = BlogPost.findById(id);
         if (post == null) {
             throw new BizException("文章不存在");
@@ -122,7 +133,11 @@ public class BlogService {
     }
 
     private String slugify(String s) {
-        return (s == null ? "post" : s.trim().toLowerCase(Locale.ROOT)
-                .replaceAll("[^a-z0-9\\u4e00-\\u9fa5]+", "-")).replaceAll("^-+|-+$", "");
+        return (s == null
+                        ? "post"
+                        : s.trim()
+                                .toLowerCase(Locale.ROOT)
+                                .replaceAll("[^a-z0-9\\u4e00-\\u9fa5]+", "-"))
+                .replaceAll("^-+|-+$", "");
     }
 }

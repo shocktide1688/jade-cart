@@ -2,10 +2,10 @@ package com.jade.cart.app.storefront;
 
 import io.quarkus.qute.TemplateExtension;
 
-/**
- * 金额格式化: {line.unitPriceCents.money} → "$12.34"
- */
-public class MoneyTemplateExtensions {
+/** 金额格式化: {line.unitPriceCents.money} → "$12.34" */
+public final class MoneyTemplateExtensions {
+
+    private MoneyTemplateExtensions() {}
 
     @TemplateExtension(matchName = "money")
     public static String money(Long cents) {

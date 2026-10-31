@@ -7,9 +7,6 @@ import com.jade.common.exception.BizException;
 import io.quarkus.logging.Log;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
-
-import javax.crypto.Mac;
-import javax.crypto.spec.SecretKeySpec;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -17,21 +14,23 @@ import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.HexFormat;
+import java.util.Locale;
+import javax.crypto.Mac;
+import javax.crypto.spec.SecretKeySpec;
 
 /**
- * Stripe 直连 (无 SDK): Checkout Session 创建 + webhook 验签 + 退款
- * markPaid 路径与 Mock 共用 (StoreCheckoutController.webhookStripe)
+ * Stripe 直连 (无 SDK): Checkout Session 创建 + webhook 验签 + 退款 markPaid 路径与 Mock 共用
+ * (StoreCheckoutController.webhookStripe)
  */
 @ApplicationScoped
 public class StripeProvider implements PaymentProvider {
 
     private static final String API = "https://api.stripe.com/v1";
 
-    @Inject
-    PaymentSettings settings;
+    @Inject PaymentSettings settings;
 
-    private final HttpClient http = HttpClient.newBuilder()
-            .connectTimeout(Duration.ofSeconds(10)).build();
+    private final HttpClient http =
+            HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(10)).build();
     private final ObjectMapper mapper = new ObjectMapper();
 
     @Override
@@ -48,22 +47,30 @@ public class StripeProvider implements PaymentProvider {
     public Initiation createPayment(Order order) {
         String secret = settings.stripeSecret().orElseThrow();
         String base = settings.storeBaseUrl();
-        String form = "mode=payment"
-                + "&client_reference_id=" + order.publicId
-                + "&success_url=" + enc(base + "/orders/" + order.publicId + "?paid=1")
-                + "&cancel_url=" + enc(base + "/orders/" + order.publicId)
-                + "&line_items[0][quantity]=1"
-                + "&line_items[0][price_data][currency]=" + enc(order.currency.toLowerCase())
-                + "&line_items[0][price_data][unit_amount]=" + order.totalCents
-                + "&line_items[0][price_data][product_data][name]=" + enc("Order " + order.orderNumber);
+        String form =
+                "mode=payment"
+                        + "&client_reference_id="
+                        + order.publicId
+                        + "&success_url="
+                        + enc(base + "/orders/" + order.publicId + "?paid=1")
+                        + "&cancel_url="
+                        + enc(base + "/orders/" + order.publicId)
+                        + "&line_items[0][quantity]=1"
+                        + "&line_items[0][price_data][currency]="
+                        + enc(order.currency.toLowerCase(Locale.ROOT))
+                        + "&line_items[0][price_data][unit_amount]="
+                        + order.totalCents
+                        + "&line_items[0][price_data][product_data][name]="
+                        + enc("Order " + order.orderNumber);
         JsonNode resp = post(API + "/checkout/sessions", secret, form);
         return new Initiation(resp.path("url").asText(), resp.path("id").asText());
     }
 
     /** 验签 (Stripe-Signature: t=...,v1=...), 返回解析后的事件 JSON; 失败抛异常拒绝处理 */
     public JsonNode verifyWebhook(String body, String signatureHeader) {
-        String secret = settings.stripeWebhookSecret()
-                .orElseThrow(() -> new BizException("Stripe webhook secret 未配置"));
+        String secret =
+                settings.stripeWebhookSecret()
+                        .orElseThrow(() -> new BizException("Stripe webhook secret 未配置"));
         if (signatureHeader == null || !signatureHeader.contains("t=")) {
             throw new BizException("缺少 Stripe-Signature");
         }
@@ -87,7 +94,9 @@ public class StripeProvider implements PaymentProvider {
         try {
             return mapper.readTree(body);
         } catch (Exception e) {
-            throw new BizException("Stripe 事件 JSON 解析失败");
+            BizException ex = new BizException("Stripe 事件 JSON 解析失败");
+            ex.initCause(e);
+            throw ex;
         }
     }
 
@@ -96,8 +105,11 @@ public class StripeProvider implements PaymentProvider {
         if (order.paymentRef == null || order.paymentRef.isBlank()) {
             throw new BizException("缺少 Stripe payment_intent, 无法退款");
         }
-        JsonNode resp = post(API + "/refunds", settings.stripeSecret().orElseThrow(),
-                "payment_intent=" + enc(order.paymentRef));
+        JsonNode resp =
+                post(
+                        API + "/refunds",
+                        settings.stripeSecret().orElseThrow(),
+                        "payment_intent=" + enc(order.paymentRef));
         Log.infof("stripe refund: order=%s refund=%s", order.orderNumber, resp.path("id").asText());
         return new RefundResult(resp.path("id").asText(), resp.toString());
     }
@@ -106,12 +118,13 @@ public class StripeProvider implements PaymentProvider {
 
     private JsonNode post(String url, String secret, String form) {
         try {
-            HttpRequest request = HttpRequest.newBuilder(URI.create(url))
-                    .header("Authorization", "Bearer " + secret)
-                    .header("Content-Type", "application/x-www-form-urlencoded")
-                    .POST(HttpRequest.BodyPublishers.ofString(form, StandardCharsets.UTF_8))
-                    .timeout(Duration.ofSeconds(30))
-                    .build();
+            HttpRequest request =
+                    HttpRequest.newBuilder(URI.create(url))
+                            .header("Authorization", "Bearer " + secret)
+                            .header("Content-Type", "application/x-www-form-urlencoded")
+                            .POST(HttpRequest.BodyPublishers.ofString(form, StandardCharsets.UTF_8))
+                            .timeout(Duration.ofSeconds(30))
+                            .build();
             HttpResponse<String> resp = http.send(request, HttpResponse.BodyHandlers.ofString());
             JsonNode json = mapper.readTree(resp.body());
             if (resp.statusCode() >= 300) {
@@ -122,7 +135,9 @@ public class StripeProvider implements PaymentProvider {
         } catch (BizException e) {
             throw e;
         } catch (Exception e) {
-            throw new BizException("Stripe 请求失败: " + e.getMessage());
+            BizException ex = new BizException("Stripe 请求失败: " + e.getMessage());
+            ex.initCause(e);
+            throw ex;
         }
     }
 
@@ -130,8 +145,7 @@ public class StripeProvider implements PaymentProvider {
         try {
             Mac mac = Mac.getInstance("HmacSHA256");
             mac.init(new SecretKeySpec(secret.getBytes(StandardCharsets.UTF_8), "HmacSHA256"));
-            return HexFormat.of().formatHex(
-                    mac.doFinal(payload.getBytes(StandardCharsets.UTF_8)));
+            return HexFormat.of().formatHex(mac.doFinal(payload.getBytes(StandardCharsets.UTF_8)));
         } catch (Exception e) {
             throw new IllegalStateException(e);
         }

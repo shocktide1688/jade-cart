@@ -4,12 +4,9 @@ import com.jade.cart.contact.entity.ContactMessage;
 import io.quarkus.logging.Log;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.transaction.Transactional;
-
 import java.time.LocalDateTime;
 
-/**
- * 客服留言: 提交 / 状态管理 / 到期匿名化 (IP 哈希置空, 不删除)
- */
+/** 客服留言: 提交 / 状态管理 / 到期匿名化 (IP 哈希置空, 不删除) */
 @ApplicationScoped
 public class ContactService {
 
@@ -17,7 +14,8 @@ public class ContactService {
     private static final int RETENTION_DAYS = 30;
 
     @Transactional
-    public ContactMessage submit(String name, String email, String topic, String message, String ipHash) {
+    public ContactMessage submit(
+            String name, String email, String topic, String message, String ipHash) {
         ContactMessage msg = new ContactMessage();
         msg.name = name;
         msg.email = email.trim();
@@ -31,8 +29,8 @@ public class ContactService {
 
     /** 同 IP 近一小时留言数 (限频) */
     public long recentCountByIp(String ipHash) {
-        return ContactMessage.count("ipHash = ?1 and createdAt > ?2",
-                ipHash, LocalDateTime.now().minusHours(1));
+        return ContactMessage.count(
+                "ipHash = ?1 and createdAt > ?2", ipHash, LocalDateTime.now().minusHours(1));
     }
 
     public java.util.List<ContactMessage> page(String status, int pageIdx, int size) {
@@ -43,7 +41,8 @@ public class ContactService {
             params.put("st", status);
         }
         return ContactMessage.find(where + " order by createdAt desc", params)
-                .page(Math.max(pageIdx - 1, 0), size).list();
+                .page(Math.max(pageIdx - 1, 0), size)
+                .list();
     }
 
     public long count(String status) {
@@ -59,12 +58,14 @@ public class ContactService {
         if (msg == null) {
             throw new com.jade.common.exception.BizException("留言不存在");
         }
-        if (!to.equals(ContactMessage.STATUS_PROCESSING) && !to.equals(ContactMessage.STATUS_CLOSED)
-                && !to.equals(ContactMessage.STATUS_NEW)) {
+        if (!ContactMessage.STATUS_PROCESSING.equals(to)
+                && !ContactMessage.STATUS_CLOSED.equals(to)
+                && !ContactMessage.STATUS_NEW.equals(to)) {
             throw new com.jade.common.exception.BizException("非法状态");
         }
         msg.status = to;
-        if (ContactMessage.STATUS_CLOSED.equals(to) || ContactMessage.STATUS_PROCESSING.equals(to)) {
+        if (ContactMessage.STATUS_CLOSED.equals(to)
+                || ContactMessage.STATUS_PROCESSING.equals(to)) {
             msg.processedAt = LocalDateTime.now();
         }
         msg.persist();
@@ -73,8 +74,10 @@ public class ContactService {
 
     @Transactional
     public long anonymizeExpiredNow() {
-        return ContactMessage.update("ipHash = null, anonymizedAt = ?1 " +
-                        "WHERE anonymizedAt IS NULL AND createdAt < ?2",
-                LocalDateTime.now(), LocalDateTime.now().minusDays(RETENTION_DAYS));
+        return ContactMessage.update(
+                "ipHash = null, anonymizedAt = ?1 "
+                        + "WHERE anonymizedAt IS NULL AND createdAt < ?2",
+                LocalDateTime.now(),
+                LocalDateTime.now().minusDays(RETENTION_DAYS));
     }
 }

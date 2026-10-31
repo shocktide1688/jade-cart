@@ -1,30 +1,27 @@
 package com.jade.cart.app.storefront;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.jade.cart.blog.entity.BlogPost;
 import com.jade.cart.catalog.entity.Product;
 import com.jade.cart.catalog.entity.Variant;
 import com.jade.cart.catalog.service.CatalogService;
-import com.jade.cart.blog.entity.BlogPost;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
-
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
 /**
- * 结构化数据 (JSON-LD) 构建器: Product / BreadcrumbList / WebSite+SearchAction / ItemList / BlogPosting
- * 输出经 Jackson 序列化, 模板以 {jsonLd.raw} 原样输出
+ * 结构化数据 (JSON-LD) 构建器: Product / BreadcrumbList / WebSite+SearchAction / ItemList / BlogPosting 输出经
+ * Jackson 序列化, 模板以 {jsonLd.raw} 原样输出
  */
 @ApplicationScoped
 public class SeoJsonLd {
 
     private static final ObjectMapper M = new ObjectMapper();
 
-    @Inject
-    CatalogService catalogService;
+    @Inject CatalogService catalogService;
 
     /** WebSite + Sitelinks SearchAction (首页) */
     public String website(String baseUrl, String storeName) {
@@ -33,8 +30,13 @@ public class SeoJsonLd {
         g.put("url", baseUrl + "/");
         Map<String, Object> sa = new LinkedHashMap<>();
         sa.put("@type", "SearchAction");
-        sa.put("target", Map.of("@type", "EntryPoint",
-                "urlTemplate", baseUrl + "/products?q={search_term_string}"));
+        sa.put(
+                "target",
+                Map.of(
+                        "@type",
+                        "EntryPoint",
+                        "urlTemplate",
+                        baseUrl + "/products?q={search_term_string}"));
         sa.put("query-input", "required name=search_term_string");
         g.put("potentialAction", sa);
         return write(g);
@@ -45,17 +47,28 @@ public class SeoJsonLd {
         List<Variant> variants = Variant.listByProduct(p.id);
         long low = variants.stream().mapToLong(v -> v.priceCents).min().orElse(0);
         long high = variants.stream().mapToLong(v -> v.priceCents).max().orElse(0);
-        int totalAvailable = variants.stream()
-                .mapToInt(v -> com.jade.cart.catalog.entity.Inventory.byVariant(v.id)
-                        .map(com.jade.cart.catalog.entity.Inventory::available).orElse(0))
-                .sum();
+        int totalAvailable =
+                variants.stream()
+                        .mapToInt(
+                                v ->
+                                        com.jade.cart.catalog.entity.Inventory.byVariant(v.id)
+                                                .map(
+                                                        com.jade.cart.catalog.entity.Inventory
+                                                                ::available)
+                                                .orElse(0))
+                        .sum();
 
         Map<String, Object> g = base("@type", "Product");
         g.put("name", p.title);
         g.put("url", baseUrl + "/products/" + p.slug);
         if (p.description != null && !p.description.isBlank()) {
-            g.put("description", clip(p.seoDescription != null && !p.seoDescription.isBlank()
-                    ? p.seoDescription : p.description, 300));
+            g.put(
+                    "description",
+                    clip(
+                            p.seoDescription != null && !p.seoDescription.isBlank()
+                                    ? p.seoDescription
+                                    : p.description,
+                            300));
         }
         if (p.mainImagePath != null) {
             g.put("image", baseUrl + "/media/" + p.mainImagePath);
@@ -71,8 +84,11 @@ public class SeoJsonLd {
         offers.put("lowPrice", low / 100.0);
         offers.put("highPrice", high / 100.0);
         offers.put("offerCount", variants.size());
-        offers.put("availability", totalAvailable > 0
-                ? "https://schema.org/InStock" : "https://schema.org/OutOfStock");
+        offers.put(
+                "availability",
+                totalAvailable > 0
+                        ? "https://schema.org/InStock"
+                        : "https://schema.org/OutOfStock");
         g.put("offers", offers);
         return write(g);
     }

@@ -7,18 +7,15 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import java.time.LocalDateTime;
+import java.util.Optional;
+import java.util.UUID;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
-import java.time.LocalDateTime;
-import java.util.Optional;
-import java.util.UUID;
-
-/**
- * 客户: 访客下单按邮箱 upsert, 无密码 (kartwo 同款)
- */
+/** 客户: 访客下单按邮箱 upsert, 无密码 (kartwo 同款) */
 @Data
 @EqualsAndHashCode(callSuper = false)
 @Entity

@@ -13,9 +13,6 @@ import io.quarkus.logging.Log;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
-import org.apache.commons.csv.CSVFormat;
-import org.apache.commons.csv.CSVRecord;
-
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.net.URI;
@@ -33,22 +30,24 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
+import org.apache.commons.csv.CSVFormat;
+import org.apache.commons.csv.CSVRecord;
 
 /**
- * CSV 商品导入 (kartwo 0012~0014 对齐):
- * 干跑预览 (行级错误, 零写入) → 确认执行 (source_sha256 幂等); Shopify 格式含远程图片下载与 301 重定向
+ * CSV 商品导入 (kartwo 0012~0014 对齐): 干跑预览 (行级错误, 零写入) → 确认执行 (source_sha256 幂等); Shopify 格式含远程图片下载与
+ * 301 重定向
  *
- * generic 列: title,slug,description,sku,price,stock,category (一行一商品)
- * shopify 列: Handle,Title,Body (HTML),Variant SKU,Variant Price,Variant Inventory Qty,Image Src (Handle 分组, 一行一变体)
+ * <p>generic 列: title,slug,description,sku,price,stock,category (一行一商品) shopify 列:
+ * Handle,Title,Body (HTML),Variant SKU,Variant Price,Variant Inventory Qty,Image Src (Handle 分组,
+ * 一行一变体)
  */
 @ApplicationScoped
 public class ImportService {
 
-    @Inject
-    MediaService mediaService;
+    @Inject MediaService mediaService;
 
-    private final HttpClient http = HttpClient.newBuilder()
-            .connectTimeout(Duration.ofSeconds(15)).build();
+    private final HttpClient http =
+            HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(15)).build();
     private final ObjectMapper mapper = new ObjectMapper();
 
     // ---------- 预览 ----------
@@ -66,11 +65,15 @@ public class ImportService {
         int totalRows = 0;
 
         try {
-            List<CSVRecord> all = CSVFormat.DEFAULT.builder()
-                    .setIgnoreEmptyLines(true)
-                    .build()
-                    .parse(new java.io.StringReader(new String(csv, StandardCharsets.UTF_8)))
-                    .getRecords();
+            List<CSVRecord> all =
+                    CSVFormat.DEFAULT
+                            .builder()
+                            .setIgnoreEmptyLines(true)
+                            .build()
+                            .parse(
+                                    new java.io.StringReader(
+                                            new String(csv, StandardCharsets.UTF_8)))
+                            .getRecords();
             if (all.isEmpty()) {
                 throw new BizException("CSV 为空");
             }
@@ -82,16 +85,19 @@ public class ImportService {
             }
             List<CSVRecord> records = all.subList(1, all.size());
 
-            var parsed = "shopify".equalsIgnoreCase(format)
-                    ? parseShopify(header, records)
-                    : parseGeneric(header, records);
+            var parsed =
+                    "shopify".equalsIgnoreCase(format)
+                            ? parseShopify(header, records)
+                            : parseGeneric(header, records);
             products = parsed.products();
             errors = parsed.errors();
             totalRows = records.size();
         } catch (BizException e) {
             throw e;
         } catch (Exception e) {
-            throw new BizException("CSV 解析失败: " + e.getMessage());
+            BizException ex = new BizException("CSV 解析失败: " + e.getMessage());
+            ex.initCause(e); // PMD PreserveStackTrace: 保留原始异常链
+            throw ex;
         }
 
         ImportJob job = new ImportJob();
@@ -108,7 +114,9 @@ public class ImportService {
         try {
             job.previewJson = mapper.writeValueAsString(preview);
         } catch (Exception e) {
-            throw new BizException("预览序列化失败");
+            BizException ex = new BizException("预览序列化失败");
+            ex.initCause(e);
+            throw ex;
         }
         job.persist();
         return job;
@@ -145,7 +153,9 @@ public class ImportService {
         } catch (Exception e) {
             job.status = ImportJob.STATUS_FAILED;
             job.persist();
-            throw new BizException("导入执行失败: " + e.getMessage());
+            BizException ex = new BizException("导入执行失败: " + e.getMessage());
+            ex.initCause(e);
+            throw ex;
         }
 
         job.status = ImportJob.STATUS_CONFIRMED;
@@ -250,10 +260,15 @@ public class ImportService {
         }
         Product product = new Product();
         product.title = p.path("title").asText("Imported product");
-        product.slug = slug.isBlank()
-                ? product.title.toLowerCase(Locale.ROOT).replaceAll("[^a-z0-9]+", "-")
-                        .replaceAll("^-+|-+$", "") + "-" + UUID.randomUUID().toString().substring(0, 6)
-                : slug;
+        product.slug =
+                slug.isBlank()
+                        ? product.title
+                                        .toLowerCase(Locale.ROOT)
+                                        .replaceAll("[^a-z0-9]+", "-")
+                                        .replaceAll("^-+|-+$", "")
+                                + "-"
+                                + UUID.randomUUID().toString().substring(0, 6)
+                        : slug;
         product.description = p.path("description").asText(null);
         product.status = Product.STATUS_ACTIVE;
         product.persist();
@@ -262,12 +277,18 @@ public class ImportService {
         JsonNode variants = p.path("variants");
         if (variants.isArray() && variants.size() > 0) {
             for (JsonNode v : variants) {
-                createVariant(product.id, v.path("sku").asText(null),
-                        v.path("priceCents").asLong(0), v.path("stock").asInt(0));
+                createVariant(
+                        product.id,
+                        v.path("sku").asText(null),
+                        v.path("priceCents").asLong(0),
+                        v.path("stock").asInt(0));
             }
         } else {
-            createVariant(product.id, p.path("sku").asText(null),
-                    p.path("priceCents").asLong(0), p.path("stock").asInt(0));
+            createVariant(
+                    product.id,
+                    p.path("sku").asText(null),
+                    p.path("priceCents").asLong(0),
+                    p.path("stock").asInt(0));
         }
 
         // 主图: 远程图片下载进媒体库 (失败不阻断)
@@ -276,11 +297,19 @@ public class ImportService {
             String imageUrl = images.get(0).asText("");
             if (!imageUrl.isBlank()) {
                 try {
-                    HttpResponse<byte[]> resp = http.send(HttpRequest.newBuilder(URI.create(imageUrl))
-                            .timeout(Duration.ofSeconds(30)).build(), HttpResponse.BodyHandlers.ofByteArray());
+                    HttpResponse<byte[]> resp =
+                            http.send(
+                                    HttpRequest.newBuilder(URI.create(imageUrl))
+                                            .timeout(Duration.ofSeconds(30))
+                                            .build(),
+                                    HttpResponse.BodyHandlers.ofByteArray());
                     if (resp.statusCode() == 200) {
                         try (InputStream in = new ByteArrayInputStream(resp.body())) {
-                            var asset = mediaService.upload(in, imageUrl.substring(imageUrl.lastIndexOf('/') + 1), null);
+                            var asset =
+                                    mediaService.upload(
+                                            in,
+                                            imageUrl.substring(imageUrl.lastIndexOf('/') + 1),
+                                            null);
                             product.mainImagePath = asset.path;
                         }
                         product.persist();
@@ -304,11 +333,19 @@ public class ImportService {
     private void createVariant(Long productId, String sku, long priceCents, int stock) {
         Variant variant = new Variant();
         variant.productId = productId;
-        variant.sku = (sku == null || sku.isBlank())
-                ? "IMP-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase(Locale.ROOT)
-                : sku;
+        variant.sku =
+                (sku == null || sku.isBlank())
+                        ? "IMP-"
+                                + UUID.randomUUID()
+                                        .toString()
+                                        .substring(0, 8)
+                                        .toUpperCase(Locale.ROOT)
+                        : sku;
         if (Variant.findBySku(variant.sku).isPresent()) {
-            variant.sku = variant.sku + "-" + UUID.randomUUID().toString().substring(0, 6).toUpperCase(Locale.ROOT);
+            variant.sku =
+                    variant.sku
+                            + "-"
+                            + UUID.randomUUID().toString().substring(0, 6).toUpperCase(Locale.ROOT);
         }
         variant.priceCents = priceCents;
         variant.persist();

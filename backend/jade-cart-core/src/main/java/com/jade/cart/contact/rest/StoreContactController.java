@@ -1,6 +1,5 @@
 package com.jade.cart.contact.rest;
 
-import com.jade.cart.contact.entity.ContactMessage;
 import com.jade.common.api.R;
 import io.quarkus.logging.Log;
 import jakarta.annotation.security.PermitAll;
@@ -13,17 +12,14 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MediaType;
-import org.eclipse.microprofile.openapi.annotations.Operation;
-import org.eclipse.microprofile.openapi.annotations.tags.Tag;
-
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.util.HexFormat;
 import java.util.Set;
+import org.eclipse.microprofile.openapi.annotations.Operation;
+import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 
-/**
- * 店面客服留言 (公开提交; IP 只存哈希)
- */
+/** 店面客服留言 (公开提交; IP 只存哈希) */
 @Path("/api/store/contact")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
@@ -31,13 +27,14 @@ import java.util.Set;
 @Tag(name = "店面-客服")
 public class StoreContactController {
 
-    private static final Set<String> TOPICS = Set.of("general", "order", "shipping", "return", "other");
+    private static final Set<String> TOPICS =
+            Set.of("general", "order", "shipping", "return", "other");
     private static final int MAX_PER_IP_PER_HOUR = 10;
 
-    @Inject
-    com.jade.cart.contact.service.ContactService contactService;
+    @Inject com.jade.cart.contact.service.ContactService contactService;
 
-    public record ContactReq(String name, String email, String topic, String message, String website) {}
+    public record ContactReq(
+            String name, String email, String topic, String message, String website) {}
 
     @POST
     @Transactional
@@ -53,7 +50,8 @@ public class StoreContactController {
         if (req.message() == null || req.message().isBlank() || req.message().length() > 5000) {
             return R.fail(400, "留言内容 1~5000 字");
         }
-        String topic = req.topic() == null || !TOPICS.contains(req.topic()) ? "general" : req.topic();
+        String topic =
+                req.topic() == null || !TOPICS.contains(req.topic()) ? "general" : req.topic();
 
         String ipHash = ipHash(clientIp(headers));
         if (contactService.recentCountByIp(ipHash) >= MAX_PER_IP_PER_HOUR) {
@@ -76,8 +74,10 @@ public class StoreContactController {
 
     private String ipHash(String ip) {
         try {
-            return HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256")
-                    .digest(ip.getBytes(StandardCharsets.UTF_8)));
+            return HexFormat.of()
+                    .formatHex(
+                            MessageDigest.getInstance("SHA-256")
+                                    .digest(ip.getBytes(StandardCharsets.UTF_8)));
         } catch (Exception e) {
             return "unknown";
         }

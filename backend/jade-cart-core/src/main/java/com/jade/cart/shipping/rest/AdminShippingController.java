@@ -16,14 +16,11 @@ import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
+import java.util.List;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 
-import java.util.List;
-
-/**
- * 运费分区管理 (管理端)
- */
+/** 运费分区管理 (管理端) */
 @Path("/api/v1/shipping-zones")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
@@ -31,11 +28,14 @@ import java.util.List;
 @Tag(name = "运费设置")
 public class AdminShippingController {
 
-    @Inject
-    ShippingService shippingService;
+    @Inject ShippingService shippingService;
 
-    public record ZoneReq(String name, String countries, Long rateCents,
-                          Long freeThresholdCents, Boolean active) {}
+    public record ZoneReq(
+            String name,
+            String countries,
+            Long rateCents,
+            Long freeThresholdCents,
+            Boolean active) {}
 
     @GET
     @RolesAllowed("admin")
@@ -49,9 +49,13 @@ public class AdminShippingController {
     @Transactional
     @Operation(summary = "创建分区 (countries: 'US,CA' 或 '*' 兜底)")
     public R<ShippingZone> create(ZoneReq req) {
-        return R.ok(shippingService.create(req.name(), req.countries(),
-                req.rateCents(), req.freeThresholdCents(),
-                req.active() == null || req.active()));
+        return R.ok(
+                shippingService.create(
+                        req.name(),
+                        req.countries(),
+                        req.rateCents(),
+                        req.freeThresholdCents(),
+                        req.active() == null || req.active()));
     }
 
     @PUT
@@ -60,8 +64,14 @@ public class AdminShippingController {
     @Transactional
     @Operation(summary = "更新分区")
     public R<ShippingZone> update(@PathParam("id") Long id, ZoneReq req) {
-        return R.ok(shippingService.update(id, req.name(), req.countries(),
-                req.rateCents(), req.freeThresholdCents(), req.active()));
+        return R.ok(
+                shippingService.update(
+                        id,
+                        req.name(),
+                        req.countries(),
+                        req.rateCents(),
+                        req.freeThresholdCents(),
+                        req.active()));
     }
 
     @DELETE

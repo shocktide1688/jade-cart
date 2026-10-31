@@ -7,18 +7,15 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
-import org.hibernate.annotations.UpdateTimestamp;
-
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import lombok.Data;
+import lombok.EqualsAndHashCode;
+import org.hibernate.annotations.UpdateTimestamp;
 
-/**
- * 博客文章 (SEO 内容载体): 受限 Markdown + 封面 + SEO 描述
- */
+/** 博客文章 (SEO 内容载体): 受限 Markdown + 封面 + SEO 描述 */
 @Data
 @EqualsAndHashCode(callSuper = false)
 @Entity

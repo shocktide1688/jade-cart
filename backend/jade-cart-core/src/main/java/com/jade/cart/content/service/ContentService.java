@@ -6,42 +6,61 @@ import com.jade.common.exception.BizException;
 import io.quarkus.logging.Log;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.transaction.Transactional;
-
 import java.util.List;
+import java.util.Locale;
 
-/**
- * 内容页: 受限 Markdown 渲染 (先转义原始 HTML 再解析白名单语法) + 政策生成器
- */
+/** 内容页: 受限 Markdown 渲染 (先转义原始 HTML 再解析白名单语法) + 政策生成器 */
 @ApplicationScoped
 public class ContentService {
 
     /** 7 个英文页脚政策页 (kartwo 对齐) */
     private static final String[][] POLICY_PAGES = {
-            {"privacy-policy", "Privacy Policy",
-                    "## Privacy Policy\n\nWe collect only the information needed to fulfill your order: "
+        {
+            "privacy-policy",
+            "Privacy Policy",
+            "## Privacy Policy\n\nWe collect only the information needed to fulfill your order: "
                     + "your email, name and shipping details. We never sell your data.\n\n"
-                    + "Contact us at {support_email} for any privacy request."},
-            {"refund-policy", "Refund Policy",
-                    "## Refund Policy\n\nUnopened items can be refunded within 30 days of delivery. "
+                    + "Contact us at {support_email} for any privacy request."
+        },
+        {
+            "refund-policy",
+            "Refund Policy",
+            "## Refund Policy\n\nUnopened items can be refunded within 30 days of delivery. "
                     + "Refunds are issued to the original payment method within 5-10 business days.\n\n"
-                    + "Questions: {support_email}"},
-            {"terms-of-service", "Terms of Service",
-                    "## Terms of Service\n\nBy placing an order you agree to these terms. "
+                    + "Questions: {support_email}"
+        },
+        {
+            "terms-of-service",
+            "Terms of Service",
+            "## Terms of Service\n\nBy placing an order you agree to these terms. "
                     + "Prices are shown in USD and include applicable taxes at checkout.\n\n"
-                    + "Questions: {support_email}"},
-            {"shipping-policy", "Shipping Policy",
-                    "## Shipping Policy\n\nOrders ship within 2-3 business days. "
+                    + "Questions: {support_email}"
+        },
+        {
+            "shipping-policy",
+            "Shipping Policy",
+            "## Shipping Policy\n\nOrders ship within 2-3 business days. "
                     + "Shipping rates are calculated at checkout by destination.\n\n"
-                    + "Questions: {support_email}"},
-            {"contact-us", "Contact Us",
-                    "## Contact Us\n\nReach us at {support_email} or use the contact form. "
-                    + "We reply within one business day."},
-            {"about-us", "About Us",
-                    "## About {store_name}\n\n{store_name} is an independent store built on Jade Cart. "
-                    + "Questions: {support_email}"},
-            {"cookie-policy", "Cookie Policy",
-                    "## Cookie Policy\n\nWe use a single anonymous cookie to keep your shopping cart. "
-                    + "No tracking cookies are used.\n\nQuestions: {support_email}"},
+                    + "Questions: {support_email}"
+        },
+        {
+            "contact-us",
+            "Contact Us",
+            "## Contact Us\n\nReach us at {support_email} or use the contact form. "
+                    + "We reply within one business day."
+        },
+        {
+            "about-us",
+            "About Us",
+            "## About {store_name}\n\n{store_name} is an independent store built on Jade Cart. "
+                    + "Questions: {support_email}"
+        },
+        {
+            "cookie-policy",
+            "Cookie Policy",
+            "## Cookie Policy\n\nWe use a single anonymous cookie to keep your shopping cart. "
+                    + "No tracking cookies are used.\n\nQuestions: {support_email}"
+        },
     };
 
     // ---------- CRUD ----------
@@ -55,7 +74,7 @@ public class ContentService {
         if (slug == null || slug.isBlank()) {
             throw new BizException("slug 不能为空");
         }
-        String normalized = slug.trim().toLowerCase().replaceAll("[^a-z0-9-]", "-");
+        String normalized = slug.trim().toLowerCase(Locale.ROOT).replaceAll("[^a-z0-9-]", "-");
         if (ContentPage.count("slug", normalized) > 0) {
             throw new BizException("slug 已存在: " + normalized);
         }
@@ -80,7 +99,8 @@ public class ContentService {
             setBody(page, bodyMarkdown);
         }
         if (status != null) {
-            if (!ContentPage.STATUS_ACTIVE.equals(status) && !ContentPage.STATUS_DRAFT.equals(status)) {
+            if (!ContentPage.STATUS_ACTIVE.equals(status)
+                    && !ContentPage.STATUS_DRAFT.equals(status)) {
                 throw new BizException("非法状态");
             }
             page.status = status;
@@ -102,9 +122,9 @@ public class ContentService {
         String storeName = StoreSetting.getValue("store_name").orElse("Jade Cart Store");
         String supportEmail = StoreSetting.getValue("support_email").orElse("support@example.com");
         for (String[] def : POLICY_PAGES) {
-            String body = def[2]
-                    .replace("{store_name}", esc(storeName))
-                    .replace("{support_email}", esc(supportEmail));
+            String body =
+                    def[2].replace("{store_name}", esc(storeName))
+                            .replace("{support_email}", esc(supportEmail));
             ContentPage page = ContentPage.find("slug", def[0]).firstResult();
             if (page == null) {
                 page = new ContentPage();
@@ -129,8 +149,8 @@ public class ContentService {
     // ---------- 受限 Markdown 渲染 ----------
 
     /**
-     * 安全受限 Markdown: 先整体 HTML 转义, 再解析白名单语法
-     * (##/### 标题, **bold**, *italic*, [text](同站/https 链接), - 列表, 段落)
+     * 安全受限 Markdown: 先整体 HTML 转义, 再解析白名单语法 (##/### 标题, **bold**, *italic*, [text](同站/https 链接), -
+     * 列表, 段落)
      */
     public String renderMarkdown(String md) {
         if (md == null || md.isBlank()) {
@@ -185,7 +205,7 @@ public class ContentService {
     }
 
     private boolean[] inListHolder(boolean v) {
-        return new boolean[]{v};
+        return new boolean[] {v};
     }
 
     private void closeList(StringBuilder html, boolean[] inList) {
@@ -220,9 +240,13 @@ public class ContentService {
                     int paren = s.indexOf(')', close + 2);
                     if (paren > 0) {
                         String href = s.substring(close + 2, paren);
-                        if (href.startsWith("https://") || (href.startsWith("/") && !href.startsWith("//"))) {
-                            out.append("<a href=\"").append(href).append("\">")
-                                    .append(s, i + 1, close).append("</a>");
+                        if (href.startsWith("https://")
+                                || (href.startsWith("/") && !href.startsWith("//"))) {
+                            out.append("<a href=\"")
+                                    .append(href)
+                                    .append("\">")
+                                    .append(s, i + 1, close)
+                                    .append("</a>");
                             i = paren + 1;
                             continue;
                         }
@@ -241,7 +265,11 @@ public class ContentService {
     }
 
     private String esc(String s) {
-        return s == null ? "" : s.replace("&", "&amp;").replace("<", "&lt;")
-                .replace(">", "&gt;").replace("\"", "&quot;");
+        return s == null
+                ? ""
+                : s.replace("&", "&amp;")
+                        .replace("<", "&lt;")
+                        .replace(">", "&gt;")
+                        .replace("\"", "&quot;");
     }
 }

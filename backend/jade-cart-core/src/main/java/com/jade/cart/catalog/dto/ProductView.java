@@ -3,9 +3,7 @@ package com.jade.cart.catalog.dto;
 import java.time.LocalDateTime;
 import java.util.List;
 
-/**
- * 商品视图 (管理端/店面通用形状)
- */
+/** 商品视图 (管理端/店面通用形状) */
 public record ProductView(
         Long id,
         String publicId,

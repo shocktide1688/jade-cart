@@ -7,16 +7,13 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import java.time.LocalDateTime;
+import java.util.Optional;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import org.hibernate.annotations.CreationTimestamp;
 
-import java.time.LocalDateTime;
-import java.util.Optional;
-
-/**
- * Shopify 旧 handle → 新商品页 301 (仅导入执行时写入, 不覆盖)
- */
+/** Shopify 旧 handle → 新商品页 301 (仅导入执行时写入, 不覆盖) */
 @Data
 @EqualsAndHashCode(callSuper = false)
 @Entity

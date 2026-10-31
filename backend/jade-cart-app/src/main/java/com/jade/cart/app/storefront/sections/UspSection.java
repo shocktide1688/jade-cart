@@ -6,15 +6,11 @@ import io.quarkus.qute.Location;
 import io.quarkus.qute.Template;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-/**
- * usp: 多列卖点条
- * config: {items: [{icon, title, text}]}
- */
+/** usp: 多列卖点条 config: {items: [{icon, title, text}]} */
 @ApplicationScoped
 public class UspSection implements SectionRenderer {
 

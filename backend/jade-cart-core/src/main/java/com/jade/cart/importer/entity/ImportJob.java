@@ -7,17 +7,14 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import java.time.LocalDateTime;
+import java.util.Optional;
+import java.util.UUID;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import org.hibernate.annotations.CreationTimestamp;
 
-import java.time.LocalDateTime;
-import java.util.Optional;
-import java.util.UUID;
-
-/**
- * 导入任务: source_sha256 唯一 = 同文件幂等; 干跑预览 → 确认执行 (kartwo 0012 对齐)
- */
+/** 导入任务: source_sha256 唯一 = 同文件幂等; 干跑预览 → 确认执行 (kartwo 0012 对齐) */
 @Data
 @EqualsAndHashCode(callSuper = false)
 @Entity

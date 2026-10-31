@@ -6,12 +6,11 @@ import io.quarkus.qute.Location;
 import io.quarkus.qute.Template;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
-
 import java.util.Map;
 
 /**
- * hero: 首屏大图 + 标题 + 副标题 + CTA
- * config: {headline, sub, image(媒体相对路径), ctaText, ctaHref, align: center|left}
+ * hero: 首屏大图 + 标题 + 副标题 + CTA config: {headline, sub, image(媒体相对路径), ctaText, ctaHref, align:
+ * center|left}
  */
 @ApplicationScoped
 public class HeroSection implements SectionRenderer {

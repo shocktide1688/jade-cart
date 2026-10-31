@@ -7,7 +7,6 @@ import com.jade.common.exception.BizException;
 import io.quarkus.logging.Log;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
-
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -15,19 +14,19 @@ import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.Base64;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
- * PayPal 直连 (无 SDK): Orders API v2 托管收银台
- * 确认双路: 顾客回跳页面 capture (主) + webhook CAPTURE.COMPLETED 验签后 markPaid (备)
+ * PayPal 直连 (无 SDK): Orders API v2 托管收银台 确认双路: 顾客回跳页面 capture (主) + webhook CAPTURE.COMPLETED 验签后
+ * markPaid (备)
  */
 @ApplicationScoped
 public class PaypalProvider implements PaymentProvider {
 
-    @Inject
-    PaymentSettings settings;
+    @Inject PaymentSettings settings;
 
-    private final HttpClient http = HttpClient.newBuilder()
-            .connectTimeout(Duration.ofSeconds(10)).build();
+    private final HttpClient http =
+            HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(10)).build();
     private final ObjectMapper mapper = new ObjectMapper();
 
     @Override
@@ -43,7 +42,8 @@ public class PaypalProvider implements PaymentProvider {
     @Override
     public Initiation createPayment(Order order) {
         String base = settings.storeBaseUrl();
-        String body = """
+        String body =
+                """
                 {
                   "intent": "CAPTURE",
                   "purchase_units": [{
@@ -58,10 +58,14 @@ public class PaypalProvider implements PaymentProvider {
                     "cancel_url": "%s"
                   }
                 }
-                """.formatted(order.publicId, order.publicId, order.currency,
-                decimal(order.totalCents),
-                base + "/pay/paypal/" + order.publicId,
-                base + "/orders/" + order.publicId);
+                """
+                        .formatted(
+                                order.publicId,
+                                order.publicId,
+                                order.currency,
+                                decimal(order.totalCents),
+                                base + "/pay/paypal/" + order.publicId,
+                                base + "/orders/" + order.publicId);
 
         JsonNode resp = post("/v2/checkout/orders", body);
         String approveUrl = null;
@@ -83,27 +87,47 @@ public class PaypalProvider implements PaymentProvider {
     }
 
     /** webhook 验签: 调 verify-webhook-signature API, true = 可信 */
-    public boolean verifyWebhook(String body, String transmissionId, String transmissionTime,
-                                 String certUrl, String authAlgo, String transmissionSig,
-                                 String authCertUrl, String webhookId) {
-        String payload = """
+    public boolean verifyWebhook(
+            String body,
+            String transmissionId,
+            String transmissionTime,
+            String certUrl,
+            String authAlgo,
+            String transmissionSig,
+            String authCertUrl,
+            String webhookId) {
+        String payload =
+                """
                 {
                   "auth_algo": "%s", "cert_url": "%s", "transmission_id": "%s",
                   "transmission_sig": "%s", "transmission_time": "%s",
                   "webhook_id": "%s", "webhook_event": %s
                 }
-                """.formatted(authAlgo, certUrl, transmissionId, transmissionSig,
-                transmissionTime, webhookId, body);
+                """
+                        .formatted(
+                                authAlgo,
+                                certUrl,
+                                transmissionId,
+                                transmissionSig,
+                                transmissionTime,
+                                webhookId,
+                                body);
         try {
-            HttpRequest request = HttpRequest.newBuilder(URI.create(settings.paypalApiBase()
-                            + "/v1/notifications/verify-webhook-signature"))
-                    .header("Authorization", "Bearer " + token())
-                    .header("Content-Type", "application/json")
-                    .POST(HttpRequest.BodyPublishers.ofString(payload, StandardCharsets.UTF_8))
-                    .timeout(Duration.ofSeconds(30)).build();
+            HttpRequest request =
+                    HttpRequest.newBuilder(
+                                    URI.create(
+                                            settings.paypalApiBase()
+                                                    + "/v1/notifications/verify-webhook-signature"))
+                            .header("Authorization", "Bearer " + token())
+                            .header("Content-Type", "application/json")
+                            .POST(
+                                    HttpRequest.BodyPublishers.ofString(
+                                            payload, StandardCharsets.UTF_8))
+                            .timeout(Duration.ofSeconds(30))
+                            .build();
             HttpResponse<String> resp = http.send(request, HttpResponse.BodyHandlers.ofString());
-            return mapper.readTree(resp.body()).path("verification_status").asText()
-                    .equals("SUCCESS");
+            return "SUCCESS"
+                    .equals(mapper.readTree(resp.body()).path("verification_status").asText());
         } catch (Exception e) {
             Log.errorf(e, "paypal webhook verify failed");
             return false;
@@ -122,47 +146,62 @@ public class PaypalProvider implements PaymentProvider {
 
     // ---------- 内部 ----------
 
-    private volatile String cachedToken;
-    private volatile long tokenExpiresAt;
+    /** OAuth token 缓存: AtomicReference 整体替换 (读写原子, 过期前多取一次无害, 无 check-then-act 竞态) */
+    private record CachedToken(String token, long expiresAt) {}
+
+    private final AtomicReference<CachedToken> cachedToken = new AtomicReference<>();
 
     private String token() {
-        if (cachedToken != null && System.currentTimeMillis() < tokenExpiresAt) {
-            return cachedToken;
+        CachedToken cached = cachedToken.get();
+        if (cached != null && System.currentTimeMillis() < cached.expiresAt()) {
+            return cached.token();
         }
         String id = settings.get(PaymentSettings.K_PAYPAL_ID).orElseThrow();
         String secret = settings.get(PaymentSettings.K_PAYPAL_SECRET).orElseThrow();
-        String basic = Base64.getEncoder().encodeToString(
-                (id + ":" + secret).getBytes(StandardCharsets.UTF_8));
+        String basic =
+                Base64.getEncoder()
+                        .encodeToString((id + ":" + secret).getBytes(StandardCharsets.UTF_8));
         try {
-            HttpRequest request = HttpRequest.newBuilder(URI.create(settings.paypalApiBase()
-                            + "/v1/oauth2/token"))
-                    .header("Authorization", "Basic " + basic)
-                    .header("Content-Type", "application/x-www-form-urlencoded")
-                    .POST(HttpRequest.BodyPublishers.ofString("grant_type=client_credentials"))
-                    .timeout(Duration.ofSeconds(30)).build();
+            HttpRequest request =
+                    HttpRequest.newBuilder(
+                                    URI.create(settings.paypalApiBase() + "/v1/oauth2/token"))
+                            .header("Authorization", "Basic " + basic)
+                            .header("Content-Type", "application/x-www-form-urlencoded")
+                            .POST(
+                                    HttpRequest.BodyPublishers.ofString(
+                                            "grant_type=client_credentials"))
+                            .timeout(Duration.ofSeconds(30))
+                            .build();
             HttpResponse<String> resp = http.send(request, HttpResponse.BodyHandlers.ofString());
             JsonNode json = mapper.readTree(resp.body());
-            cachedToken = json.path("access_token").asText(null);
-            if (cachedToken == null) {
+            String token = json.path("access_token").asText(null);
+            if (token == null) {
                 throw new BizException("PayPal OAuth 失败: " + resp.body());
             }
-            tokenExpiresAt = System.currentTimeMillis()
-                    + (json.path("expires_in").asLong(3600) - 60) * 1000;
-            return cachedToken;
+            cachedToken.set(
+                    new CachedToken(
+                            token,
+                            System.currentTimeMillis()
+                                    + (json.path("expires_in").asLong(3600) - 60) * 1000));
+            return token;
         } catch (BizException e) {
             throw e;
         } catch (Exception e) {
-            throw new BizException("PayPal OAuth 请求失败: " + e.getMessage());
+            BizException ex = new BizException("PayPal OAuth 请求失败: " + e.getMessage());
+            ex.initCause(e);
+            throw ex;
         }
     }
 
     private JsonNode post(String path, String body) {
         try {
-            HttpRequest request = HttpRequest.newBuilder(URI.create(settings.paypalApiBase() + path))
-                    .header("Authorization", "Bearer " + token())
-                    .header("Content-Type", "application/json")
-                    .POST(HttpRequest.BodyPublishers.ofString(body, StandardCharsets.UTF_8))
-                    .timeout(Duration.ofSeconds(30)).build();
+            HttpRequest request =
+                    HttpRequest.newBuilder(URI.create(settings.paypalApiBase() + path))
+                            .header("Authorization", "Bearer " + token())
+                            .header("Content-Type", "application/json")
+                            .POST(HttpRequest.BodyPublishers.ofString(body, StandardCharsets.UTF_8))
+                            .timeout(Duration.ofSeconds(30))
+                            .build();
             HttpResponse<String> resp = http.send(request, HttpResponse.BodyHandlers.ofString());
             JsonNode json = mapper.readTree(resp.body());
             if (resp.statusCode() >= 300) {
@@ -173,7 +212,9 @@ public class PaypalProvider implements PaymentProvider {
         } catch (BizException e) {
             throw e;
         } catch (Exception e) {
-            throw new BizException("PayPal 请求失败: " + e.getMessage());
+            BizException ex = new BizException("PayPal 请求失败: " + e.getMessage());
+            ex.initCause(e);
+            throw ex;
         }
     }
 

@@ -9,19 +9,14 @@ import io.quarkus.qute.Location;
 import io.quarkus.qute.Template;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
-
 import java.util.List;
 import java.util.Map;
 
-/**
- * featured: 商品网格
- * config: {title, limit, source: "featured"|"latest"|"category:<slug>"}
- */
+/** featured: 商品网格 config: {title, limit, source: "featured"|"latest"|"category:<slug>"} */
 @ApplicationScoped
 public class FeaturedSection implements SectionRenderer {
 
-    @Inject
-    CatalogService catalogService;
+    @Inject CatalogService catalogService;
 
     @Inject
     @Location("sections/featured")
@@ -38,7 +33,8 @@ public class FeaturedSection implements SectionRenderer {
     public String render(JsonNode cfg) throws Exception {
         String source = cfg.path("source").asText("featured");
         int limit = Math.min(Math.max(cfg.path("limit").asInt(8), 1), 24);
-        String categorySlug = source.startsWith("category:") ? source.substring("category:".length()) : null;
+        String categorySlug =
+                source.startsWith("category:") ? source.substring("category:".length()) : null;
 
         List<Product> products;
         if ("latest".equals(source)) {
@@ -46,8 +42,9 @@ public class FeaturedSection implements SectionRenderer {
         } else if (categorySlug != null && !categorySlug.isBlank()) {
             com.jade.cart.catalog.entity.Category category =
                     com.jade.cart.catalog.entity.Category.findBySlug(categorySlug);
-            products = catalogService.activeProducts(null,
-                    category == null ? null : category.id, limit);
+            products =
+                    catalogService.activeProducts(
+                            null, category == null ? null : category.id, limit);
         } else {
             products = catalogService.featuredProducts(limit);
             if (products.isEmpty()) {

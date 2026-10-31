@@ -6,14 +6,10 @@ import io.quarkus.qute.Location;
 import io.quarkus.qute.Template;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
-
 import java.util.Map;
 import java.util.regex.Pattern;
 
-/**
- * banner_strip: 公告/促销条 (背景色白名单校验防 CSS 注入)
- * config: {text, bg(默认 --c-primary), href?}
- */
+/** banner_strip: 公告/促销条 (背景色白名单校验防 CSS 注入) config: {text, bg(默认 --c-primary), href?} */
 @ApplicationScoped
 public class BannerStripSection implements SectionRenderer {
 

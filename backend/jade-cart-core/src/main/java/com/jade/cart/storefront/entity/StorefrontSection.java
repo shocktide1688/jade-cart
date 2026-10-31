@@ -7,16 +7,13 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import java.time.LocalDateTime;
+import java.util.List;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import org.hibernate.annotations.UpdateTimestamp;
 
-import java.time.LocalDateTime;
-import java.util.List;
-
-/**
- * 店面装修区块: 页面 = 有序 Section 列表 (type → SectionRenderer 注册表渲染)
- */
+/** 店面装修区块: 页面 = 有序 Section 列表 (type → SectionRenderer 注册表渲染) */
 @Data
 @EqualsAndHashCode(callSuper = false)
 @Entity

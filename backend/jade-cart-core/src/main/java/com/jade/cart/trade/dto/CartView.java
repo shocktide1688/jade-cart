@@ -2,14 +2,9 @@ package com.jade.cart.trade.dto;
 
 import java.util.List;
 
-/**
- * 购物车视图 (匿名 cookie token 会话)
- */
+/** 购物车视图 (匿名 cookie token 会话) */
 public record CartView(
-        String cartPublicId,
-        String currency,
-        List<LineView> items,
-        Long subtotalCents) {
+        String cartPublicId, String currency, List<LineView> items, Long subtotalCents) {
 
     public record LineView(
             Long variantId,

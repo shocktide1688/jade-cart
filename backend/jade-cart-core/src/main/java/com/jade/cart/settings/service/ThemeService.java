@@ -6,7 +6,6 @@ import com.jade.cart.settings.entity.StoreSetting;
 import com.jade.common.exception.BizException;
 import io.quarkus.logging.Log;
 import jakarta.enterprise.context.ApplicationScoped;
-
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -14,9 +13,8 @@ import java.util.Map;
 import java.util.regex.Pattern;
 
 /**
- * 店面主题 (设计令牌): 预设 4 套 + 商家覆盖, 合并出最终 token
- * 存储: mall_store_setting KV "theme_config" = {"preset":"minimal","overrides":{...}}
- * 校验: 颜色 #hex / radius 0~24 / font 白名单 (防 CSS 注入)
+ * 店面主题 (设计令牌): 预设 4 套 + 商家覆盖, 合并出最终 token 存储: mall_store_setting KV "theme_config" =
+ * {"preset":"minimal","overrides":{...}} 校验: 颜色 #hex / radius 0~24 / font 白名单 (防 CSS 注入)
  */
 @ApplicationScoped
 public class ThemeService {
@@ -29,29 +27,36 @@ public class ThemeService {
     private static final List<String> MEDIA_KEYS = List.of("logoPath", "faviconPath");
 
     /** token 键 → 预设值 (minimal 为基线) */
-    private static final Map<String, String> BASE = Map.of(
-            "primary", "#1a1a1a",
-            "bg", "#ffffff",
-            "ink", "#1a1a1a",
-            "muted", "#767676",
-            "line", "#e6e6e6",
-            "radius", "8",
-            "font", "sans");
+    private static final Map<String, String> BASE =
+            Map.of(
+                    "primary", "#1a1a1a",
+                    "bg", "#ffffff",
+                    "ink", "#1a1a1a",
+                    "muted", "#767676",
+                    "line", "#e6e6e6",
+                    "radius", "8",
+                    "font", "sans");
 
     /** 预设主题 (有序, minimal 首位) */
     private static final Map<String, Map<String, String>> PRESETS = new LinkedHashMap<>();
 
     static {
         PRESETS.put("minimal", BASE);
-        PRESETS.put("classic", Map.of(
-                "primary", "#7c2d12", "bg", "#faf6f0", "ink", "#292524",
-                "muted", "#a8a29e", "line", "#e7e0d8", "radius", "4", "font", "serif"));
-        PRESETS.put("bold", Map.of(
-                "primary", "#4f46e5", "bg", "#ffffff", "ink", "#111827",
-                "muted", "#6b7280", "line", "#e5e7eb", "radius", "16", "font", "sans"));
-        PRESETS.put("warm", Map.of(
-                "primary", "#b45309", "bg", "#fffbeb", "ink", "#451a03",
-                "muted", "#a16207", "line", "#fde68a", "radius", "12", "font", "sans"));
+        PRESETS.put(
+                "classic",
+                Map.of(
+                        "primary", "#7c2d12", "bg", "#faf6f0", "ink", "#292524", "muted", "#a8a29e",
+                        "line", "#e7e0d8", "radius", "4", "font", "serif"));
+        PRESETS.put(
+                "bold",
+                Map.of(
+                        "primary", "#4f46e5", "bg", "#ffffff", "ink", "#111827", "muted", "#6b7280",
+                        "line", "#e5e7eb", "radius", "16", "font", "sans"));
+        PRESETS.put(
+                "warm",
+                Map.of(
+                        "primary", "#b45309", "bg", "#fffbeb", "ink", "#451a03", "muted", "#a16207",
+                        "line", "#fde68a", "radius", "12", "font", "sans"));
     }
 
     private final ObjectMapper mapper = new ObjectMapper();
@@ -59,11 +64,12 @@ public class ThemeService {
     /** 预设列表 (管理端卡片) */
     public List<Map<String, Object>> presets() {
         List<Map<String, Object>> out = new ArrayList<>();
-        PRESETS.forEach((name, tokens) -> {
-            Map<String, Object> p = new LinkedHashMap<>(tokens);
-            p.put("name", name);
-            out.add(p);
-        });
+        PRESETS.forEach(
+                (name, tokens) -> {
+                    Map<String, Object> p = new LinkedHashMap<>(tokens);
+                    p.put("name", name);
+                    out.add(p);
+                });
         return out;
     }
 
@@ -81,28 +87,37 @@ public class ThemeService {
                 }
                 JsonNode ov = node.path("overrides");
                 if (ov.isObject()) {
-                    ov.fields().forEachRemaining(e -> overrides.put(e.getKey(), e.getValue().asText()));
+                    ov.fields()
+                            .forEachRemaining(
+                                    e -> overrides.put(e.getKey(), e.getValue().asText()));
                 }
             } catch (Exception e) {
                 Log.warnf("theme_config 解析失败, 回退预设: %s", e.getMessage());
             }
         }
         Map<String, String> tokens = new LinkedHashMap<>(PRESETS.get(presetName));
-        overrides.forEach((k, v) -> {
-            if ((BASE.containsKey(k) || MEDIA_KEYS.contains(k)) && valid(k, v)) {
-                tokens.put(k, v);
-            }
-        });
+        overrides.forEach(
+                (k, v) -> {
+                    if ((BASE.containsKey(k) || MEDIA_KEYS.contains(k)) && valid(k, v)) {
+                        tokens.put(k, v);
+                    }
+                });
         // 派生: font 白名单 → 字体栈
-        tokens.put("fontFamily", switch (tokens.get("font")) {
-            case "serif" -> "Georgia,'Times New Roman',serif";
-            case "mono" -> "ui-monospace,'SF Mono',Menlo,monospace";
-            default -> "-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif";
-        });
+        tokens.put(
+                "fontFamily",
+                switch (tokens.get("font")) {
+                    case "serif" -> "Georgia,'Times New Roman',serif";
+                    case "mono" -> "ui-monospace,'SF Mono',Menlo,monospace";
+                    default ->
+                            "-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif";
+                });
         // 媒体路径键: 模板 {#if} 需要显式键存在, 无值置 null
         for (String k : MEDIA_KEYS) {
-            tokens.put(k, overrides.containsKey(k) && !overrides.get(k).isBlank()
-                    ? overrides.get(k) : null);
+            tokens.put(
+                    k,
+                    overrides.containsKey(k) && !overrides.get(k).isBlank()
+                            ? overrides.get(k)
+                            : null);
         }
         return tokens;
     }
@@ -118,7 +133,9 @@ public class ThemeService {
                 preset = node.path("preset").asText("minimal");
                 JsonNode ov = node.path("overrides");
                 if (ov.isObject()) {
-                    ov.fields().forEachRemaining(e -> overrides.put(e.getKey(), e.getValue().asText()));
+                    ov.fields()
+                            .forEachRemaining(
+                                    e -> overrides.put(e.getKey(), e.getValue().asText()));
                 }
             } catch (Exception ignored) {
             }
@@ -138,18 +155,26 @@ public class ThemeService {
         }
         Map<String, String> clean = new LinkedHashMap<>();
         if (overrides != null) {
-            overrides.forEach((k, v) -> {
-                if ((BASE.containsKey(k) || MEDIA_KEYS.contains(k)) && valid(k, v)) {
-                    clean.put(k, v);
-                }
-            });
+            overrides.forEach(
+                    (k, v) -> {
+                        if ((BASE.containsKey(k) || MEDIA_KEYS.contains(k)) && valid(k, v)) {
+                            clean.put(k, v);
+                        }
+                    });
         }
         try {
-            String json = mapper.writeValueAsString(Map.of("preset", preset == null ? "minimal" : preset,
-                    "overrides", clean));
+            String json =
+                    mapper.writeValueAsString(
+                            Map.of(
+                                    "preset",
+                                    preset == null ? "minimal" : preset,
+                                    "overrides",
+                                    clean));
             StoreSetting.put(KV_KEY, json);
         } catch (Exception e) {
-            throw new BizException("主题保存失败: " + e.getMessage());
+            BizException ex = new BizException("主题保存失败: " + e.getMessage());
+            ex.initCause(e);
+            throw ex;
         }
         Log.infof("theme saved: preset=%s overrides=%d", preset, clean.size());
         return tokens();

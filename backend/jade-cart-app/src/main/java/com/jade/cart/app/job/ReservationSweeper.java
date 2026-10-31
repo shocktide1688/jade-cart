@@ -6,14 +6,11 @@ import io.quarkus.scheduler.Scheduled;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 
-/**
- * 订单预留过期清扫 (kartwo 同款: 每分钟扫, 过期 PENDING → CANCELLED + 释放 reserved)
- */
+/** 订单预留过期清扫 (kartwo 同款: 每分钟扫, 过期 PENDING → CANCELLED + 释放 reserved) */
 @ApplicationScoped
 public class ReservationSweeper {
 
-    @Inject
-    OrderService orderService;
+    @Inject OrderService orderService;
 
     @Scheduled(every = "60s", delay = 15, delayUnit = java.util.concurrent.TimeUnit.SECONDS)
     void sweep() {

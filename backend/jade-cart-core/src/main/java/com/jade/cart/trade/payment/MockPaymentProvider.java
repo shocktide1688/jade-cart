@@ -4,8 +4,7 @@ import com.jade.cart.trade.entity.Order;
 import jakarta.enterprise.context.ApplicationScoped;
 
 /**
- * Mock 收银台: 跳转到本站 /pay/mock/{publicId} 页面,
- * 页面确认后走 webhook 幂等路径 markPaid (与真实网关回调同一条代码路径)
+ * Mock 收银台: 跳转到本站 /pay/mock/{publicId} 页面, 页面确认后走 webhook 幂等路径 markPaid (与真实网关回调同一条代码路径)
  * 未配置任何真实网关时的兜底渠道
  */
 @ApplicationScoped

@@ -16,25 +16,21 @@ import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
+import java.nio.file.Files;
+import java.util.List;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import org.jboss.resteasy.reactive.RestForm;
 import org.jboss.resteasy.reactive.multipart.FileUpload;
 
-import java.nio.file.Files;
-import java.util.List;
-
-/**
- * CSV 商品导入 (管理端): 干跑预览 → 确认执行 (同文件 sha256 幂等)
- */
+/** CSV 商品导入 (管理端): 干跑预览 → 确认执行 (同文件 sha256 幂等) */
 @Path("/api/v1/import")
 @Produces(MediaType.APPLICATION_JSON)
 @Authenticated
 @Tag(name = "数据导入")
 public class AdminImportController {
 
-    @Inject
-    ImportService importService;
+    @Inject ImportService importService;
 
     @POST
     @Path("/preview")
@@ -42,14 +38,16 @@ public class AdminImportController {
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     @Transactional
     @Operation(summary = "上传 CSV 干跑预览 (零写入; 同文件重复上传返回既有任务)")
-    public R<ImportJob> preview(@RestForm("file") FileUpload file,
-                                @RestForm("format") String format) {
+    public R<ImportJob> preview(
+            @RestForm("file") FileUpload file, @RestForm("format") String format) {
         if (file == null || file.uploadedFile() == null) {
             return R.fail(400, "请选择 CSV 文件");
         }
         try {
             byte[] csv = Files.readAllBytes(file.uploadedFile());
-            return R.ok(importService.preview(file.fileName(), format == null ? "generic" : format, csv));
+            return R.ok(
+                    importService.preview(
+                            file.fileName(), format == null ? "generic" : format, csv));
         } catch (BizException e) {
             throw e;
         } catch (Exception e) {
@@ -71,7 +69,9 @@ public class AdminImportController {
     @RolesAllowed("admin")
     @Operation(summary = "导入历史")
     public R<List<ImportJob>> jobs(@QueryParam("limit") Integer limit) {
-        return R.ok(ImportJob.<ImportJob>find("1=1 order by id desc")
-                .page(0, limit == null ? 20 : limit).list());
+        return R.ok(
+                ImportJob.<ImportJob>find("1=1 order by id desc")
+                        .page(0, limit == null ? 20 : limit)
+                        .list());
     }
 }

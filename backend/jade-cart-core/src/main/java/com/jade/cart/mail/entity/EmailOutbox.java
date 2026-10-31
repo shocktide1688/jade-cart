@@ -7,17 +7,13 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import java.time.LocalDateTime;
+import java.util.List;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import org.hibernate.annotations.CreationTimestamp;
 
-import java.time.LocalDateTime;
-import java.util.List;
-
-/**
- * 邮件 outbox: 与业务同事务入队, worker 异步投递 (指数退避→死信)
- * (order_id, kind) 唯一约束保证幂等
- */
+/** 邮件 outbox: 与业务同事务入队, worker 异步投递 (指数退避→死信) (order_id, kind) 唯一约束保证幂等 */
 @Data
 @EqualsAndHashCode(callSuper = false)
 @Entity
@@ -69,12 +65,16 @@ public class EmailOutbox extends PanacheEntityBase {
 
     /** 投递到期且未死信的消息 */
     public static List<EmailOutbox> listDue(int limit) {
-        return find("status in ?1 and nextAttemptAt <= ?2 order by nextAttemptAt asc",
-                List.of(STATUS_PENDING, STATUS_FAILED), LocalDateTime.now())
-                .page(0, limit).list();
+        return find(
+                        "status in ?1 and nextAttemptAt <= ?2 order by nextAttemptAt asc",
+                        List.of(STATUS_PENDING, STATUS_FAILED),
+                        LocalDateTime.now())
+                .page(0, limit)
+                .list();
     }
 
     /** 指数退避: 1m/5m/30m/2h/6h, 第 6 次进死信 */
     public static final long[] BACKOFF_MINUTES = {1, 5, 30, 120, 360};
+
     public static final int MAX_ATTEMPTS = 6;
 }

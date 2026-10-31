@@ -7,18 +7,15 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Optional;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
-import java.time.LocalDateTime;
-import java.util.List;
-import java.util.Optional;
-
-/**
- * 购物车行: 不存单价快照 (kartwo 同款), 结算时落 order_item
- */
+/** 购物车行: 不存单价快照 (kartwo 同款), 结算时落 order_item */
 @Data
 @EqualsAndHashCode(callSuper = false)
 @Entity

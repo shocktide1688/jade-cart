@@ -6,14 +6,11 @@ import io.quarkus.scheduler.Scheduled;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 
-/**
- * 每日 04:00 全量备份 + 保留轮换 ( kartwo backup scheduler 对齐)
- */
+/** 每日 04:00 全量备份 + 保留轮换 ( kartwo backup scheduler 对齐) */
 @ApplicationScoped
 public class BackupJob {
 
-    @Inject
-    BackupService backupService;
+    @Inject BackupService backupService;
 
     @Scheduled(cron = "0 0 4 * * ?")
     void dailyBackup() {

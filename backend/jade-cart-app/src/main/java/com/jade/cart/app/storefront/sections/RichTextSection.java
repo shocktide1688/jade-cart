@@ -7,18 +7,13 @@ import io.quarkus.qute.Location;
 import io.quarkus.qute.Template;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
-
 import java.util.Map;
 
-/**
- * rich_text: 富文本区块 (受限 Markdown)
- * config: {title?, markdown}
- */
+/** rich_text: 富文本区块 (受限 Markdown) config: {title?, markdown} */
 @ApplicationScoped
 public class RichTextSection implements SectionRenderer {
 
-    @Inject
-    ContentService contentService;
+    @Inject ContentService contentService;
 
     @Inject
     @Location("sections/rich-text")

@@ -6,6 +6,7 @@ import com.jade.cart.trade.payment.PaymentProvider;
 import com.jade.cart.trade.service.CartService;
 import com.jade.cart.trade.service.OrderService;
 import com.jade.common.api.R;
+import io.quarkus.logging.Log;
 import jakarta.annotation.security.PermitAll;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
@@ -20,17 +21,16 @@ import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.NewCookie;
 import jakarta.ws.rs.core.Response;
-import org.eclipse.microprofile.openapi.annotations.Operation;
-import io.quarkus.logging.Log;
-import org.eclipse.microprofile.openapi.annotations.tags.Tag;
-
+import java.util.Locale;
 import java.util.UUID;
+import org.eclipse.microprofile.openapi.annotations.Operation;
+import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 
 /**
  * 店面结算 + 订单查询 + Mock 收银台 (公开)
  *
- * Mock 支付流程: checkout 返回 payUrl=/pay/mock/{publicId} → 店面确认
- * → /mock-pay/{publicId}/confirm 模拟网关回调 → markPaid 幂等路径
+ * <p>Mock 支付流程: checkout 返回 payUrl=/pay/mock/{publicId} → 店面确认 → /mock-pay/{publicId}/confirm
+ * 模拟网关回调 → markPaid 幂等路径
  */
 @Path("/api/store")
 @Produces(MediaType.APPLICATION_JSON)
@@ -39,19 +39,25 @@ import java.util.UUID;
 @Tag(name = "店面-结算")
 public class StoreCheckoutController {
 
-    @Inject
-    CartService cartService;
+    @Inject CartService cartService;
 
-    @Inject
-    OrderService orderService;
+    @Inject OrderService orderService;
 
     public record CheckoutReq(String email, String shipName, String country) {}
 
-    public record CheckoutResult(String orderPublicId, String orderNumber, Long totalCents,
-                                 String currency, String payUrl) {}
+    public record CheckoutResult(
+            String orderPublicId,
+            String orderNumber,
+            Long totalCents,
+            String currency,
+            String payUrl) {}
 
-    public record WebhookReq(String eventId, String orderPublicId, Long amountCents,
-                             String currency, String paymentRef) {}
+    public record WebhookReq(
+            String eventId,
+            String orderPublicId,
+            Long amountCents,
+            String currency,
+            String paymentRef) {}
 
     @POST
     @Path("/checkout")
@@ -66,10 +72,21 @@ public class StoreCheckoutController {
         PaymentProvider provider = orderService.providerOf(order);
         PaymentProvider.Initiation initiation = provider.createPayment(order);
 
-        return Response.ok(R.ok(new CheckoutResult(order.publicId, order.orderNumber,
-                        order.totalCents, order.currency, initiation.redirectUrl())))
-                .cookie(new NewCookie.Builder(CartService.CART_COOKIE)
-                        .value(token).path("/").maxAge(60 * 60 * 24 * 30).httpOnly(true).build())
+        return Response.ok(
+                        R.ok(
+                                new CheckoutResult(
+                                        order.publicId,
+                                        order.orderNumber,
+                                        order.totalCents,
+                                        order.currency,
+                                        initiation.redirectUrl())))
+                .cookie(
+                        new NewCookie.Builder(CartService.CART_COOKIE)
+                                .value(token)
+                                .path("/")
+                                .maxAge(60 * 60 * 24 * 30)
+                                .httpOnly(true)
+                                .build())
                 .build();
     }
 
@@ -94,22 +111,26 @@ public class StoreCheckoutController {
             return R.fail(404, "订单不存在");
         }
         // 模拟网关行为: 用网关侧已知金额/币种生成事件回调商户
-        String eventId = "evt_mock_" + UUID.randomUUID().toString().replace("-", "").substring(0, 16);
-        boolean consumed = orderService.markPaid("mock", eventId, publicId,
-                order.totalCents, order.currency, "mock_" + eventId);
+        String eventId =
+                "evt_mock_" + UUID.randomUUID().toString().replace("-", "").substring(0, 16);
+        boolean consumed =
+                orderService.markPaid(
+                        "mock",
+                        eventId,
+                        publicId,
+                        order.totalCents,
+                        order.currency,
+                        "mock_" + eventId);
         return R.ok(consumed);
     }
 
     // ---------- 真实网关 webhook (P1) ----------
 
-    @Inject
-    com.jade.cart.trade.payment.StripeProvider stripeProvider;
+    @Inject com.jade.cart.trade.payment.StripeProvider stripeProvider;
 
-    @Inject
-    com.jade.cart.trade.payment.PaypalProvider paypalProvider;
+    @Inject com.jade.cart.trade.payment.PaypalProvider paypalProvider;
 
-    @Inject
-    com.jade.cart.trade.payment.PaymentSettings paymentSettings;
+    @Inject com.jade.cart.trade.payment.PaymentSettings paymentSettings;
 
     /** Stripe webhook: 验签 (Stripe-Signature) → checkout.session.completed → markPaid */
     @POST
@@ -117,10 +138,11 @@ public class StoreCheckoutController {
     @Consumes(MediaType.APPLICATION_JSON)
     @Transactional
     @Operation(summary = "Stripe webhook 回调 (验签+幂等)")
-    public R<Boolean> webhookStripe(String rawBody,
-                                    @jakarta.ws.rs.HeaderParam("Stripe-Signature") String signature) {
+    public R<Boolean> webhookStripe(
+            String rawBody, @jakarta.ws.rs.HeaderParam("Stripe-Signature") String signature) {
         try {
-            com.fasterxml.jackson.databind.JsonNode event = stripeProvider.verifyWebhook(rawBody, signature);
+            com.fasterxml.jackson.databind.JsonNode event =
+                    stripeProvider.verifyWebhook(rawBody, signature);
             String type = event.path("type").asText();
             if (!"checkout.session.completed".equals(type)) {
                 return R.ok(true); // 非支付完成事件不处理
@@ -128,14 +150,20 @@ public class StoreCheckoutController {
             com.fasterxml.jackson.databind.JsonNode session = event.path("data").path("object");
             String orderPublicId = session.path("client_reference_id").asText(null);
             long amount = session.path("amount_total").asLong(0);
-            String currency = session.path("currency").asText("usd").toUpperCase();
+            String currency = session.path("currency").asText("usd").toUpperCase(Locale.ROOT);
             String paymentIntent = session.path("payment_intent").asText("");
             if (orderPublicId == null || orderPublicId.isBlank()) {
                 Log.warn("stripe webhook: session without client_reference_id");
                 return R.ok(true);
             }
-            return R.ok(orderService.markPaid("stripe", event.path("id").asText(), orderPublicId,
-                    amount, currency, paymentIntent));
+            return R.ok(
+                    orderService.markPaid(
+                            "stripe",
+                            event.path("id").asText(),
+                            orderPublicId,
+                            amount,
+                            currency,
+                            paymentIntent));
         } catch (com.jade.common.exception.BizException e) {
             Log.warnf("stripe webhook rejected: %s", e.getMessage());
             return R.fail(400, e.getMessage());
@@ -156,18 +184,27 @@ public class StoreCheckoutController {
     @Transactional
     @Operation(summary = "PayPal webhook 回调 (验签+幂等)")
     public R<Boolean> webhookPaypal(String rawBody, @jakarta.ws.rs.BeanParam PaypalHeaders h) {
-        String webhookId = paymentSettings.get(com.jade.cart.trade.payment.PaymentSettings.K_PAYPAL_WEBHOOK_ID)
-                .orElse(null);
+        String webhookId =
+                paymentSettings
+                        .get(com.jade.cart.trade.payment.PaymentSettings.K_PAYPAL_WEBHOOK_ID)
+                        .orElse(null);
         if (webhookId == null) {
             return R.fail(400, "PayPal webhook id 未配置");
         }
-        if (!paypalProvider.verifyWebhook(rawBody, h.transmissionId(), h.transmissionTime(),
-                h.certUrl(), h.authAlgo(), h.transmissionSig(), h.certUrl(), webhookId)) {
+        if (!paypalProvider.verifyWebhook(
+                rawBody,
+                h.transmissionId(),
+                h.transmissionTime(),
+                h.certUrl(),
+                h.authAlgo(),
+                h.transmissionSig(),
+                h.certUrl(),
+                webhookId)) {
             return R.fail(400, "PayPal 签名校验失败");
         }
         try {
-            com.fasterxml.jackson.databind.JsonNode event = new com.fasterxml.jackson.databind.ObjectMapper()
-                    .readTree(rawBody);
+            com.fasterxml.jackson.databind.JsonNode event =
+                    new com.fasterxml.jackson.databind.ObjectMapper().readTree(rawBody);
             if (!"PAYMENT.CAPTURE.COMPLETED".equals(event.path("event_type").asText())) {
                 return R.ok(true);
             }
@@ -180,8 +217,14 @@ public class StoreCheckoutController {
                 Log.warn("paypal webhook: capture without custom_id");
                 return R.ok(true);
             }
-            return R.ok(orderService.markPaid("paypal", event.path("id").asText(), customId,
-                    amountCents, currency, captureId));
+            return R.ok(
+                    orderService.markPaid(
+                            "paypal",
+                            event.path("id").asText(),
+                            customId,
+                            amountCents,
+                            currency,
+                            captureId));
         } catch (com.jade.common.exception.BizException e) {
             return R.fail(400, e.getMessage());
         } catch (Exception e) {
@@ -198,8 +241,13 @@ public class StoreCheckoutController {
         if (req.eventId() == null || req.orderPublicId() == null || req.amountCents() == null) {
             return R.fail(400, "eventId/orderPublicId/amountCents 必填");
         }
-        return R.ok(orderService.markPaid("mock", req.eventId(), req.orderPublicId(),
-                req.amountCents(), req.currency() == null ? "USD" : req.currency(),
-                req.paymentRef() == null ? "mock_" + req.eventId() : req.paymentRef()));
+        return R.ok(
+                orderService.markPaid(
+                        "mock",
+                        req.eventId(),
+                        req.orderPublicId(),
+                        req.amountCents(),
+                        req.currency() == null ? "USD" : req.currency(),
+                        req.paymentRef() == null ? "mock_" + req.eventId() : req.paymentRef()));
     }
 }

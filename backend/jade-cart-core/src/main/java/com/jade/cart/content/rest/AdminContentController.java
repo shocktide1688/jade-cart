@@ -16,14 +16,11 @@ import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
+import java.util.List;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 
-import java.util.List;
-
-/**
- * 内容页管理 (管理端)
- */
+/** 内容页管理 (管理端) */
 @Path("/api/v1/content-pages")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
@@ -31,8 +28,7 @@ import java.util.List;
 @Tag(name = "内容管理")
 public class AdminContentController {
 
-    @Inject
-    ContentService contentService;
+    @Inject ContentService contentService;
 
     public record PageReq(String slug, String title, String bodyMarkdown, String status) {}
 

@@ -7,14 +7,10 @@ import io.quarkus.qute.Location;
 import io.quarkus.qute.Template;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
-
 import java.util.List;
 import java.util.Map;
 
-/**
- * blog_latest: 最新文章
- * config: {title, limit}
- */
+/** blog_latest: 最新文章 config: {title, limit} */
 @ApplicationScoped
 public class BlogLatestSection implements SectionRenderer {
 

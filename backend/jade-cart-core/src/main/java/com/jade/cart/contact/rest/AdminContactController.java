@@ -16,14 +16,11 @@ import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
+import java.util.List;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 
-import java.util.List;
-
-/**
- * 客服留言管理 (管理端)
- */
+/** 客服留言管理 (管理端) */
 @Path("/api/v1/contact-messages")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
@@ -31,15 +28,15 @@ import java.util.List;
 @Tag(name = "客服留言")
 public class AdminContactController {
 
-    @Inject
-    ContactService contactService;
+    @Inject ContactService contactService;
 
     @GET
     @RolesAllowed("admin")
     @Operation(summary = "留言分页")
-    public R<PageResult<ContactMessage>> list(@QueryParam("page") Integer page,
-                                              @QueryParam("size") Integer size,
-                                              @QueryParam("status") String status) {
+    public R<PageResult<ContactMessage>> list(
+            @QueryParam("page") Integer page,
+            @QueryParam("size") Integer size,
+            @QueryParam("status") String status) {
         int p = page == null ? 1 : page;
         int s = size == null ? 10 : size;
         List<ContactMessage> records = contactService.page(status, p, s);
@@ -51,14 +48,15 @@ public class AdminContactController {
     @RolesAllowed("admin")
     @Transactional
     @Operation(summary = "状态流转 (processing / closed / reopen)")
-    public R<ContactMessage> transition(@PathParam("publicId") String publicId,
-                                        @PathParam("action") String action) {
-        String to = switch (action) {
-            case "processing" -> ContactMessage.STATUS_PROCESSING;
-            case "closed" -> ContactMessage.STATUS_CLOSED;
-            case "reopen" -> ContactMessage.STATUS_NEW;
-            default -> null;
-        };
+    public R<ContactMessage> transition(
+            @PathParam("publicId") String publicId, @PathParam("action") String action) {
+        String to =
+                switch (action) {
+                    case "processing" -> ContactMessage.STATUS_PROCESSING;
+                    case "closed" -> ContactMessage.STATUS_CLOSED;
+                    case "reopen" -> ContactMessage.STATUS_NEW;
+                    default -> null;
+                };
         if (to == null) {
             return R.fail(400, "非法操作");
         }

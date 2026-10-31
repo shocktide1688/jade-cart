@@ -10,21 +10,20 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
-import org.hibernate.annotations.UpdateTimestamp;
-
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import lombok.Data;
+import lombok.EqualsAndHashCode;
+import org.hibernate.annotations.UpdateTimestamp;
 
 /**
  * 商城设置 KV (值 AES-256-GCM 加密存储, 与 jade-mail/LDAP 密码同机制)
  *
- * P0 键: store_name / currency / support_email / announcement / mock_payment_enabled
- * P1 键: stripe_secret_key / paypal_client_secret 等 (加密, 界面掩码)
+ * <p>P0 键: store_name / currency / support_email / announcement / mock_payment_enabled P1 键:
+ * stripe_secret_key / paypal_client_secret 等 (加密, 界面掩码)
  */
 @Data
 @EqualsAndHashCode(callSuper = false)
@@ -50,8 +49,7 @@ public class StoreSetting extends PanacheEntityBase {
     public LocalDateTime updatedAt;
 
     public static Optional<String> getValue(String key) {
-        return StoreSetting.<StoreSetting>find("key", key).firstResultOptional()
-                .map(s -> s.value);
+        return StoreSetting.<StoreSetting>find("key", key).firstResultOptional().map(s -> s.value);
     }
 
     public static void put(String key, String value) {

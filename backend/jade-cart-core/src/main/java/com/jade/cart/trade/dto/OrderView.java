@@ -3,9 +3,7 @@ package com.jade.cart.trade.dto;
 import java.time.LocalDateTime;
 import java.util.List;
 
-/**
- * 订单视图 (管理端 + 店面订单查询通用形状)
- */
+/** 订单视图 (管理端 + 店面订单查询通用形状) */
 public record OrderView(
         String publicId,
         String orderNumber,

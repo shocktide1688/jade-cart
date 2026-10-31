@@ -7,16 +7,13 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import java.time.LocalDateTime;
+import java.util.List;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import org.hibernate.annotations.CreationTimestamp;
 
-import java.time.LocalDateTime;
-import java.util.List;
-
-/**
- * 运费分区: 国家列表(逗号分隔 ISO2, * = 兜底) + 固定运费 + 满额免邮
- */
+/** 运费分区: 国家列表(逗号分隔 ISO2, * = 兜底) + 固定运费 + 满额免邮 */
 @Data
 @EqualsAndHashCode(callSuper = false)
 @Entity

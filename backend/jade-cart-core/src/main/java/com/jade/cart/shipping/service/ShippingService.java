@@ -1,16 +1,13 @@
 package com.jade.cart.shipping.service;
 
 import com.jade.cart.shipping.entity.ShippingZone;
-import com.jade.cart.trade.entity.Order;
 import com.jade.common.exception.BizException;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.transaction.Transactional;
-
 import java.util.List;
+import java.util.Locale;
 
-/**
- * 运费分区: 结账时按收货国家匹配 (先配置的具体国家优先, * 兜底最后)
- */
+/** 运费分区: 结账时按收货国家匹配 (先配置的具体国家优先, * 兜底最后) */
 @ApplicationScoped
 public class ShippingService {
 
@@ -19,7 +16,12 @@ public class ShippingService {
     }
 
     @Transactional
-    public ShippingZone create(String name, String countries, Long rateCents, Long freeThresholdCents, boolean active) {
+    public ShippingZone create(
+            String name,
+            String countries,
+            Long rateCents,
+            Long freeThresholdCents,
+            boolean active) {
         if (name == null || name.isBlank()) {
             throw new BizException("分区名称不能为空");
         }
@@ -34,8 +36,13 @@ public class ShippingService {
     }
 
     @Transactional
-    public ShippingZone update(Long id, String name, String countries, Long rateCents,
-                               Long freeThresholdCents, Boolean active) {
+    public ShippingZone update(
+            Long id,
+            String name,
+            String countries,
+            Long rateCents,
+            Long freeThresholdCents,
+            Boolean active) {
         ShippingZone zone = ShippingZone.findById(id);
         if (zone == null) {
             throw new BizException("运费分区不存在");
@@ -66,10 +73,7 @@ public class ShippingService {
         }
     }
 
-    /**
-     * 匹配运费: 具体国家命中优先; 仅 * 兜底; 无任何命中 = 免运费 (0)
-     * 满额免邮: 门槛 > 0 且小计 >= 门槛时免运费
-     */
+    /** 匹配运费: 具体国家命中优先; 仅 * 兜底; 无任何命中 = 免运费 (0) 满额免邮: 门槛 > 0 且小计 >= 门槛时免运费 */
     public long shippingFor(String country, long subtotalCents) {
         if (country == null || country.isBlank()) {
             country = "US";
@@ -121,6 +125,8 @@ public class ShippingService {
     }
 
     private String normalize(String countries) {
-        return countries == null ? "*" : countries.trim().toUpperCase().replaceAll("\\s+", "");
+        return countries == null
+                ? "*"
+                : countries.trim().toUpperCase(Locale.ROOT).replaceAll("\\s+", "");
     }
 }

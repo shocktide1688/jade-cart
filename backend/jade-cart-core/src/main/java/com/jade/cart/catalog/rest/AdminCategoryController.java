@@ -16,14 +16,11 @@ import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
+import java.util.List;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 
-import java.util.List;
-
-/**
- * 分类管理 (管理端)
- */
+/** 分类管理 (管理端) */
 @Path("/api/v1/categories")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
@@ -31,10 +28,10 @@ import java.util.List;
 @Tag(name = "分类管理")
 public class AdminCategoryController {
 
-    @Inject
-    CatalogService catalogService;
+    @Inject CatalogService catalogService;
 
-    public record CategoryReq(String name, String slug, Long parentId, Integer sortOrder, Integer status) {}
+    public record CategoryReq(
+            String name, String slug, Long parentId, Integer sortOrder, Integer status) {}
 
     @GET
     @RolesAllowed("admin")
@@ -51,8 +48,9 @@ public class AdminCategoryController {
         if (req.name() == null || req.name().isBlank()) {
             return R.fail(400, "分类名称不能为空");
         }
-        return R.ok(catalogService.createCategory(
-                req.name(), req.slug(), req.parentId(), req.sortOrder()));
+        return R.ok(
+                catalogService.createCategory(
+                        req.name(), req.slug(), req.parentId(), req.sortOrder()));
     }
 
     @PUT
@@ -61,8 +59,9 @@ public class AdminCategoryController {
     @Transactional
     @Operation(summary = "更新分类")
     public R<Category> update(@PathParam("id") Long id, CategoryReq req) {
-        return R.ok(catalogService.updateCategory(
-                id, req.name(), req.slug(), req.parentId(), req.sortOrder(), req.status()));
+        return R.ok(
+                catalogService.updateCategory(
+                        id, req.name(), req.slug(), req.parentId(), req.sortOrder(), req.status()));
     }
 
     @DELETE

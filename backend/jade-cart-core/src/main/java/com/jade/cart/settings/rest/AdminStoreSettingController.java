@@ -11,14 +11,11 @@ import jakarta.ws.rs.PUT;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
+import java.util.Map;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 
-import java.util.Map;
-
-/**
- * 商城设置 (管理端 KV, 值 AES-GCM 加密存储)
- */
+/** 商城设置 (管理端 KV, 值 AES-GCM 加密存储) */
 @Path("/api/v1/store-settings")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)

@@ -7,8 +7,6 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
-import org.eclipse.microprofile.config.inject.ConfigProperty;
-
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -21,30 +19,49 @@ import java.util.List;
 import java.util.Map;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
 
 /**
- * 全量备份 (kartwo backup 对齐): ZIP = manifest + mall_* 表 JSON 快照 + 媒体文件
- * 本地定时 (每日 04:00) + 保留 N 份; 恢复用 restore 脚本/未来导入 (P3)
+ * 全量备份 (kartwo backup 对齐): ZIP = manifest + mall_* 表 JSON 快照 + 媒体文件 本地定时 (每日 04:00) + 保留 N 份; 恢复用
+ * restore 脚本/未来导入 (P3)
  */
 @ApplicationScoped
 public class BackupService {
 
     private static final DateTimeFormatter FMT = DateTimeFormatter.ofPattern("yyyyMMdd-HHmmss");
-    private static final List<String> TABLES = List.of(
-            "mall_category", "mall_product", "mall_product_option", "mall_product_option_value",
-            "mall_variant", "mall_variant_option_value", "mall_inventory", "mall_product_category",
-            "mall_customer", "mall_cart", "mall_cart_item", "mall_order", "mall_order_item",
-            "mall_webhook_event", "mall_store_setting", "mall_shipping_zone", "mall_shipment",
-            "mall_email_outbox", "mall_media_asset", "mall_content_page", "mall_contact_message",
-            "mall_import_job", "mall_redirect");
+    private static final List<String> TABLES =
+            List.of(
+                    "mall_category",
+                    "mall_product",
+                    "mall_product_option",
+                    "mall_product_option_value",
+                    "mall_variant",
+                    "mall_variant_option_value",
+                    "mall_inventory",
+                    "mall_product_category",
+                    "mall_customer",
+                    "mall_cart",
+                    "mall_cart_item",
+                    "mall_order",
+                    "mall_order_item",
+                    "mall_webhook_event",
+                    "mall_store_setting",
+                    "mall_shipping_zone",
+                    "mall_shipment",
+                    "mall_email_outbox",
+                    "mall_media_asset",
+                    "mall_content_page",
+                    "mall_contact_message",
+                    "mall_import_job",
+                    "mall_redirect");
 
-    @Inject
-    EntityManager em;
+    @Inject EntityManager em;
 
-    private final ObjectMapper mapper = new ObjectMapper()
-            .enable(SerializationFeature.INDENT_OUTPUT)
-            .registerModule(new com.fasterxml.jackson.datatype.jsr310.JavaTimeModule())
-            .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+    private final ObjectMapper mapper =
+            new ObjectMapper()
+                    .enable(SerializationFeature.INDENT_OUTPUT)
+                    .registerModule(new com.fasterxml.jackson.datatype.jsr310.JavaTimeModule())
+                    .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
 
     @ConfigProperty(name = "jade.cart.backup-dir", defaultValue = "./data/backups")
     String backupDir;
@@ -67,7 +84,7 @@ public class BackupService {
         Path zipPath = root.resolve(name);
 
         try (OutputStream fos = Files.newOutputStream(zipPath);
-             ZipOutputStream zip = new ZipOutputStream(fos, StandardCharsets.UTF_8)) {
+                ZipOutputStream zip = new ZipOutputStream(fos, StandardCharsets.UTF_8)) {
 
             // ① manifest
             Map<String, Object> manifest = new LinkedHashMap<>();
@@ -81,9 +98,10 @@ public class BackupService {
             // ② 各表 JSON 快照 (原生 SQL → 独立于实体)
             for (String table : TABLES) {
                 try {
-                    List<?> rows = em.createNativeQuery("SELECT to_jsonb(t) FROM " + table + " t").getResultList();
-                    putZipEntry(zip, "data/" + table + ".json",
-                            mapper.writeValueAsBytes(rows));
+                    List<?> rows =
+                            em.createNativeQuery("SELECT to_jsonb(t) FROM " + table + " t")
+                                    .getResultList();
+                    putZipEntry(zip, "data/" + table + ".json", mapper.writeValueAsBytes(rows));
                 } catch (Exception e) {
                     Log.warnf("backup table skipped: %s (%s)", table, e.getMessage());
                 }
@@ -93,15 +111,19 @@ public class BackupService {
             Path media = Path.of(mediaDir).toAbsolutePath().normalize();
             if (Files.isDirectory(media)) {
                 try (var walk = Files.walk(media)) {
-                    walk.filter(Files::isRegularFile).forEach(file -> {
-                        try {
-                            zip.putNextEntry(new ZipEntry("media/" + media.relativize(file)));
-                            zip.write(Files.readAllBytes(file));
-                            zip.closeEntry();
-                        } catch (Exception e) {
-                            Log.warnf("backup media skipped: %s", file);
-                        }
-                    });
+                    walk.filter(Files::isRegularFile)
+                            .forEach(
+                                    file -> {
+                                        try {
+                                            zip.putNextEntry(
+                                                    new ZipEntry(
+                                                            "media/" + media.relativize(file)));
+                                            zip.write(Files.readAllBytes(file));
+                                            zip.closeEntry();
+                                        } catch (Exception e) {
+                                            Log.warnf("backup media skipped: %s", file);
+                                        }
+                                    });
                 }
             }
         }
@@ -120,16 +142,17 @@ public class BackupService {
         try (var stream = Files.list(root)) {
             stream.filter(f -> f.getFileName().toString().endsWith(".zip"))
                     .sorted((a, b) -> b.compareTo(a))
-                    .forEach(f -> {
-                        Map<String, Object> m = new LinkedHashMap<>();
-                        m.put("filename", f.getFileName().toString());
-                        try {
-                            m.put("sizeBytes", Files.size(f));
-                        } catch (Exception e) {
-                            m.put("sizeBytes", 0);
-                        }
-                        out.add(m);
-                    });
+                    .forEach(
+                            f -> {
+                                Map<String, Object> m = new LinkedHashMap<>();
+                                m.put("filename", f.getFileName().toString());
+                                try {
+                                    m.put("sizeBytes", Files.size(f));
+                                } catch (Exception e) {
+                                    m.put("sizeBytes", 0);
+                                }
+                                out.add(m);
+                            });
         } catch (Exception ignored) {
         }
         return out;
@@ -162,9 +185,10 @@ public class BackupService {
     /** 保留最近 keep 份 */
     private void enforceRetention(Path root) {
         try (var stream = Files.list(root)) {
-            List<Path> zips = stream.filter(f -> f.getFileName().toString().endsWith(".zip"))
-                    .sorted((a, b) -> b.compareTo(a))
-                    .toList();
+            List<Path> zips =
+                    stream.filter(f -> f.getFileName().toString().endsWith(".zip"))
+                            .sorted((a, b) -> b.compareTo(a))
+                            .toList();
             for (int i = keep; i < zips.size(); i++) {
                 Files.deleteIfExists(zips.get(i));
                 Log.infof("backup rotated out: %s", zips.get(i).getFileName());
@@ -176,8 +200,9 @@ public class BackupService {
 
     private long countSafe(String table) {
         try {
-            return ((Number) em.createNativeQuery("SELECT count(*) FROM " + table)
-                    .getSingleResult()).longValue();
+            return ((Number)
+                            em.createNativeQuery("SELECT count(*) FROM " + table).getSingleResult())
+                    .longValue();
         } catch (Exception e) {
             return 0;
         }

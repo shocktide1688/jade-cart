@@ -7,17 +7,14 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import java.time.LocalDateTime;
+import java.util.Optional;
+import java.util.UUID;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import org.hibernate.annotations.CreationTimestamp;
 
-import java.time.LocalDateTime;
-import java.util.Optional;
-import java.util.UUID;
-
-/**
- * 媒体资产: 磁盘内容哈希命名存储, DB 只存相对路径
- */
+/** 媒体资产: 磁盘内容哈希命名存储, DB 只存相对路径 */
 @Data
 @EqualsAndHashCode(callSuper = false)
 @Entity

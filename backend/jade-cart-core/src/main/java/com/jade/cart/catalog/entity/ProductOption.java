@@ -7,14 +7,11 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import java.util.List;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
-import java.util.List;
-
-/**
- * 商品变体轴 (如 color / size)
- */
+/** 商品变体轴 (如 color / size) */
 @Data
 @EqualsAndHashCode(callSuper = false)
 @Entity

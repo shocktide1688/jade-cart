@@ -7,14 +7,11 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import java.util.List;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
-import java.util.List;
-
-/**
- * 订单行: 结算时落快照 (标题/规格/SKU/单价), 与商品后续改动解耦
- */
+/** 订单行: 结算时落快照 (标题/规格/SKU/单价), 与商品后续改动解耦 */
 @Data
 @EqualsAndHashCode(callSuper = false)
 @Entity

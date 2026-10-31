@@ -7,18 +7,15 @@ import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.core.Response;
-
 import java.nio.file.Files;
+import java.util.Locale;
 
-/**
- * 媒体公开访问: GET /media/{...相对路径} (内容哈希命名, 长缓存)
- */
+/** 媒体公开访问: GET /media/{...相对路径} (内容哈希命名, 长缓存) */
 @Path("/media")
 @PermitAll
 public class PublicMediaController {
 
-    @Inject
-    MediaService mediaService;
+    @Inject MediaService mediaService;
 
     @GET
     @Path("/{resource:.*}")
@@ -27,9 +24,11 @@ public class PublicMediaController {
         if (file == null) {
             return Response.status(Response.Status.NOT_FOUND).build();
         }
-        String name = file.getFileName().toString().toLowerCase();
-        String type = name.endsWith(".png") ? "image/png"
-                : name.endsWith(".webp") ? "image/webp" : "image/jpeg";
+        String name = file.getFileName().toString().toLowerCase(Locale.ROOT);
+        String type =
+                name.endsWith(".png")
+                        ? "image/png"
+                        : name.endsWith(".webp") ? "image/webp" : "image/jpeg";
         try {
             return Response.ok(Files.readAllBytes(file))
                     .type(type)

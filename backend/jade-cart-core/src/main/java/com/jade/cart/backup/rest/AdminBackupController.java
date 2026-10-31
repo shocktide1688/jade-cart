@@ -13,24 +13,20 @@ import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
-import org.eclipse.microprofile.openapi.annotations.Operation;
-import org.eclipse.microprofile.openapi.annotations.tags.Tag;
-
 import java.nio.file.Files;
 import java.util.List;
 import java.util.Map;
+import org.eclipse.microprofile.openapi.annotations.Operation;
+import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 
-/**
- * 备份管理 (管理端): 手动备份 / 列表 / 下载 / 删除
- */
+/** 备份管理 (管理端): 手动备份 / 列表 / 下载 / 删除 */
 @Path("/api/v1/backups")
 @Produces(MediaType.APPLICATION_JSON)
 @Authenticated
 @Tag(name = "备份")
 public class AdminBackupController {
 
-    @Inject
-    BackupService backupService;
+    @Inject BackupService backupService;
 
     @GET
     @RolesAllowed("admin")
@@ -44,8 +40,7 @@ public class AdminBackupController {
     @Operation(summary = "立即备份 (manifest + 数据 JSON + 媒体)")
     public R<Map<String, Object>> run() throws Exception {
         java.nio.file.Path zip = backupService.createBackup();
-        return R.ok(Map.of("filename", zip.getFileName().toString(),
-                "sizeBytes", Files.size(zip)));
+        return R.ok(Map.of("filename", zip.getFileName().toString(), "sizeBytes", Files.size(zip)));
     }
 
     @GET

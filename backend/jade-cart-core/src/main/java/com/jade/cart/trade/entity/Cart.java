@@ -7,19 +7,16 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
-import java.time.LocalDateTime;
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
-
-/**
- * 匿名购物车 (cookie token 标识); 结算成功后置 CONVERTED, 同 token 下次再建新 ACTIVE
- */
+/** 匿名购物车 (cookie token 标识); 结算成功后置 CONVERTED, 同 token 下次再建新 ACTIVE */
 @Data
 @EqualsAndHashCode(callSuper = false)
 @Entity

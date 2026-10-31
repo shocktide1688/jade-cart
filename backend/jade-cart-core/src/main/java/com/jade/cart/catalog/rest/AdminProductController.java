@@ -18,14 +18,11 @@ import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
+import java.util.List;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 
-import java.util.List;
-
-/**
- * 商品管理 (管理端)
- */
+/** 商品管理 (管理端) */
 @Path("/api/v1/products")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
@@ -33,15 +30,29 @@ import java.util.List;
 @Tag(name = "商品管理")
 public class AdminProductController {
 
-    @Inject
-    CatalogService catalogService;
+    @Inject CatalogService catalogService;
 
-    public record CreateReq(String title, String slug, String description, String seoDescription,
-                            String status, Boolean featured, Long defaultPriceCents, String defaultSku,
-                            String mainImagePath, String seoKeywords) {}
+    public record CreateReq(
+            String title,
+            String slug,
+            String description,
+            String seoDescription,
+            String status,
+            Boolean featured,
+            Long defaultPriceCents,
+            String defaultSku,
+            String mainImagePath,
+            String seoKeywords) {}
 
-    public record UpdateReq(String title, String slug, String description, String seoDescription,
-                            String status, Boolean featured, String mainImagePath, String seoKeywords) {}
+    public record UpdateReq(
+            String title,
+            String slug,
+            String description,
+            String seoDescription,
+            String status,
+            Boolean featured,
+            String mainImagePath,
+            String seoKeywords) {}
 
     public record OptionReq(String optionKey, String displayName, List<String> values) {}
 
@@ -56,14 +67,17 @@ public class AdminProductController {
     @GET
     @RolesAllowed("admin")
     @Operation(summary = "商品分页")
-    public R<PageResult<ProductView.Summary>> list(@QueryParam("page") Integer page,
-                                                   @QueryParam("size") Integer size,
-                                                   @QueryParam("keyword") String keyword,
-                                                   @QueryParam("status") String status) {
+    public R<PageResult<ProductView.Summary>> list(
+            @QueryParam("page") Integer page,
+            @QueryParam("size") Integer size,
+            @QueryParam("keyword") String keyword,
+            @QueryParam("status") String status) {
         int p = page == null ? 1 : page;
         int s = size == null ? 10 : size;
-        List<ProductView.Summary> records = catalogService.pageProducts(keyword, status, p, s)
-                .stream().map(catalogService::toSummary).toList();
+        List<ProductView.Summary> records =
+                catalogService.pageProducts(keyword, status, p, s).stream()
+                        .map(catalogService::toSummary)
+                        .toList();
         return R.ok(PageResult.of(records, catalogService.countProducts(keyword, status), p, s));
     }
 
@@ -75,10 +89,19 @@ public class AdminProductController {
         if (req.title() == null || req.title().isBlank()) {
             return R.fail(400, "商品标题不能为空");
         }
-        return R.ok(catalogService.toView(catalogService.createProduct(
-                req.title(), req.slug(), req.description(), req.seoDescription(),
-                req.status(), req.featured(), req.defaultPriceCents(), req.defaultSku(),
-                req.mainImagePath(), req.seoKeywords())));
+        return R.ok(
+                catalogService.toView(
+                        catalogService.createProduct(
+                                req.title(),
+                                req.slug(),
+                                req.description(),
+                                req.seoDescription(),
+                                req.status(),
+                                req.featured(),
+                                req.defaultPriceCents(),
+                                req.defaultSku(),
+                                req.mainImagePath(),
+                                req.seoKeywords())));
     }
 
     @GET
@@ -86,7 +109,8 @@ public class AdminProductController {
     @RolesAllowed("admin")
     @Operation(summary = "商品详情 (含变体轴/变体/库存)")
     public R<ProductView> get(@PathParam("id") Long id) {
-        com.jade.cart.catalog.entity.Product product = com.jade.cart.catalog.entity.Product.findById(id);
+        com.jade.cart.catalog.entity.Product product =
+                com.jade.cart.catalog.entity.Product.findById(id);
         if (product == null || product.deleted) {
             return R.fail(404, "商品不存在");
         }
@@ -99,9 +123,18 @@ public class AdminProductController {
     @Transactional
     @Operation(summary = "更新商品")
     public R<ProductView> update(@PathParam("id") Long id, UpdateReq req) {
-        return R.ok(catalogService.toView(catalogService.updateProduct(
-                id, req.title(), req.slug(), req.description(), req.seoDescription(),
-                req.status(), req.featured(), req.mainImagePath(), req.seoKeywords())));
+        return R.ok(
+                catalogService.toView(
+                        catalogService.updateProduct(
+                                id,
+                                req.title(),
+                                req.slug(),
+                                req.description(),
+                                req.seoDescription(),
+                                req.status(),
+                                req.featured(),
+                                req.mainImagePath(),
+                                req.seoKeywords())));
     }
 
     @DELETE
@@ -119,8 +152,8 @@ public class AdminProductController {
     @RolesAllowed("admin")
     @Transactional
     @Operation(summary = "设置商品所属分类 (覆盖式)")
-    public R<Void> linkCategories(@PathParam("id") Long id,
-                                  com.jade.cart.catalog.rest.req.CategoryLinkReq req) {
+    public R<Void> linkCategories(
+            @PathParam("id") Long id, com.jade.cart.catalog.rest.req.CategoryLinkReq req) {
         catalogService.linkCategories(id, req.categoryIds());
         return R.ok();
     }
@@ -152,8 +185,8 @@ public class AdminProductController {
     @RolesAllowed("admin")
     @Transactional
     @Operation(summary = "追加轴取值")
-    public R<Void> addOptionValue(@PathParam("id") Long id, @PathParam("optionId") Long optionId,
-                                  OptionReq req) {
+    public R<Void> addOptionValue(
+            @PathParam("id") Long id, @PathParam("optionId") Long optionId, OptionReq req) {
         if (req.values() == null || req.values().isEmpty()) {
             return R.fail(400, "取值不能为空");
         }
@@ -187,10 +220,11 @@ public class AdminProductController {
     @RolesAllowed("admin")
     @Transactional
     @Operation(summary = "更新变体 (SKU/价格)")
-    public R<ProductView.VariantView> updateVariant(@PathParam("variantId") Long variantId,
-                                                    VariantUpdateReq req) {
-        return R.ok(catalogService.toVariantView(
-                catalogService.updateVariant(variantId, req.sku(), req.priceCents())));
+    public R<ProductView.VariantView> updateVariant(
+            @PathParam("variantId") Long variantId, VariantUpdateReq req) {
+        return R.ok(
+                catalogService.toVariantView(
+                        catalogService.updateVariant(variantId, req.sku(), req.priceCents())));
     }
 
     @DELETE
@@ -210,8 +244,8 @@ public class AdminProductController {
     @RolesAllowed("admin")
     @Transactional
     @Operation(summary = "设置在库数量 (reserved 不受影响)")
-    public R<ProductView.VariantView> setInventory(@PathParam("variantId") Long variantId,
-                                                   InventoryReq req) {
+    public R<ProductView.VariantView> setInventory(
+            @PathParam("variantId") Long variantId, InventoryReq req) {
         if (req.quantity() == null) {
             return R.fail(400, "数量不能为空");
         }

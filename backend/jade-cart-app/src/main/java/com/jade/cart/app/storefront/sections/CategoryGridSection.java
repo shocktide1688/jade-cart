@@ -7,13 +7,9 @@ import io.quarkus.qute.Location;
 import io.quarkus.qute.Template;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
-
 import java.util.Map;
 
-/**
- * category_grid: 分类导航卡
- * config: {title, limit}
- */
+/** category_grid: 分类导航卡 config: {title, limit} */
 @ApplicationScoped
 public class CategoryGridSection implements SectionRenderer {
 
@@ -30,7 +26,6 @@ public class CategoryGridSection implements SectionRenderer {
 
     @Override
     public String render(JsonNode cfg) throws Exception {
-        int limit = Math.min(Math.max(cfg.path("limit").asInt(6), 1), 12);
         Map<String, Object> c = mapper.readValue(cfg.toString(), Map.class);
         c.putIfAbsent("title", "");
         return tpl.data("cfg", c).data("categories", Category.listActive()).render();

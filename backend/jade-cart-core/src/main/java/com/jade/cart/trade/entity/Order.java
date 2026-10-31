@@ -7,18 +7,18 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
-import java.time.LocalDateTime;
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
-
 /**
  * 订单状态机:
+ *
  * <pre>
  * PENDING --支付--> PAID --履约--> FULFILLED
  *    |--超时/取消--> CANCELLED    PAID/REVIEW --退款--> REFUNDED
@@ -116,17 +116,18 @@ public class Order extends PanacheEntityBase {
 
     /** 条件状态流转: 返回 false = 状态已变化 (并发/迟到) */
     public static boolean transition(Long id, String from, String to, LocalDateTime at) {
-        String atColumn = switch (to) {
-            case STATUS_PAID -> ", paidAt = ?3";
-            case STATUS_FULFILLED -> ", fulfilledAt = ?3";
-            case STATUS_CANCELLED -> ", cancelledAt = ?3";
-            case STATUS_REFUNDED -> ", refundedAt = ?3";
-            default -> "";
-        };
+        String atColumn =
+                switch (to) {
+                    case STATUS_PAID -> ", paidAt = ?3";
+                    case STATUS_FULFILLED -> ", fulfilledAt = ?3";
+                    case STATUS_CANCELLED -> ", cancelledAt = ?3";
+                    case STATUS_REFUNDED -> ", refundedAt = ?3";
+                    default -> "";
+                };
         if (atColumn.isEmpty()) {
             return update("status = ?2 where id = ?1 and status = ?3", id, to, from) == 1;
         }
-        return update("status = ?2" + atColumn + " where id = ?1 and status = ?4",
-                id, to, at, from) == 1;
+        return update("status = ?2" + atColumn + " where id = ?1 and status = ?4", id, to, at, from)
+                == 1;
     }
 }

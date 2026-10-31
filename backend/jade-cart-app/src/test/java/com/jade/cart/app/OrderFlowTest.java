@@ -1,5 +1,9 @@
 package com.jade.cart.app;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import com.jade.cart.catalog.entity.Inventory;
 import com.jade.cart.catalog.entity.Product;
 import com.jade.cart.catalog.entity.Variant;
@@ -15,9 +19,6 @@ import io.quarkus.test.junit.QuarkusTest;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
 import jakarta.transaction.UserTransaction;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
@@ -25,29 +26,20 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicInteger;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-
-/**
- * 交易核心路径测试 (P3-14): 防超卖并发 / 订单状态机 / webhook 幂等 / 预留过期
- * 独立库 jade_test, Flyway 自动迁移
- */
+/** 交易核心路径测试 (P3-14): 防超卖并发 / 订单状态机 / webhook 幂等 / 预留过期 独立库 jade_test, Flyway 自动迁移 */
 @QuarkusTest
 class OrderFlowTest {
 
-    @Inject
-    CatalogService catalogService;
+    @Inject CatalogService catalogService;
 
-    @Inject
-    CartService cartService;
+    @Inject CartService cartService;
 
-    @Inject
-    OrderService orderService;
+    @Inject OrderService orderService;
 
-    @Inject
-    UserTransaction utx;
+    @Inject UserTransaction utx;
 
     @BeforeEach
     @Transactional
@@ -71,8 +63,18 @@ class OrderFlowTest {
     /** 建一个 ACTIVE 商品 + 单变体 + 指定库存, 返回变体 id */
     @Transactional
     Long seedProduct(int stock) {
-        Product p = catalogService.createProduct("Test Tee " + System.nanoTime(), null,
-                null, null, Product.STATUS_ACTIVE, false, 1900L, null, null, null);
+        Product p =
+                catalogService.createProduct(
+                        "Test Tee " + System.nanoTime(),
+                        null,
+                        null,
+                        null,
+                        Product.STATUS_ACTIVE,
+                        false,
+                        1900L,
+                        null,
+                        null,
+                        null);
         Variant v = Variant.listByProduct(p.id).get(0);
         // createVariant 已自动建库存行, 这里只改数量
         catalogService.setInventory(v.id, stock);
@@ -91,22 +93,27 @@ class OrderFlowTest {
 
         List<Future<Boolean>> futures = new java.util.ArrayList<>();
         for (int i = 0; i < threads; i++) {
-            futures.add(pool.submit(() -> {
-                ready.countDown();
-                start.await();
-                utx.begin();
-                try {
-                    boolean ok = Inventory.reserve(variantId, 2);
-                    utx.commit();
-                    if (ok) {
-                        wins.incrementAndGet();
-                    }
-                    return ok;
-                } catch (Exception e) {
-                    try { utx.rollback(); } catch (Exception ignored) {}
-                    return false;
-                }
-            }));
+            futures.add(
+                    pool.submit(
+                            () -> {
+                                ready.countDown();
+                                start.await();
+                                utx.begin();
+                                try {
+                                    boolean ok = Inventory.reserve(variantId, 2);
+                                    utx.commit();
+                                    if (ok) {
+                                        wins.incrementAndGet();
+                                    }
+                                    return ok;
+                                } catch (Exception e) {
+                                    try {
+                                        utx.rollback();
+                                    } catch (Exception ignored) {
+                                    }
+                                    return false;
+                                }
+                            }));
         }
         ready.await();
         start.countDown();
@@ -129,15 +136,20 @@ class OrderFlowTest {
 
         // PENDING 不能直接履约
         utx.begin();
-        boolean illegal = Order.transition(order.id, Order.STATUS_PAID, Order.STATUS_FULFILLED,
-                LocalDateTime.now());
+        boolean illegal =
+                Order.transition(
+                        order.id, Order.STATUS_PAID, Order.STATUS_FULFILLED, LocalDateTime.now());
         utx.commit();
         assertFalse(illegal, "PENDING→FULFILLED 必须被拒绝");
         // 已取消订单不能再取消
         orderService.cancel(order.publicId);
         utx.begin();
-        boolean doubleCancel = Order.transition(order.id, Order.STATUS_PENDING, Order.STATUS_CANCELLED,
-                LocalDateTime.now());
+        boolean doubleCancel =
+                Order.transition(
+                        order.id,
+                        Order.STATUS_PENDING,
+                        Order.STATUS_CANCELLED,
+                        LocalDateTime.now());
         utx.commit();
         assertFalse(doubleCancel, "重复取消必须被拒绝");
 
@@ -156,17 +168,21 @@ class OrderFlowTest {
         Order order = orderService.checkout(token, "t2@example.com", null, "US");
 
         String eventId = "evt_test_idem_1";
-        boolean first = orderService.markPaid("mock", eventId, order.publicId,
-                order.totalCents, order.currency, "ref_1");
-        boolean second = orderService.markPaid("mock", eventId, order.publicId,
-                order.totalCents, order.currency, "ref_1");
+        boolean first =
+                orderService.markPaid(
+                        "mock", eventId, order.publicId, order.totalCents, order.currency, "ref_1");
+        boolean second =
+                orderService.markPaid(
+                        "mock", eventId, order.publicId, order.totalCents, order.currency, "ref_1");
 
         assertTrue(first, "首次回调应消费");
         assertTrue(second, "重复回调按幂等成功返回");
 
         assertEquals(1, WebhookEvent.count("eventId", eventId), "事件表只落一条");
-        assertEquals(1, Order.count("publicId = ?1 and status = ?2",
-                order.publicId, Order.STATUS_PAID), "订单只被支付一次");
+        assertEquals(
+                1,
+                Order.count("publicId = ?1 and status = ?2", order.publicId, Order.STATUS_PAID),
+                "订单只被支付一次");
         Inventory inv = Inventory.byVariant(variantId).orElseThrow();
         assertEquals(7, inv.quantity, "库存只核销一次 (10-3)");
         assertEquals(0, inv.reserved, "预留清零且不重复扣");
@@ -203,8 +219,14 @@ class OrderFlowTest {
         Order order = orderService.checkout(token, "t4@example.com", null, "US");
         orderService.cancel(order.publicId);
 
-        boolean consumed = orderService.markPaid("mock", "evt_late_1", order.publicId,
-                order.totalCents, order.currency, "ref_late");
+        boolean consumed =
+                orderService.markPaid(
+                        "mock",
+                        "evt_late_1",
+                        order.publicId,
+                        order.totalCents,
+                        order.currency,
+                        "ref_late");
         assertTrue(consumed, "迟到款事件按已消费返回");
 
         Order reloaded = Order.findById(order.id);

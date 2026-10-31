@@ -3,10 +3,10 @@ package com.jade.cart.trade.payment;
 import com.jade.cart.trade.entity.Order;
 
 /**
- * 支付网关抽象 (kartwo PaymentProvider 同形状):
- * createPayment 发起 → 网关回调 webhook → PaymentService.markPaid; refund 网关退款
+ * 支付网关抽象 (kartwo PaymentProvider 同形状): createPayment 发起 → 网关回调 webhook → PaymentService.markPaid;
+ * refund 网关退款
  *
- * P0 内置 MockProvider; P1 增加真实 Stripe / PayPal (REST 直连, 无 SDK)
+ * <p>P0 内置 MockProvider; P1 增加真实 Stripe / PayPal (REST 直连, 无 SDK)
  */
 public interface PaymentProvider {
 

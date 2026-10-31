@@ -16,14 +16,11 @@ import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
+import java.util.List;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 
-import java.util.List;
-
-/**
- * 博客管理 (管理端)
- */
+/** 博客管理 (管理端) */
 @Path("/api/v1/blog-posts")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
@@ -31,12 +28,18 @@ import java.util.List;
 @Tag(name = "博客管理")
 public class AdminBlogController {
 
-    @Inject
-    BlogService blogService;
+    @Inject BlogService blogService;
 
-    public record PostReq(String slug, String title, String excerpt, String bodyMarkdown,
-                          String bodyHtml, String coverPath, String seoDescription,
-                          String seoKeywords, String status) {}
+    public record PostReq(
+            String slug,
+            String title,
+            String excerpt,
+            String bodyMarkdown,
+            String bodyHtml,
+            String coverPath,
+            String seoDescription,
+            String seoKeywords,
+            String status) {}
 
     @GET
     @RolesAllowed("admin")
@@ -50,9 +53,17 @@ public class AdminBlogController {
     @Transactional
     @Operation(summary = "创建文章 (status=ACTIVE 直接发布)")
     public R<BlogPost> create(PostReq req) {
-        return R.ok(blogService.create(req.slug(), req.title(), req.excerpt(), req.bodyMarkdown(),
-                req.bodyHtml(), req.coverPath(), req.seoDescription(), req.seoKeywords(),
-                BlogPost.STATUS_ACTIVE.equals(req.status())));
+        return R.ok(
+                blogService.create(
+                        req.slug(),
+                        req.title(),
+                        req.excerpt(),
+                        req.bodyMarkdown(),
+                        req.bodyHtml(),
+                        req.coverPath(),
+                        req.seoDescription(),
+                        req.seoKeywords(),
+                        BlogPost.STATUS_ACTIVE.equals(req.status())));
     }
 
     @PUT
@@ -61,9 +72,17 @@ public class AdminBlogController {
     @Transactional
     @Operation(summary = "更新文章")
     public R<BlogPost> update(@PathParam("id") Long id, PostReq req) {
-        return R.ok(blogService.update(id, req.title(), req.excerpt(), req.bodyMarkdown(),
-                req.bodyHtml(), req.coverPath(), req.seoDescription(), req.seoKeywords(),
-                req.status()));
+        return R.ok(
+                blogService.update(
+                        id,
+                        req.title(),
+                        req.excerpt(),
+                        req.bodyMarkdown(),
+                        req.bodyHtml(),
+                        req.coverPath(),
+                        req.seoDescription(),
+                        req.seoKeywords(),
+                        req.status()));
     }
 
     @DELETE

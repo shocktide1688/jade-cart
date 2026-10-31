@@ -7,18 +7,15 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.UUID;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
-import java.time.LocalDateTime;
-import java.util.List;
-import java.util.UUID;
-
-/**
- * 商品分类 (父子层级, slug 唯一)
- */
+/** 商品分类 (父子层级, slug 唯一) */
 @Data
 @EqualsAndHashCode(callSuper = false)
 @Entity

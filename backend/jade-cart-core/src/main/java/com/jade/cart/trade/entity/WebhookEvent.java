@@ -7,15 +7,12 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import java.time.LocalDateTime;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import org.hibernate.annotations.CreationTimestamp;
 
-import java.time.LocalDateTime;
-
-/**
- * 支付回调幂等表: (provider, event_id) 唯一约束, 插入冲突 = 事件已处理
- */
+/** 支付回调幂等表: (provider, event_id) 唯一约束, 插入冲突 = 事件已处理 */
 @Data
 @EqualsAndHashCode(callSuper = false)
 @Entity
@@ -42,11 +39,9 @@ public class WebhookEvent extends PanacheEntityBase {
     @Column(name = "processed_at", nullable = false)
     public LocalDateTime processedAt;
 
-    /**
-     * 幂等入库: true = 新事件, false = 已处理过 (直接返回成功)
-     * 先查后插, 唯一约束兜底并发窗口 (冲突时事务回滚, 上层返回错误让网关重试)
-     */
-    public static boolean insertIfAbsent(String provider, String eventId, String orderPublicId, String payload) {
+    /** 幂等入库: true = 新事件, false = 已处理过 (直接返回成功) 先查后插, 唯一约束兜底并发窗口 (冲突时事务回滚, 上层返回错误让网关重试) */
+    public static boolean insertIfAbsent(
+            String provider, String eventId, String orderPublicId, String payload) {
         if (count("provider = ?1 and eventId = ?2", provider, eventId) > 0) {
             return false;
         }

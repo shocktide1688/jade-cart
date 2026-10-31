@@ -12,33 +12,30 @@ import com.jade.common.exception.BizException;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-/**
- * 匿名购物车: cookie token 标识, 行不存单价快照 (kartwo 同款)
- * 加购时校验库存上限但不预留 (预留只发生在结算事务)
- */
+/** 匿名购物车: cookie token 标识, 行不存单价快照 (kartwo 同款) 加购时校验库存上限但不预留 (预留只发生在结算事务) */
 @ApplicationScoped
 public class CartService {
 
     public static final String CART_COOKIE = "cart_token";
 
-    @Inject
-    CatalogService catalogService;
+    @Inject CatalogService catalogService;
 
     /** 取 ACTIVE 购物车, 无则新建 (token 保持不变, 结算 CONVERTED 后下次重建) */
     @Transactional
     public Cart getOrCreate(String token) {
-        return Cart.activeByToken(token).orElseGet(() -> {
-            Cart cart = new Cart();
-            cart.token = token;
-            cart.persist();
-            return cart;
-        });
+        return Cart.activeByToken(token)
+                .orElseGet(
+                        () -> {
+                            Cart cart = new Cart();
+                            cart.token = token;
+                            cart.persist();
+                            return cart;
+                        });
     }
 
     public CartView view(Cart cart) {
@@ -55,12 +52,17 @@ public class CartService {
             long unitPrice = variant.priceCents;
             long lineTotal = unitPrice * item.quantity;
             subtotal += lineTotal;
-            lines.add(new CartView.LineView(variant.id,
-                    product == null ? variant.sku : product.title,
-                    product == null ? null : product.slug,
-                    variant.sku,
-                    catalogService.specText(variant.id),
-                    unitPrice, item.quantity, available, lineTotal));
+            lines.add(
+                    new CartView.LineView(
+                            variant.id,
+                            product == null ? variant.sku : product.title,
+                            product == null ? null : product.slug,
+                            variant.sku,
+                            catalogService.specText(variant.id),
+                            unitPrice,
+                            item.quantity,
+                            available,
+                            lineTotal));
         }
         String currency = StoreSetting.getValue("currency").orElse("USD");
         return new CartView(cart.publicId, currency, lines, subtotal);
@@ -104,8 +106,9 @@ public class CartService {
     @Transactional
     public CartView updateItem(String token, Long variantId, int quantity) {
         Cart cart = getOrCreate(token);
-        CartItem item = CartItem.byCartAndVariant(cart.id, variantId)
-                .orElseThrow(() -> new BizException("购物车中没有该商品"));
+        CartItem item =
+                CartItem.byCartAndVariant(cart.id, variantId)
+                        .orElseThrow(() -> new BizException("购物车中没有该商品"));
         if (quantity <= 0) {
             item.delete();
             return view(cart);
@@ -125,7 +128,8 @@ public class CartService {
 
     /** 新访客 token (32 位随机 hex) */
     public static String newToken() {
-        return UUID.randomUUID().toString().replace("-", "") + UUID.randomUUID().toString().replace("-", "").substring(0, 16);
+        return UUID.randomUUID().toString().replace("-", "")
+                + UUID.randomUUID().toString().replace("-", "").substring(0, 16);
     }
 
     /** 读 cookie token, 无则生成 (cookie 由控制器写回) */
