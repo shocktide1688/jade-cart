@@ -125,7 +125,7 @@ jade:
   quarkus:
     datasource:
       jdbc:
-        url: "jdbc:postgresql://localhost:5432/jade_test?currentSchema=public"
+        url: "${TEST_DB_URL:jdbc:postgresql://localhost:5432/jade_test?currentSchema=public}"
         max-size: 8
     redis:
       hosts: "redis://localhost:6380"

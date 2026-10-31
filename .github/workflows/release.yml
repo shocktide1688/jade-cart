@@ -1,0 +1,207 @@
+name: release
+
+# Jade Cart 云原生发布 (jade-wiki matrix+merge 惯例):
+#   test  → 核心交易测试 (jade_cart 服务库, %test URL 可覆盖)
+#   build → matrix 双架构 (amd64/arm64 原生 runner, 无 QEMU) 构建 api + all-in-one, 按 arch 推 GHCR + 落 digest
+#   merge → buildx imagetools 合成多架构 manifest (latest / sha / tag)
+# 已知坑 (jade-wiki 踩平): digest 文件名不带冒号 / merge 用 cat 拼 / 源引用与 push 名严格一致
+
+on:
+  push:
+    branches: [ main ]
+    tags: [ 'v*' ]
+  workflow_dispatch:
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE: ghcr.io/shocktide1688/jade-cart
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  # ---------- ① 测试 ----------
+  test:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: jade_cart
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d jade_cart"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          repository: shocktide1688/jade-boot
+          path: jade-boot
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+      - name: Install jade-boot to local repo
+        run: mvn -q install -DskipTests -f jade-boot/backend/pom.xml
+      - name: Run core tests (OrderFlowTest)
+        run: mvn -pl jade-cart-app test -f backend/pom.xml
+        env:
+          TEST_DB_URL: jdbc:postgresql://localhost:5432/jade_cart?currentSchema=public
+
+  # ---------- ② 多架构构建 ----------
+  build:
+    needs: test
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: linux/amd64
+            runs-on: ubuntu-latest
+            suffix: amd64
+          - platform: linux/arm64
+            runs-on: ubuntu-24.04-arm
+            suffix: arm64
+    runs-on: ${{ matrix.runs-on }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          repository: shocktide1688/jade-boot
+          path: jade-boot
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - name: Build backend (boot install + cart package)
+        run: |
+          mvn -q install -DskipTests -f jade-boot/backend/pom.xml
+          mvn -q package -DskipTests -f backend/pom.xml
+      - name: Build frontend
+        run: |
+          cd frontend
+          npm ci --silent
+          npm run build
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Build & push (per-arch)
+        id: build
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: docker/Dockerfile
+          platforms: ${{ matrix.platform }}
+          target: all-in-one
+          push: true
+          provenance: false
+          tags: |
+            ${{ env.IMAGE }}:${{ needs.meta.outputs.version }}-aio-${{ matrix.suffix }}
+            ${{ env.IMAGE }}:${{ needs.meta.outputs.version }}-api-${{ matrix.suffix }}
+      - name: Export digests (文件名不带冒号)
+        run: |
+          mkdir -p /tmp/digests
+          D="${{ steps.build.outputs.digest }}"
+          D="${D#sha256:}"
+          echo "$D" > "/tmp/digests/${{ matrix.suffix }}-aio.txt"
+      - uses: docker/build-push-action@v6
+        id: build-api
+        with:
+          context: .
+          file: docker/Dockerfile
+          platforms: ${{ matrix.platform }}
+          target: api
+          push: true
+          provenance: false
+          tags: ${{ env.IMAGE }}:${{ needs.meta.outputs.version }}-api-${{ matrix.suffix }}
+      - name: Export api digest
+        run: |
+          D="${{ steps.build-api.outputs.digest }}"
+          D="${D#sha256:}"
+          echo "$D" > "/tmp/digests/${{ matrix.suffix }}-api.txt"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: digests-${{ matrix.suffix }}
+          path: /tmp/digests/*.txt
+          if-no-files-found: error
+          retention-days: 1
+
+  # ---------- ③ 合成多架构 manifest ----------
+  merge:
+    needs: [meta, build]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: /tmp/digests-artifacts
+      - name: Assemble digest list (cat 拼接)
+        run: |
+          mkdir -p /tmp/digests
+          find /tmp/digests-artifacts -name '*.txt' -exec cat {} \; | while read -r d; do
+            [ -n "$d" ] && touch "/tmp/digests/$d"
+          done
+          ls /tmp/digests | wc -l
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Create multi-arch manifest (all-in-one)
+        working-directory: /tmp/digests
+        run: |
+          ARGS=""
+          while read -r d; do
+            ARGS="$ARGS ${{ env.IMAGE }}@sha256:$d"
+          done < <(ls)
+          docker buildx imagetools create \
+            -t ${{ env.IMAGE }}:${{ needs.meta.outputs.version }}-aio \
+            ${{ needs.meta.outputs.latest == 'true' && format('-t {0}:latest', env.IMAGE) || '' }} \
+            $ARGS
+      - name: Create multi-arch manifest (api)
+        working-directory: /tmp/digests
+        run: |
+          ARGS=""
+          while read -r d; do
+            ARGS="$ARGS ${{ env.IMAGE }}@sha256:$d"
+          done < <(ls *-api.txt)
+          docker buildx imagetools create \
+            -t ${{ env.IMAGE }}:${{ needs.meta.outputs.version }}-api \
+            ${{ needs.meta.outputs.latest == 'true' && format('-t {0}:latest-api', env.IMAGE) || '' }} \
+            $ARGS
+
+  # ---------- ⓪ 版本号计算 ----------
+  meta:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.v.outputs.version }}
+      latest: ${{ steps.v.outputs.latest }}
+    steps:
+      - id: v
+        run: |
+          if [[ "$GITHUB_REF" == refs/tags/v* ]]; then
+            echo "version=${GITHUB_REF#refs/tags/}" >> "$GITHUB_OUTPUT"
+            echo "latest=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "version=sha-${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
+            echo "latest=true" >> "$GITHUB_OUTPUT"
+          fi

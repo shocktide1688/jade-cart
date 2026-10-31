@@ -114,11 +114,11 @@ const fulfilling = ref(false)
 const fulfillOrder = ref<any>(null)
 const fulfillForm = reactive({ carrier: '', trackingNumber: '', trackingUrl: '' })
 
-const statusText: Record<string, string> = {
+const statusText: Record<string, any> = {
   PENDING: '待支付', PAID: '已支付', FULFILLED: '已履约',
   CANCELLED: '已取消', REFUNDED: '已退款', PAYMENT_REVIEW: '支付待审核',
 }
-const statusType: Record<string, string> = {
+const statusType: Record<string, any> = {
   PENDING: 'warning', PAID: 'success', FULFILLED: 'primary',
   CANCELLED: 'info', REFUNDED: 'info', PAYMENT_REVIEW: 'danger',
 }

@@ -49,8 +49,8 @@
         <el-table-column prop="importedCount" label="已导入" width="80" />
         <el-table-column label="状态" width="100">
           <template #default="{ row }">
-            <el-tag :type="{ PREVIEW: 'info', CONFIRMED: 'success', FAILED: 'danger' }[row.status]">
-              {{ { PREVIEW: '待确认', CONFIRMED: '已导入', FAILED: '失败' }[row.status] }}
+            <el-tag :type="importTag(row.status)">
+              {{ importLabel(row.status) }}
             </el-tag>
           </template>
         </el-table-column>
@@ -71,6 +71,9 @@ const job = ref<any>(null)
 const jobs = ref<any[]>([])
 
 const jobErrors = ref<any[]>([])
+
+const importTag = (s: string): any => ({ PREVIEW: 'info', CONFIRMED: 'success', FAILED: 'danger' }[s] || 'info')
+const importLabel = (s: string): string => ({ PREVIEW: '待确认', CONFIRMED: '已导入', FAILED: '失败' }[s] || s)
 
 async function onFile(file: any) {
   uploading.value = true

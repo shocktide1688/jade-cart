@@ -20,8 +20,8 @@
         <el-table-column prop="message" label="内容" min-width="220" show-overflow-tooltip />
         <el-table-column label="状态" width="100">
           <template #default="{ row }">
-            <el-tag :type="{ NEW: 'danger', PROCESSING: 'warning', CLOSED: 'info' }[row.status]">
-              {{ { NEW: '新留言', PROCESSING: '处理中', CLOSED: '已关闭' }[row.status] }}
+            <el-tag :type="contactTag(row.status)">
+              {{ contactLabel(row.status) }}
             </el-tag>
           </template>
         </el-table-column>
@@ -51,6 +51,9 @@ const rows = ref<any[]>([])
 const total = ref(0)
 const loading = ref(false)
 const query = reactive({ page: 1, size: 10, status: '' })
+
+const contactTag = (s: string): any => ({ NEW: 'danger', PROCESSING: 'warning', CLOSED: 'info' }[s] || 'info')
+const contactLabel = (s: string): string => ({ NEW: '新留言', PROCESSING: '处理中', CLOSED: '已关闭' }[s] || s)
 
 async function load() {
   loading.value = true
