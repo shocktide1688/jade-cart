@@ -58,7 +58,7 @@ jobs:
 
   # ---------- ② 多架构构建 ----------
   build:
-    needs: test
+    needs: [test, meta]
     strategy:
       fail-fast: false
       matrix:
