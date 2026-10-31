@@ -52,7 +52,7 @@ jobs:
       - name: Install jade-boot to local repo
         run: mvn -q install -DskipTests -f jade-boot/backend/pom.xml
       - name: Run core tests (OrderFlowTest)
-        run: mvn -pl jade-cart-app test -f backend/pom.xml
+        run: mvn test -f backend/pom.xml
         env:
           TEST_DB_URL: jdbc:postgresql://localhost:5432/jade_cart?currentSchema=public
 
