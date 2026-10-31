@@ -22,8 +22,9 @@ const service: AxiosInstance = axios.create({
 service.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
     const userStore = useUserStore()
-    // 登录/注册等公开接口不带旧凭据 (过期 token 会被 JWT filter 拒绝导致 401)
-    const isPublicAuth = config.url?.startsWith('/api/v1/auth/')
+    // 仅登录接口剥凭据: 过期旧 token 会在 HTTP 层被 401 拒绝而阻断登录;
+    // /auth/me /profile 等其余 auth 接口仍需携带 token
+    const isPublicAuth = config.url === '/api/v1/auth/login'
     if (userStore.accessToken && !isPublicAuth) {
       config.headers.Authorization = `Bearer ${userStore.accessToken}`
     }
