@@ -23,4 +23,60 @@
         <module>jade-cart-core</module>
         <module>jade-cart-app</module>
     </modules>
+
+    <!-- ========== 质量门 (绑定 validate 阶段, mvn test 即触发, 违规即失败) ========== -->
+    <build>
+        <plugins>
+            <!-- 格式化闸门: google-java-format AOSP (4 空格缩进, 与现有风格一致)
+                 JDK 16+ 需要 add-exports 参数, 见仓库根 .mvn/jvm.config -->
+            <plugin>
+                <groupId>com.diffplug.spotless</groupId>
+                <artifactId>spotless-maven-plugin</artifactId>
+                <version>2.44.5</version>
+                <configuration>
+                    <java>
+                        <googleJavaFormat>
+                            <version>1.27.0</version>
+                            <style>AOSP</style>
+                        </googleJavaFormat>
+                        <importOrder />
+                        <removeUnusedImports />
+                        <trimTrailingWhitespace />
+                        <endWithNewline />
+                    </java>
+                </configuration>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>check</goal>
+                        </goals>
+                        <phase>validate</phase>
+                    </execution>
+                </executions>
+            </plugin>
+            <!-- 静态分析闸门: PMD 7 quickstart 规则集
+                 (阿里 P3C 停留在 PMD 6, 无法解析 Java 21 record/模式匹配语法, 故用 PMD 7 内置集) -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-pmd-plugin</artifactId>
+                <version>3.27.0</version>
+                <configuration>
+                    <printFailingErrorsToConsole>true</printFailingErrorsToConsole>
+                    <rulesets>
+                        <ruleset>rulesets/java/quickstart.xml</ruleset>
+                    </rulesets>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>pmd-check</id>
+                        <goals>
+                            <goal>pmd</goal>
+                            <goal>check</goal>
+                        </goals>
+                        <phase>validate</phase>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
 </project>

@@ -55,6 +55,18 @@ jobs:
         run: mvn test -f backend/pom.xml
         env:
           TEST_DB_URL: jdbc:postgresql://localhost:5432/jade_cart?currentSchema=public
+      # 质量门: 后端 spotless/PMD 已绑在 mvn test 的 validate 阶段, 违规即失败
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - name: Frontend quality gate (lint + type-check)
+        run: |
+          cd frontend
+          npm ci --silent
+          npm run lint
+          npm run type-check
 
   # ---------- ② 多架构构建 ----------
   build:
