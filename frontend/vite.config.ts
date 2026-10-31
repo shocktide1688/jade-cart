@@ -27,8 +27,8 @@ export default defineConfig(({ mode }) => {
       },
     },
     server: {
-      port: 5173,
-      open: true,
+      port: 5174,
+      host: true, // 监听 0.0.0.0, 允许局域网 IP 访问 (手机/同事电脑联调)
       proxy: {
         '/api': {
           target: env.VITE_API_PROXY_TARGET || 'http://localhost:8090',
