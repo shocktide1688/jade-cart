@@ -69,6 +69,12 @@ const routes: RouteRecordRaw[] = [
         meta: { title: '备份管理', icon: 'Box' },
       },
       {
+        path: 'mall/storefront',
+        name: 'MallStorefront',
+        component: () => import('@/pages/mall/storefront/index.vue'),
+        meta: { title: '店面装修', icon: 'Brush' },
+      },
+      {
         path: 'mall/blog',
         name: 'MallBlog',
         component: () => import('@/pages/mall/blog/index.vue'),

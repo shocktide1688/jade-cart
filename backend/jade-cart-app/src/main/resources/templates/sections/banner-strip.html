@@ -1,0 +1,5 @@
+{#if cfg.href}
+<a class="sec-banner" href="{cfg.href}" style="background:{cfg.bg ?: 'var(--c-primary)'};color:#fff;display:block;text-align:center;padding:12px 20px;border-radius:var(--radius);margin-bottom:8px">{cfg.text}</a>
+{#else}
+<div class="sec-banner" style="background:{cfg.bg ?: 'var(--c-primary)'};color:#fff;text-align:center;padding:12px 20px;border-radius:var(--radius);margin-bottom:8px">{cfg.text}</div>
+{/if}

@@ -1,6 +1,8 @@
-{#storePage title='Home' store=storeName seo=seo baseUrl=baseUrl}
+{#storePage title='Home' store=storeName seo=seo theme=theme baseUrl=baseUrl}
 
 {jsonLd.raw}
+
+{#if sections.isEmpty()}
 
 {#if featured.isEmpty() && latest.isEmpty()}
   <h1>Welcome</h1>
@@ -35,6 +37,12 @@
     </a>
     {/for}
   </div>
+{/if}
+
+{#else}
+
+{#each sections}{it.raw}{/each}
+
 {/if}
 
 {/storePage}

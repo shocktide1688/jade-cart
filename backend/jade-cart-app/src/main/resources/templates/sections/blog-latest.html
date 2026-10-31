@@ -1,0 +1,14 @@
+<section class="sec-blog">
+  {#if cfg.title}<h2>{cfg.title}</h2>{/if}
+  <div class="grid">
+    {#for post in posts}
+    <a class="card blog-card" href="/blog/{post.slug}">
+      {#if post.coverPath}<img src="/media/{post.coverPath}" alt="{post.title}" loading="lazy" style="width:100%;height:140px;object-fit:cover;display:block">{#else}<div class="ph">✎</div>{/if}
+      <div class="body">
+        <div class="date muted" style="font-size:13px;margin-bottom:6px">{post.publishedAt ?: post.updatedAt}</div>
+        <div class="name">{post.title}</div>
+      </div>
+    </a>
+    {/for}
+  </div>
+</section>

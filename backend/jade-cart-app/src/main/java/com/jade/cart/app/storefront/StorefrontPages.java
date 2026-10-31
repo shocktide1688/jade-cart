@@ -103,6 +103,12 @@ public class StorefrontPages {
     SeoJsonLd seoJsonLd;
 
     @Inject
+    com.jade.cart.settings.service.ThemeService themeService;
+
+    @Inject
+    StorefrontService storefrontService;
+
+    @Inject
     @Location("store/blog")
     Template blogTpl;
 
@@ -127,10 +133,11 @@ public class StorefrontPages {
                 .orElseGet(() -> "Shop " + storeName
                         + " — curated products, fast worldwide shipping and easy returns.");
         return Response.ok(home
+                .data("sections", storefrontService.renderHome())
                 .data("featured", featured)
                 .data("latest", latest)
                 .data("storeName", storeName).data("baseUrl", baseUrl)
-                .data("seo", seo(homeDesc, null, false, "website", "/"))
+                .data("theme", themeService.tokens()).data("seo", seo(homeDesc, null, false, "website", "/"))
                 .data("jsonLd", ld(seoJsonLd.website(baseUrl, storeName)))
                 .render()).build();
     }
@@ -160,7 +167,7 @@ public class StorefrontPages {
                 .data("categoryName", categoryName)
                 .data("categories", Category.listActive())
                 .data("storeName", storeName).data("baseUrl", baseUrl)
-                .data("seo", seo(desc, null, false, "website", "/products"))
+                .data("theme", themeService.tokens()).data("seo", seo(desc, null, false, "website", "/products"))
                 .data("jsonLd", ld(seoJsonLd.itemList(baseUrl,
                         catalogService.activeProducts(q, categoryId, 20))))
                 .render()).build();
@@ -191,7 +198,7 @@ public class StorefrontPages {
                 .data("p", view)
                 .data("related", related)
                 .data("storeName", storeName).data("baseUrl", baseUrl)
-                .data("seo", seo(desc, ogImage, false, "product", "/products/" + entity.slug))
+                .data("theme", themeService.tokens()).data("seo", seo(desc, ogImage, false, "product", "/products/" + entity.slug))
                 .data("jsonLd", jsonLd)
                 .render()).build();
     }
@@ -207,7 +214,7 @@ public class StorefrontPages {
                 .data("cart", view)
                 .data("error", error)
                 .data("storeName", storeName).data("baseUrl", baseUrl)
-                .data("seo", seo("Your shopping cart at " + storeName + ".", null, true))
+                .data("theme", themeService.tokens()).data("seo", seo("Your shopping cart at " + storeName + ".", null, true))
                 .render()).build();
     }
 
@@ -219,7 +226,7 @@ public class StorefrontPages {
             return Response.status(Response.Status.NOT_FOUND).entity("Order not found").build();
         }
         return Response.ok(payMock.data("o", order).data("storeName", storeName).data("baseUrl", baseUrl)
-                .data("seo", seo("Complete your payment.", null, true))
+                .data("theme", themeService.tokens()).data("seo", seo("Complete your payment.", null, true))
                 .render()).build();
     }
 
@@ -234,7 +241,7 @@ public class StorefrontPages {
         return Response.ok(payPaypal
                 .data("o", order)
                 .data("paypalOrderId", paypalOrderId == null ? "" : paypalOrderId)
-                .data("seo", seo("Complete your PayPal payment.", null, true))
+                .data("theme", themeService.tokens()).data("seo", seo("Complete your PayPal payment.", null, true))
                 .render()).build();
     }
 
@@ -287,7 +294,7 @@ public class StorefrontPages {
         return Response.ok(blogTpl
                 .data("posts", posts)
                 .data("storeName", storeName).data("baseUrl", baseUrl)
-                .data("seo", seo("Blog — news, guides and stories from " + storeName + ".", null, false, "website", "/blog"))
+                .data("theme", themeService.tokens()).data("seo", seo("Blog — news, guides and stories from " + storeName + ".", null, false, "website", "/blog"))
                 .render()).build();
     }
 
@@ -304,7 +311,7 @@ public class StorefrontPages {
                     return Response.ok(blogPostTpl
                             .data("post", post)
                             .data("storeName", storeName).data("baseUrl", baseUrl)
-                            .data("seo", seo(desc, ogImage, false, "article", "/blog/" + post.slug))
+                            .data("theme", themeService.tokens()).data("seo", seo(desc, ogImage, false, "article", "/blog/" + post.slug))
                             .data("jsonLd", ld(seoJsonLd.blogPosting(post, baseUrl, storeName)))
                             .render()).build();
                 })
@@ -319,7 +326,7 @@ public class StorefrontPages {
                 .map(page -> Response.ok(contentTpl
                         .data("page", page)
                         .data("storeName", storeName).data("baseUrl", baseUrl)
-                        .data("seo", seo(SeoExtensions.teaser(page.bodyMarkdown, 160), null, false, "website", "/pages/" + page.slug))
+                        .data("theme", themeService.tokens()).data("seo", seo(SeoExtensions.teaser(page.bodyMarkdown, 160), null, false, "website", "/pages/" + page.slug))
                         .render()).build())
                 .orElseGet(() -> Response.status(Response.Status.NOT_FOUND)
                         .entity("Page not found").build());
@@ -332,7 +339,7 @@ public class StorefrontPages {
                 .data("sent", false)
                 .data("error", (String) null)
                 .data("storeName", storeName).data("baseUrl", baseUrl)
-                .data("seo", seo("Contact " + storeName + " — we reply within one business day.", null, false, "website", "/contact"))
+                .data("theme", themeService.tokens()).data("seo", seo("Contact " + storeName + " — we reply within one business day.", null, false, "website", "/contact"))
                 .render()).build();
     }
 
@@ -352,19 +359,19 @@ public class StorefrontPages {
                 return Response.ok(contactTpl.data("sent", false)
                         .data("error", "Please provide a valid email and message.")
                         .data("storeName", storeName).data("baseUrl", baseUrl)
-                        .data("seo", seo("Contact " + storeName + ".", null, true))
+                        .data("theme", themeService.tokens()).data("seo", seo("Contact " + storeName + ".", null, true))
                         .render()).build();
             }
             contactService.submit(name, email, topic == null ? "general" : topic, message, "web");
             return Response.ok(contactTpl.data("sent", true)
                     .data("storeName", storeName).data("baseUrl", baseUrl)
-                    .data("seo", seo("Message sent — thank you!", null, true))
+                    .data("theme", themeService.tokens()).data("seo", seo("Message sent — thank you!", null, true))
                     .render()).build();
         } catch (Exception e) {
             return Response.ok(contactTpl.data("sent", false)
                     .data("error", "Failed to send, please try later.")
                     .data("storeName", storeName).data("baseUrl", baseUrl)
-                    .data("seo", seo("Contact " + storeName + ".", null, true))
+                    .data("theme", themeService.tokens()).data("seo", seo("Contact " + storeName + ".", null, true))
                     .render()).build();
         }
     }
@@ -374,7 +381,7 @@ public class StorefrontPages {
     public Response orderPage(@PathParam("publicId") String publicId) {
         return Order.byPublicId(publicId)
                 .map(o -> Response.ok(orderTpl.data("o", orderService.toView(o)).data("storeName", storeName).data("baseUrl", baseUrl)
-                        .data("seo", seo("Order " + o.orderNumber + " status.", null, true))
+                        .data("theme", themeService.tokens()).data("seo", seo("Order " + o.orderNumber + " status.", null, true))
                         .render()).build())
                 .orElseGet(() -> Response.status(Response.Status.NOT_FOUND)
                         .entity("Order not found").build());

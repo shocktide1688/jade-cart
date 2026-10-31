@@ -76,6 +76,62 @@
           <el-alert type="warning" :closable="false" show-icon
                     title="安全" description="所有密钥 AES-256-GCM 加密入库, 界面不回显明文。" />
         </el-tab-pane>
+
+        <!-- 店面主题 -->
+        <el-tab-pane label="店面主题" name="theme">
+          <el-form label-width="120" style="max-width: 720px" v-loading="themeLoading">
+            <el-form-item label="预设主题">
+              <div style="display:flex;gap:12px;flex-wrap:wrap">
+                <div v-for="p in themeInfo.presets" :key="p.name"
+                     @click="themeForm.preset = p.name"
+                     :style="{ border: themeForm.preset === p.name ? '2px solid #409eff' : '1px solid #ddd',
+                               borderRadius: '8px', padding: '10px 14px', cursor: 'pointer', minWidth: '110px' }">
+                  <div style="font-weight:600;text-transform:capitalize">{{ p.name }}</div>
+                  <div style="display:flex;gap:4px;margin-top:6px">
+                    <span :style="{ width: '18px', height: '18px', borderRadius: '4px', background: p.primary, display: 'inline-block' }" />
+                    <span :style="{ width: '18px', height: '18px', borderRadius: '4px', background: p.bg, border: '1px solid #eee', display: 'inline-block' }" />
+                    <span :style="{ width: '18px', height: '18px', borderRadius: '4px', background: p.ink, display: 'inline-block' }" />
+                  </div>
+                </div>
+              </div>
+            </el-form-item>
+            <el-form-item label="主色覆盖">
+              <el-color-picker v-model="themeForm.primary" show-alpha />
+              <span class="muted" style="margin-left:10px;font-size:12px">留空 = 跟随预设</span>
+            </el-form-item>
+            <el-form-item label="背景色覆盖">
+              <el-color-picker v-model="themeForm.bg" show-alpha />
+            </el-form-item>
+            <el-form-item label="圆角">
+              <el-slider v-model="themeForm.radiusNum" :min="0" :max="24" style="max-width:280px" />
+            </el-form-item>
+            <el-form-item label="字体">
+              <el-radio-group v-model="themeForm.font">
+                <el-radio value="sans">无衬线</el-radio>
+                <el-radio value="serif">衬线</el-radio>
+                <el-radio value="mono">等宽</el-radio>
+              </el-radio-group>
+            </el-form-item>
+            <el-form-item label="Logo">
+              <div style="display:flex;gap:12px;align-items:center">
+                <img v-if="themeForm.logoPath" :src="'/media/' + themeForm.logoPath"
+                     style="height:30px;border:1px solid #eee;border-radius:4px" />
+                <el-upload :show-file-list="false" accept="image/png,image/jpeg,image/webp,image/svg+xml"
+                           :auto-upload="false" :on-change="uploadLogo">
+                  <el-button :loading="logoUploading">{{ themeForm.logoPath ? '更换' : '上传' }}</el-button>
+                </el-upload>
+                <el-button v-if="themeForm.logoPath" link type="danger" @click="themeForm.logoPath = ''">移除</el-button>
+              </div>
+            </el-form-item>
+            <el-form-item>
+              <el-button type="primary" :loading="themeSaving" @click="saveTheme">保存主题 (店面即时生效)</el-button>
+            </el-form-item>
+            <el-form-item label="实时预览">
+              <iframe :src="storefrontUrl" :key="previewKey"
+                      style="width:100%;height:420px;border:1px solid #ddd;border-radius:8px" />
+            </el-form-item>
+          </el-form>
+        </el-tab-pane>
       </el-tabs>
     </el-card>
   </div>
@@ -141,5 +197,58 @@ async function savePayment() {
   } finally { saving.value = false }
 }
 
-onMounted(load)
+// ---------- 店面主题 ----------
+const themeInfo = ref<any>({ presets: [] })
+const themeLoading = ref(false)
+const themeSaving = ref(false)
+const logoUploading = ref(false)
+const previewKey = ref(0)
+const storefrontUrl = 'http://localhost:8090/'
+const themeForm = reactive({
+  preset: 'minimal', primary: '', bg: '', radiusNum: 8, font: 'sans', logoPath: '',
+})
+
+async function loadTheme() {
+  themeLoading.value = true
+  try {
+    const res: any = await request.get('/api/v1/theme')
+    themeInfo.value = res.data.data
+    const o = res.data.data.overrides || {}
+    themeForm.preset = res.data.data.preset || 'minimal'
+    themeForm.primary = o.primary || ''
+    themeForm.bg = o.bg || ''
+    themeForm.radiusNum = o.radius ? parseInt(o.radius) : 8
+    themeForm.font = o.font || 'sans'
+    themeForm.logoPath = (res.data.data.tokens || {}).logoPath || ''
+  } finally { themeLoading.value = false }
+}
+
+async function uploadLogo(file: any) {
+  logoUploading.value = true
+  try {
+    const fd = new FormData()
+    fd.append('file', file.raw)
+    const res: any = await request.post('/api/v1/media/upload', fd, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    })
+    themeForm.logoPath = res.data.data.path
+  } finally { logoUploading.value = false }
+}
+
+async function saveTheme() {
+  themeSaving.value = true
+  try {
+    const overrides: Record<string, string> = {}
+    if (themeForm.primary) overrides.primary = themeForm.primary
+    if (themeForm.bg) overrides.bg = themeForm.bg
+    overrides.radius = String(themeForm.radiusNum)
+    overrides.font = themeForm.font
+    await request.put('/api/v1/theme', { preset: themeForm.preset, overrides })
+    ElMessage.success('主题已保存, 店面即时生效')
+    previewKey.value++
+    loadTheme()
+  } finally { themeSaving.value = false }
+}
+
+onMounted(() => { load(); loadTheme() })
 </script>

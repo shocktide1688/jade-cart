@@ -1,0 +1,8 @@
+<section class="sec-cats">
+  {#if cfg.title}<h2>{cfg.title}</h2>{/if}
+  <div style="display:flex;flex-wrap:wrap;gap:12px">
+    {#for c in categories}
+    <a class="badge" href="/products?category={c.slug}" style="font-size:15px;padding:10px 18px;border-radius:var(--radius)">{c.name}</a>
+    {/for}
+  </div>
+</section>

@@ -1,0 +1,8 @@
+<section class="sec-hero {cfg.align ?: 'center'}">
+  {#if cfg.image}<img class="sec-hero-img" src="/media/{cfg.image}" alt="{cfg.headline ?: ''}">{/if}
+  <div class="sec-hero-body">
+    <h1>{cfg.headline ?: ''}</h1>
+    {#if cfg.sub}<p class="muted">{cfg.sub}</p>{/if}
+    {#if cfg.ctaText}<a class="btn" href="{cfg.ctaHref ?: '/products'}">{cfg.ctaText}</a>{/if}
+  </div>
+</section>

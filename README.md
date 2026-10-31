@@ -41,6 +41,26 @@ jade-admin V4~V8(自带) + mail V14 + ldap-client V15 + **cart V16(商品) V17(�
 ### 迁移版本号约定 (重要)
 底座 jade-boot 占用 V1~V16 (ldap-client V16 起), 业务应用迁移从 **V100** 开始 (V100~V105), 避免底座演进撞号。
 
+## 云原生镜像 (GHCR)
+
+CI (`release.yml`) 每次 push main / 打 tag 自动: 核心测试 → 双架构构建 (amd64/arm64 原生 runner) → GHCR 多架构 manifest。
+
+| 镜像 | 说明 |
+|---|---|
+| `ghcr.io/shocktide1688/jade-cart:latest` | **all-in-one 单容器**（JVM 后端 + nginx SPA，端口 8080） |
+| `ghcr.io/shocktide1688/jade-cart:latest-api` | 纯后端 JVM（8090） |
+| `sha-<sha>-aio` / `sha-<sha>-api` | 每次提交的固定版本 |
+
+一键自托管（数据库外置时）：
+```bash
+docker run -d -p 8080:8080 -v cart-data:/app/data \
+  -e DB_URL=jdbc:postgresql://<host>:5432/jade_cart \
+  -e REDIS_URL=redis://<host>:6379 \
+  ghcr.io/shocktide1688/jade-cart:latest
+```
+JWT/Crypto 密钥未提供时自动生成并持久化到 `/app/data/.env`（重启不丢）。
+完整栈（含数据库）用 `docker-compose.jade-cart.yml`。
+
 ## 测试
 
 ```bash

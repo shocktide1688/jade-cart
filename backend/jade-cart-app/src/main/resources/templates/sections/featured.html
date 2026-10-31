@@ -1,0 +1,14 @@
+<section class="sec-featured">
+  {#if cfg.title}<h2>{cfg.title}</h2>{/if}
+  <div class="grid">
+    {#for p in items}
+    <a class="card" href="/products/{p.slug}">
+      {#if p.mainImagePath}<img src="/media/{p.mainImagePath}" alt="{p.title}" loading="lazy" style="width:100%;height:160px;object-fit:cover;display:block">{#else}<div class="ph">✦</div>{/if}
+      <div class="body">
+        <div class="name">{p.title}</div>
+        <div class="price">from {p.minPriceCents.money}</div>
+      </div>
+    </a>
+    {/for}
+  </div>
+</section>

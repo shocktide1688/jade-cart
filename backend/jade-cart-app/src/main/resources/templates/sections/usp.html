@@ -1,0 +1,11 @@
+<section class="sec-usp">
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:20px">
+    {#for item in items}
+    <div style="text-align:center;padding:16px;border:1px solid var(--c-line);border-radius:var(--radius)">
+      <div style="font-size:28px">{item.icon}</div>
+      <div style="font-weight:600;margin:6px 0">{item.title}</div>
+      <div class="muted" style="font-size:14px">{item.text}</div>
+    </div>
+    {/for}
+  </div>
+</section>
