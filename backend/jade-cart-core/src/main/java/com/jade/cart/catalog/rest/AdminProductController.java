@@ -37,7 +37,8 @@ public class AdminProductController {
     CatalogService catalogService;
 
     public record CreateReq(String title, String slug, String description, String seoDescription,
-                            String status, Boolean featured, Long defaultPriceCents, String defaultSku) {}
+                            String status, Boolean featured, Long defaultPriceCents, String defaultSku,
+                            String mainImagePath) {}
 
     public record UpdateReq(String title, String slug, String description, String seoDescription,
                             String status, Boolean featured, String mainImagePath) {}
@@ -76,7 +77,8 @@ public class AdminProductController {
         }
         return R.ok(catalogService.toView(catalogService.createProduct(
                 req.title(), req.slug(), req.description(), req.seoDescription(),
-                req.status(), req.featured(), req.defaultPriceCents(), req.defaultSku())));
+                req.status(), req.featured(), req.defaultPriceCents(), req.defaultSku(),
+                req.mainImagePath())));
     }
 
     @GET

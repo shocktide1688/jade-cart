@@ -123,7 +123,7 @@ public class CatalogService {
     @Transactional
     public Product createProduct(String title, String slug, String description,
                                  String seoDescription, String status, Boolean featured,
-                                 Long defaultPriceCents, String defaultSku) {
+                                 Long defaultPriceCents, String defaultSku, String mainImagePath) {
         Product product = new Product();
         product.title = title;
         product.slug = uniqueSlug(slug, title, s -> Product.findBySlug(s) != null);
@@ -131,6 +131,7 @@ public class CatalogService {
         product.seoDescription = seoDescription;
         product.status = validStatus(status, Product.STATUS_DRAFT);
         product.featured = Boolean.TRUE.equals(featured);
+        product.mainImagePath = (mainImagePath == null || mainImagePath.isBlank()) ? null : mainImagePath;
         product.persist();
 
         // 无变体商品自动带一条默认变体 (kartwo 语义: 商品必有 >=1 变体)

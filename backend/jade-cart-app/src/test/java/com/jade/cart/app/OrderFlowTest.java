@@ -72,7 +72,7 @@ class OrderFlowTest {
     @Transactional
     Long seedProduct(int stock) {
         Product p = catalogService.createProduct("Test Tee " + System.nanoTime(), null,
-                null, null, Product.STATUS_ACTIVE, false, 1900L, null);
+                null, null, Product.STATUS_ACTIVE, false, 1900L, null, null);
         Variant v = Variant.listByProduct(p.id).get(0);
         // createVariant 已自动建库存行, 这里只改数量
         catalogService.setInventory(v.id, stock);
