@@ -112,14 +112,8 @@ jobs:
           push: true
           provenance: false
           tags: ${{ env.IMAGE }}:${{ needs.meta.outputs.version }}-aio-${{ matrix.suffix }}
-      - name: Export digests (文件名不带冒号)
-        run: |
-          mkdir -p /tmp/digests
-          D="${{ steps.build.outputs.digest }}"
-          D="${D#sha256:}"
-          echo "$D" > "/tmp/digests/${{ matrix.suffix }}-aio.txt"
-      - uses: docker/build-push-action@v6
-        id: build-api
+      - name: Build & push api (per-arch)
+        uses: docker/build-push-action@v6
         with:
           context: .
           file: docker/Dockerfile
@@ -128,17 +122,6 @@ jobs:
           push: true
           provenance: false
           tags: ${{ env.IMAGE }}:${{ needs.meta.outputs.version }}-api-${{ matrix.suffix }}
-      - name: Export api digest
-        run: |
-          D="${{ steps.build-api.outputs.digest }}"
-          D="${D#sha256:}"
-          echo "$D" > "/tmp/digests/${{ matrix.suffix }}-api.txt"
-      - uses: actions/upload-artifact@v4
-        with:
-          name: digests-${{ matrix.suffix }}
-          path: /tmp/digests/*.txt
-          if-no-files-found: error
-          retention-days: 1
 
   # ---------- ③ 合成多架构 manifest ----------
   merge:
@@ -148,16 +131,6 @@ jobs:
       contents: read
       packages: write
     steps:
-      - uses: actions/download-artifact@v4
-        with:
-          path: /tmp/digests-artifacts
-      - name: Assemble digest list (cat 拼接)
-        run: |
-          mkdir -p /tmp/digests
-          find /tmp/digests-artifacts -name '*.txt' -exec cat {} \; | while read -r d; do
-            [ -n "$d" ] && touch "/tmp/digests/$d"
-          done
-          ls /tmp/digests | wc -l
       - uses: docker/setup-buildx-action@v3
       - uses: docker/login-action@v3
         with:
@@ -165,27 +138,19 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
       - name: Create multi-arch manifest (all-in-one)
-        working-directory: /tmp/digests
         run: |
-          ARGS=""
-          while read -r d; do
-            ARGS="$ARGS ${{ env.IMAGE }}@sha256:$d"
-          done < <(ls *-aio.txt)
           docker buildx imagetools create \
             -t ${{ env.IMAGE }}:${{ needs.meta.outputs.version }}-aio \
             ${{ needs.meta.outputs.latest == 'true' && format('-t {0}:latest', env.IMAGE) || '' }} \
-            $ARGS
+            ${{ env.IMAGE }}:${{ needs.meta.outputs.version }}-aio-amd64 \
+            ${{ env.IMAGE }}:${{ needs.meta.outputs.version }}-aio-arm64
       - name: Create multi-arch manifest (api)
-        working-directory: /tmp/digests
         run: |
-          ARGS=""
-          while read -r d; do
-            ARGS="$ARGS ${{ env.IMAGE }}@sha256:$d"
-          done < <(ls *-api.txt)
           docker buildx imagetools create \
             -t ${{ env.IMAGE }}:${{ needs.meta.outputs.version }}-api \
             ${{ needs.meta.outputs.latest == 'true' && format('-t {0}:latest-api', env.IMAGE) || '' }} \
-            $ARGS
+            ${{ env.IMAGE }}:${{ needs.meta.outputs.version }}-api-amd64 \
+            ${{ env.IMAGE }}:${{ needs.meta.outputs.version }}-api-arm64
 
   # ---------- ⓪ 版本号计算 ----------
   meta:
