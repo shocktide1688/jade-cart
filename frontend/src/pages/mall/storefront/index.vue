@@ -7,30 +7,91 @@
           <template #header>
             <div style="display:flex;justify-content:space-between;align-items:center">
               <span>首页区块编排</span>
-              <el-select v-model="addType" placeholder="添加区块" style="width:160px" @change="addSection">
-                <el-option v-for="t in typeLabels" :key="t.value" :label="t.label" :value="t.value" />
+              <el-select
+                v-model="addType"
+                placeholder="添加区块"
+                style="width:160px"
+                @change="addSection"
+              >
+                <el-option
+                  v-for="t in typeLabels"
+                  :key="t.value"
+                  :label="t.label"
+                  :value="t.value"
+                />
               </el-select>
             </div>
           </template>
-          <el-empty v-if="sections.length === 0" description="暂无区块 — 添加后首页按此顺序渲染 (空则回退内置布局)" />
+          <el-empty
+            v-if="sections.length === 0"
+            description="暂无区块 — 添加后首页按此顺序渲染 (空则回退内置布局)"
+          />
           <transition-group name="list">
-            <div v-for="(s, i) in sections" :key="i"
-                 style="display:flex;align-items:center;gap:8px;border:1px solid #e6e6e6;border-radius:8px;padding:10px 12px;margin-bottom:8px">
+            <div
+              v-for="(s, i) in sections"
+              :key="i"
+              style="display:flex;align-items:center;gap:8px;border:1px solid #e6e6e6;border-radius:8px;padding:10px 12px;margin-bottom:8px"
+            >
               <span style="cursor:grab;color:#999">≡</span>
               <strong style="min-width:90px">{{ typeLabels.find(t => t.value === s.type)?.label }}</strong>
-              <span class="muted" style="flex:1;font-size:12px">{{ summary(s) }}</span>
-              <el-switch v-model="s.visible" inline-prompt active-text="显" inactive-text="隐" size="small" />
-              <el-button link :disabled="i === 0" @click="move(i, -1)">↑</el-button>
-              <el-button link :disabled="i === sections.length - 1" @click="move(i, 1)">↓</el-button>
-              <el-button link type="primary" @click="editIndex = i">配置</el-button>
-              <el-popconfirm title="删除该区块?" @confirm="sections.splice(i, 1)">
-                <template #reference><el-button link type="danger">删</el-button></template>
+              <span
+                class="muted"
+                style="flex:1;font-size:12px"
+              >{{ summary(s) }}</span>
+              <el-switch
+                v-model="s.visible"
+                inline-prompt
+                active-text="显"
+                inactive-text="隐"
+                size="small"
+              />
+              <el-button
+                link
+                :disabled="i === 0"
+                @click="move(i, -1)"
+              >
+                ↑
+              </el-button>
+              <el-button
+                link
+                :disabled="i === sections.length - 1"
+                @click="move(i, 1)"
+              >
+                ↓
+              </el-button>
+              <el-button
+                link
+                type="primary"
+                @click="editIndex = i"
+              >
+                配置
+              </el-button>
+              <el-popconfirm
+                title="删除该区块?"
+                @confirm="sections.splice(i, 1)"
+              >
+                <template #reference>
+                  <el-button
+                    link
+                    type="danger"
+                  >
+                    删
+                  </el-button>
+                </template>
               </el-popconfirm>
             </div>
           </transition-group>
           <div style="margin-top:16px;display:flex;gap:8px">
-            <el-button type="primary" :loading="saving" @click="save">保存编排</el-button>
-            <el-button @click="previewKey++">刷新预览</el-button>
+            <el-button
+              type="primary"
+              :loading="saving"
+              @click="save"
+            >
+              保存编排
+            </el-button>
+            <el-button @click="previewKey++">
+              刷新预览
+            </el-button>
           </div>
         </el-card>
       </el-col>
@@ -38,80 +99,186 @@
       <!-- 右: 预览 + 配置 -->
       <el-col :span="13">
         <el-card v-if="editing">
-          <template #header><span>配置: {{ typeLabels.find(t => t.value === editing.type)?.label }}</span></template>
+          <template #header>
+            <span>配置: {{ typeLabels.find(t => t.value === editing.type)?.label }}</span>
+          </template>
           <el-form label-width="90">
             <!-- hero -->
             <template v-if="editing.type === 'hero'">
-              <el-form-item label="标题"><el-input v-model="editing.config.headline" /></el-form-item>
-              <el-form-item label="副标题"><el-input v-model="editing.config.sub" /></el-form-item>
+              <el-form-item label="标题">
+                <el-input v-model="editing.config.headline" />
+              </el-form-item>
+              <el-form-item label="副标题">
+                <el-input v-model="editing.config.sub" />
+              </el-form-item>
               <el-form-item label="背景图">
                 <div style="display:flex;gap:8px;align-items:center">
-                  <img v-if="editing.config.image" :src="'/media/' + editing.config.image" style="height:40px;border-radius:4px" />
-                  <el-upload :show-file-list="false" accept="image/*" :auto-upload="false" :on-change="uploadHeroImage">
-                    <el-button size="small">上传</el-button>
+                  <img
+                    v-if="editing.config.image"
+                    :src="'/media/' + editing.config.image"
+                    style="height:40px;border-radius:4px"
+                  >
+                  <el-upload
+                    :show-file-list="false"
+                    accept="image/*"
+                    :auto-upload="false"
+                    :on-change="uploadHeroImage"
+                  >
+                    <el-button size="small">
+                      上传
+                    </el-button>
                   </el-upload>
                 </div>
               </el-form-item>
-              <el-form-item label="按钮文字"><el-input v-model="editing.config.ctaText" placeholder="Shop now" /></el-form-item>
-              <el-form-item label="按钮链接"><el-input v-model="editing.config.ctaHref" placeholder="/products" /></el-form-item>
+              <el-form-item label="按钮文字">
+                <el-input
+                  v-model="editing.config.ctaText"
+                  placeholder="Shop now"
+                />
+              </el-form-item>
+              <el-form-item label="按钮链接">
+                <el-input
+                  v-model="editing.config.ctaHref"
+                  placeholder="/products"
+                />
+              </el-form-item>
               <el-form-item label="对齐">
                 <el-radio-group v-model="editing.config.align">
-                  <el-radio value="center">居中</el-radio>
-                  <el-radio value="left">居左</el-radio>
+                  <el-radio value="center">
+                    居中
+                  </el-radio>
+                  <el-radio value="left">
+                    居左
+                  </el-radio>
                 </el-radio-group>
               </el-form-item>
             </template>
 
             <!-- featured -->
             <template v-if="editing.type === 'featured'">
-              <el-form-item label="标题"><el-input v-model="editing.config.title" placeholder="Featured" /></el-form-item>
+              <el-form-item label="标题">
+                <el-input
+                  v-model="editing.config.title"
+                  placeholder="Featured"
+                />
+              </el-form-item>
               <el-form-item label="商品来源">
                 <el-radio-group v-model="editing.config.source">
-                  <el-radio value="featured">首页精选</el-radio>
-                  <el-radio value="latest">最新上架</el-radio>
-                  <el-radio value="category:">按分类</el-radio>
+                  <el-radio value="featured">
+                    首页精选
+                  </el-radio>
+                  <el-radio value="latest">
+                    最新上架
+                  </el-radio>
+                  <el-radio value="category:">
+                    按分类
+                  </el-radio>
                 </el-radio-group>
               </el-form-item>
-              <el-form-item v-if="(editing.config.source || '').startsWith('category')" label="分类 slug">
-                <el-input v-model="editing.config.source" :placeholder="editing.config.source === 'category:' ? '如 category:apparel' : ''"
-                          :disabled="!editing.config.source.startsWith('category:')" />
+              <el-form-item
+                v-if="(editing.config.source || '').startsWith('category')"
+                label="分类 slug"
+              >
+                <el-input
+                  v-model="editing.config.source"
+                  :placeholder="editing.config.source === 'category:' ? '如 category:apparel' : ''"
+                  :disabled="!editing.config.source.startsWith('category:')"
+                />
               </el-form-item>
               <el-form-item label="数量">
-                <el-input-number v-model="editing.config.limit" :min="1" :max="24" />
+                <el-input-number
+                  v-model="editing.config.limit"
+                  :min="1"
+                  :max="24"
+                />
               </el-form-item>
             </template>
 
             <!-- category_grid / blog_latest -->
             <template v-if="['category_grid', 'blog_latest'].includes(editing.type)">
-              <el-form-item label="标题"><el-input v-model="editing.config.title" /></el-form-item>
-              <el-form-item label="数量"><el-input-number v-model="editing.config.limit" :min="1" :max="12" /></el-form-item>
+              <el-form-item label="标题">
+                <el-input v-model="editing.config.title" />
+              </el-form-item>
+              <el-form-item label="数量">
+                <el-input-number
+                  v-model="editing.config.limit"
+                  :min="1"
+                  :max="12"
+                />
+              </el-form-item>
             </template>
 
             <!-- usp -->
             <template v-if="editing.type === 'usp'">
-              <div v-for="(item, i) in editing.config.items" :key="i"
-                   style="display:flex;gap:8px;margin-bottom:8px">
-                <el-input v-model="item.icon" style="width:70px" placeholder="🚚" />
-                <el-input v-model="item.title" style="width:140px" placeholder="标题" />
-                <el-input v-model="item.text" placeholder="说明" />
-                <el-button link type="danger" @click="editing.config.items.splice(i, 1)">删</el-button>
+              <div
+                v-for="(item, i) in editing.config.items"
+                :key="i"
+                style="display:flex;gap:8px;margin-bottom:8px"
+              >
+                <el-input
+                  v-model="item.icon"
+                  style="width:70px"
+                  placeholder="🚚"
+                />
+                <el-input
+                  v-model="item.title"
+                  style="width:140px"
+                  placeholder="标题"
+                />
+                <el-input
+                  v-model="item.text"
+                  placeholder="说明"
+                />
+                <el-button
+                  link
+                  type="danger"
+                  @click="editing.config.items.splice(i, 1)"
+                >
+                  删
+                </el-button>
               </div>
-              <el-button size="small" @click="editing.config.items.push({ icon: '✦', title: '', text: '' })">加一条</el-button>
+              <el-button
+                size="small"
+                @click="editing.config.items.push({ icon: '✦', title: '', text: '' })"
+              >
+                加一条
+              </el-button>
             </template>
 
             <!-- rich_text -->
             <template v-if="editing.type === 'rich_text'">
-              <el-form-item label="标题"><el-input v-model="editing.config.title" /></el-form-item>
+              <el-form-item label="标题">
+                <el-input v-model="editing.config.title" />
+              </el-form-item>
               <el-form-item label="Markdown">
-                <el-input v-model="editing.config.markdown" type="textarea" :rows="8" />
+                <el-input
+                  v-model="editing.config.markdown"
+                  type="textarea"
+                  :rows="8"
+                />
               </el-form-item>
             </template>
 
             <!-- banner_strip -->
             <template v-if="editing.type === 'banner_strip'">
-              <el-form-item label="文案"><el-input v-model="editing.config.text" placeholder="Summer Sale — 20% off" /></el-form-item>
-              <el-form-item label="背景色"><el-color-picker v-model="editing.config.bg" /><span class="muted" style="margin-left:8px;font-size:12px">留空 = 主题主色</span></el-form-item>
-              <el-form-item label="链接"><el-input v-model="editing.config.href" placeholder="可选" /></el-form-item>
+              <el-form-item label="文案">
+                <el-input
+                  v-model="editing.config.text"
+                  placeholder="Summer Sale — 20% off"
+                />
+              </el-form-item>
+              <el-form-item label="背景色">
+                <el-color-picker v-model="editing.config.bg" /><span
+                  class="muted"
+                  style="margin-left:8px;font-size:12px"
+                >留空 = 主题主色</span>
+              </el-form-item>
+              <el-form-item label="链接">
+                <el-input
+                  v-model="editing.config.href"
+                  placeholder="可选"
+                />
+              </el-form-item>
             </template>
           </el-form>
         </el-card>
@@ -120,14 +287,24 @@
           <template #header>
             <div style="display:flex;justify-content:space-between;align-items:center">
               <span>店面预览</span>
-              <el-radio-group v-model="previewWidth" size="small">
-                <el-radio-button value="100%">Desktop</el-radio-button>
-                <el-radio-button value="390px">Mobile</el-radio-button>
+              <el-radio-group
+                v-model="previewWidth"
+                size="small"
+              >
+                <el-radio-button value="100%">
+                  Desktop
+                </el-radio-button>
+                <el-radio-button value="390px">
+                  Mobile
+                </el-radio-button>
               </el-radio-group>
             </div>
           </template>
-          <iframe :src="'http://localhost:8090/'" :key="previewKey"
-                  :style="{ width: previewWidth, height: '560px', border: '1px solid #ddd', borderRadius: '8px', margin: '0 auto', display: 'block' }" />
+          <iframe
+            :key="previewKey"
+            :src="'http://localhost:8090/'"
+            :style="{ width: previewWidth, height: '560px', border: '1px solid #ddd', borderRadius: '8px', margin: '0 auto', display: 'block' }"
+          />
         </el-card>
       </el-col>
     </el-row>

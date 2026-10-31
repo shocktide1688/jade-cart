@@ -4,23 +4,67 @@
       <template #header>
         <div style="display:flex;justify-content:space-between;align-items:center">
           <span>备份管理</span>
-          <el-button type="primary" :loading="running" @click="run">立即备份</el-button>
+          <el-button
+            type="primary"
+            :loading="running"
+            @click="run"
+          >
+            立即备份
+          </el-button>
         </div>
       </template>
-      <el-alert type="info" :closable="false" show-icon style="margin-bottom:12px"
-                title="备份内容: manifest + 全部商城表 JSON 快照 + 媒体文件; 每日 04:00 自动备份, 本地保留最近 7 份。" />
-      <el-table :data="rows" v-loading="loading" border>
-        <el-table-column prop="filename" label="文件" min-width="260" />
-        <el-table-column label="大小" width="120">
-          <template #default="{ row }">{{ (row.sizeBytes / 1024).toFixed(1) }} KB</template>
-        </el-table-column>
-        <el-table-column label="操作" width="160" fixed="right">
+      <el-alert
+        type="info"
+        :closable="false"
+        show-icon
+        style="margin-bottom:12px"
+        title="备份内容: manifest + 全部商城表 JSON 快照 + 媒体文件; 每日 04:00 自动备份, 本地保留最近 7 份。"
+      />
+      <el-table
+        v-loading="loading"
+        :data="rows"
+        border
+      >
+        <el-table-column
+          prop="filename"
+          label="文件"
+          min-width="260"
+        />
+        <el-table-column
+          label="大小"
+          width="120"
+        >
           <template #default="{ row }">
-            <a :href="'/api/v1/backups/' + row.filename" target="_blank">
-              <el-button link type="primary">下载</el-button>
+            {{ (row.sizeBytes / 1024).toFixed(1) }} KB
+          </template>
+        </el-table-column>
+        <el-table-column
+          label="操作"
+          width="160"
+          fixed="right"
+        >
+          <template #default="{ row }">
+            <a
+              :href="'/api/v1/backups/' + row.filename"
+              target="_blank"
+            >
+              <el-button
+                link
+                type="primary"
+              >下载</el-button>
             </a>
-            <el-popconfirm title="确定删除该备份?" @confirm="remove(row.filename)">
-              <template #reference><el-button link type="danger">删除</el-button></template>
+            <el-popconfirm
+              title="确定删除该备份?"
+              @confirm="remove(row.filename)"
+            >
+              <template #reference>
+                <el-button
+                  link
+                  type="danger"
+                >
+                  删除
+                </el-button>
+              </template>
             </el-popconfirm>
           </template>
         </el-table-column>

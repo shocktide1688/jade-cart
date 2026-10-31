@@ -45,13 +45,25 @@ onMounted(load)
   <el-row :gutter="16">
     <el-col :span="12">
       <el-card>
-        <template #header><span>个人资料</span></template>
-        <el-form :model="profile" label-width="100" label-position="right">
+        <template #header>
+          <span>个人资料</span>
+        </template>
+        <el-form
+          :model="profile"
+          label-width="100"
+          label-position="right"
+        >
           <el-form-item label="ID">
-            <el-input v-model="profile.id" disabled />
+            <el-input
+              v-model="profile.id"
+              disabled
+            />
           </el-form-item>
           <el-form-item label="用户名">
-            <el-input v-model="profile.username" disabled />
+            <el-input
+              v-model="profile.username"
+              disabled
+            />
           </el-form-item>
           <el-form-item label="昵称">
             <el-input v-model="profile.nickname" />
@@ -68,10 +80,20 @@ onMounted(load)
             </el-tag>
           </el-form-item>
           <el-form-item label="注册时间">
-            <el-input v-model="profile.createdAt" disabled />
+            <el-input
+              v-model="profile.createdAt"
+              disabled
+            />
           </el-form-item>
           <el-form-item>
-            <el-button type="primary" :loading="saving" @click="saveProfile" style="background: #00a86b; border-color: #00a86b;">保存</el-button>
+            <el-button
+              type="primary"
+              :loading="saving"
+              style="background: #00a86b; border-color: #00a86b;"
+              @click="saveProfile"
+            >
+              保存
+            </el-button>
           </el-form-item>
         </el-form>
       </el-card>
@@ -79,19 +101,43 @@ onMounted(load)
 
     <el-col :span="12">
       <el-card>
-        <template #header><span>修改密码</span></template>
-        <el-form :model="pwdForm" label-width="100" label-position="right">
+        <template #header>
+          <span>修改密码</span>
+        </template>
+        <el-form
+          :model="pwdForm"
+          label-width="100"
+          label-position="right"
+        >
           <el-form-item label="原密码">
-            <el-input v-model="pwdForm.old" type="password" show-password />
+            <el-input
+              v-model="pwdForm.old"
+              type="password"
+              show-password
+            />
           </el-form-item>
           <el-form-item label="新密码">
-            <el-input v-model="pwdForm.new" type="password" show-password />
+            <el-input
+              v-model="pwdForm.new"
+              type="password"
+              show-password
+            />
           </el-form-item>
           <el-form-item>
-            <el-button type="warning" :loading="savingPwd" @click="changePassword">修改密码</el-button>
+            <el-button
+              type="warning"
+              :loading="savingPwd"
+              @click="changePassword"
+            >
+              修改密码
+            </el-button>
           </el-form-item>
         </el-form>
-        <el-alert type="info" :closable="false" show-icon>
+        <el-alert
+          type="info"
+          :closable="false"
+          show-icon
+        >
           <p>修改密码后需用新密码重新登录</p>
           <p>建议：至少 8 位，包含字母+数字</p>
         </el-alert>

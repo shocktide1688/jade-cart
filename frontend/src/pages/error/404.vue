@@ -7,7 +7,11 @@ const router = useRouter()
   <div class="error-page">
     <h1>404</h1>
     <p>页面不存在</p>
-    <el-button type="primary" style="background: #00a86b; border-color: #00a86b;" @click="router.push('/')">
+    <el-button
+      type="primary"
+      style="background: #00a86b; border-color: #00a86b;"
+      @click="router.push('/')"
+    >
       返回首页
     </el-button>
   </div>

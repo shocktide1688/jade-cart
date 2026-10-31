@@ -1,53 +1,138 @@
 <template>
   <div>
     <el-card>
-      <template #header><span>数据导入</span></template>
-      <el-alert type="info" :closable="false" show-icon style="margin-bottom:16px"
-                title="流程: 上传干跑预览 → 确认执行 (同文件 sha256 幂等, 重复确认被拒)" />
+      <template #header>
+        <span>数据导入</span>
+      </template>
+      <el-alert
+        type="info"
+        :closable="false"
+        show-icon
+        style="margin-bottom:16px"
+        title="流程: 上传干跑预览 → 确认执行 (同文件 sha256 幂等, 重复确认被拒)"
+      />
       <el-form inline>
         <el-form-item label="格式">
           <el-radio-group v-model="format">
-            <el-radio value="generic">通用 (title,slug,sku,price,stock)</el-radio>
-            <el-radio value="shopify">Shopify 导出 (Handle 分组)</el-radio>
+            <el-radio value="generic">
+              通用 (title,slug,sku,price,stock)
+            </el-radio>
+            <el-radio value="shopify">
+              Shopify 导出 (Handle 分组)
+            </el-radio>
           </el-radio-group>
         </el-form-item>
         <el-form-item>
-          <el-upload :show-file-list="false" accept=".csv" :auto-upload="false" :on-change="onFile">
-            <el-button type="primary" :loading="uploading">选择 CSV 上传预览</el-button>
+          <el-upload
+            :show-file-list="false"
+            accept=".csv"
+            :auto-upload="false"
+            :on-change="onFile"
+          >
+            <el-button
+              type="primary"
+              :loading="uploading"
+            >
+              选择 CSV 上传预览
+            </el-button>
           </el-upload>
         </el-form-item>
       </el-form>
 
       <template v-if="job">
-        <el-descriptions :column="4" border size="small" style="margin-bottom:12px">
-          <el-descriptions-item label="任务">{{ job.publicId.slice(0, 8) }}…</el-descriptions-item>
-          <el-descriptions-item label="总行数">{{ job.totalRows }}</el-descriptions-item>
-          <el-descriptions-item label="商品数">{{ job.productCount }}</el-descriptions-item>
+        <el-descriptions
+          :column="4"
+          border
+          size="small"
+          style="margin-bottom:12px"
+        >
+          <el-descriptions-item label="任务">
+            {{ job.publicId.slice(0, 8) }}…
+          </el-descriptions-item>
+          <el-descriptions-item label="总行数">
+            {{ job.totalRows }}
+          </el-descriptions-item>
+          <el-descriptions-item label="商品数">
+            {{ job.productCount }}
+          </el-descriptions-item>
           <el-descriptions-item label="错误行">
             <span :style="job.errorRows > 0 ? 'color:#b42318;font-weight:600' : ''">{{ job.errorRows }}</span>
           </el-descriptions-item>
         </el-descriptions>
 
-        <el-alert v-if="job.errorRows > 0" type="error" :closable="false" show-icon style="margin-bottom:12px">
-          <div v-for="(e, i) in jobErrors" :key="i">行 {{ e.row }}: {{ e.message }}</div>
+        <el-alert
+          v-if="job.errorRows > 0"
+          type="error"
+          :closable="false"
+          show-icon
+          style="margin-bottom:12px"
+        >
+          <div
+            v-for="(e, i) in jobErrors"
+            :key="i"
+          >
+            行 {{ e.row }}: {{ e.message }}
+          </div>
         </el-alert>
 
-        <el-button v-if="job.status === 'PREVIEW'" type="success" :loading="confirming"
-                   @click="confirm">确认执行导入 ({{ job.productCount }} 个商品)</el-button>
-        <el-tag v-else-if="job.status === 'CONFIRMED'" type="success">
+        <el-button
+          v-if="job.status === 'PREVIEW'"
+          type="success"
+          :loading="confirming"
+          @click="confirm"
+        >
+          确认执行导入 ({{ job.productCount }} 个商品)
+        </el-button>
+        <el-tag
+          v-else-if="job.status === 'CONFIRMED'"
+          type="success"
+        >
           已导入 {{ job.importedCount }} 个商品
         </el-tag>
       </template>
 
-      <h4 style="margin-top:24px">导入历史</h4>
-      <el-table :data="jobs" size="small" border>
-        <el-table-column prop="createdAt" label="时间" width="170" />
-        <el-table-column prop="filename" label="文件" min-width="160" />
-        <el-table-column prop="sourceFormat" label="格式" width="90" />
-        <el-table-column prop="productCount" label="商品" width="70" />
-        <el-table-column prop="errorRows" label="错误行" width="80" />
-        <el-table-column prop="importedCount" label="已导入" width="80" />
-        <el-table-column label="状态" width="100">
+      <h4 style="margin-top:24px">
+        导入历史
+      </h4>
+      <el-table
+        :data="jobs"
+        size="small"
+        border
+      >
+        <el-table-column
+          prop="createdAt"
+          label="时间"
+          width="170"
+        />
+        <el-table-column
+          prop="filename"
+          label="文件"
+          min-width="160"
+        />
+        <el-table-column
+          prop="sourceFormat"
+          label="格式"
+          width="90"
+        />
+        <el-table-column
+          prop="productCount"
+          label="商品"
+          width="70"
+        />
+        <el-table-column
+          prop="errorRows"
+          label="错误行"
+          width="80"
+        />
+        <el-table-column
+          prop="importedCount"
+          label="已导入"
+          width="80"
+        />
+        <el-table-column
+          label="状态"
+          width="100"
+        >
           <template #default="{ row }">
             <el-tag :type="importTag(row.status)">
               {{ importLabel(row.status) }}

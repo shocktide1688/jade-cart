@@ -1,7 +1,14 @@
 <template>
   <div class="rich-editor">
-    <QuillEditor ref="quillRef" theme="snow" v-model:content="content" contentType="html"
-                 :toolbar="toolbar" :style="{ height }" @update:content="onUpdate" />
+    <QuillEditor
+      ref="quillRef"
+      v-model:content="content"
+      theme="snow"
+      content-type="html"
+      :toolbar="toolbar"
+      :style="{ height }"
+      @update:content="onUpdate"
+    />
   </div>
 </template>
 

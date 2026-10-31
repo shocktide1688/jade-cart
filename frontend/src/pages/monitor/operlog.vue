@@ -28,22 +28,77 @@ onMounted(fetchData)
 <template>
   <el-card>
     <div class="toolbar">
-      <el-input v-model="username" placeholder="搜索用户" clearable style="width: 240px;" @keyup.enter="fetchData" />
-      <el-button type="primary" @click="fetchData" style="background: #00a86b; border-color: #00a86b;">搜索</el-button>
+      <el-input
+        v-model="username"
+        placeholder="搜索用户"
+        clearable
+        style="width: 240px;"
+        @keyup.enter="fetchData"
+      />
+      <el-button
+        type="primary"
+        style="background: #00a86b; border-color: #00a86b;"
+        @click="fetchData"
+      >
+        搜索
+      </el-button>
     </div>
-    <el-table v-loading="loading" :data="list" stripe>
-      <el-table-column prop="title" label="模块" width="120" />
-      <el-table-column prop="method" label="方法" width="240" />
-      <el-table-column prop="requestMethod" label="HTTP" width="80" />
-      <el-table-column prop="requestUrl" label="URL" width="240" />
-      <el-table-column prop="username" label="操作人" width="120" />
-      <el-table-column prop="ip" label="IP" width="120" />
-      <el-table-column prop="durationMs" label="耗时(ms)" width="100" />
-      <el-table-column prop="operTime" label="时间" width="180" />
+    <el-table
+      v-loading="loading"
+      :data="list"
+      stripe
+    >
+      <el-table-column
+        prop="title"
+        label="模块"
+        width="120"
+      />
+      <el-table-column
+        prop="method"
+        label="方法"
+        width="240"
+      />
+      <el-table-column
+        prop="requestMethod"
+        label="HTTP"
+        width="80"
+      />
+      <el-table-column
+        prop="requestUrl"
+        label="URL"
+        width="240"
+      />
+      <el-table-column
+        prop="username"
+        label="操作人"
+        width="120"
+      />
+      <el-table-column
+        prop="ip"
+        label="IP"
+        width="120"
+      />
+      <el-table-column
+        prop="durationMs"
+        label="耗时(ms)"
+        width="100"
+      />
+      <el-table-column
+        prop="operTime"
+        label="时间"
+        width="180"
+      />
     </el-table>
-    <el-pagination v-model:current-page="page" v-model:page-size="size" :total="total"
-      :page-sizes="[20, 50, 100]" layout="total, sizes, prev, pager, next"
-      style="margin-top: 16px; justify-content: flex-end;" @current-change="fetchData" @size-change="fetchData" />
+    <el-pagination
+      v-model:current-page="page"
+      v-model:page-size="size"
+      :total="total"
+      :page-sizes="[20, 50, 100]"
+      layout="total, sizes, prev, pager, next"
+      style="margin-top: 16px; justify-content: flex-end;"
+      @current-change="fetchData"
+      @size-change="fetchData"
+    />
   </el-card>
 </template>
 <style scoped>.toolbar { display: flex; gap: 12px; margin-bottom: 16px; }</style>

@@ -86,59 +86,157 @@ onMounted(fetchData)
 <template>
   <el-card>
     <div class="toolbar">
-      <el-button type="success" @click="openCreate" plain>+ 新建角色</el-button>
+      <el-button
+        type="success"
+        plain
+        @click="openCreate"
+      >
+        + 新建角色
+      </el-button>
     </div>
-    <el-table v-loading="loading" :data="list" stripe>
-      <el-table-column prop="id" label="ID" width="80" />
-      <el-table-column prop="roleName" label="角色名" />
-      <el-table-column prop="roleCode" label="角色代码" />
-      <el-table-column prop="dataScope" label="数据范围" width="120" />
-      <el-table-column prop="status" label="状态" width="100">
+    <el-table
+      v-loading="loading"
+      :data="list"
+      stripe
+    >
+      <el-table-column
+        prop="id"
+        label="ID"
+        width="80"
+      />
+      <el-table-column
+        prop="roleName"
+        label="角色名"
+      />
+      <el-table-column
+        prop="roleCode"
+        label="角色代码"
+      />
+      <el-table-column
+        prop="dataScope"
+        label="数据范围"
+        width="120"
+      />
+      <el-table-column
+        prop="status"
+        label="状态"
+        width="100"
+      >
         <template #default="{ row }">
-          <el-tag :type="row.status === 1 ? 'success' : 'danger'" size="small">
+          <el-tag
+            :type="row.status === 1 ? 'success' : 'danger'"
+            size="small"
+          >
             {{ row.status === 1 ? '正常' : '停用' }}
           </el-tag>
         </template>
       </el-table-column>
-      <el-table-column label="操作" width="260" fixed="right">
+      <el-table-column
+        label="操作"
+        width="260"
+        fixed="right"
+      >
         <template #default="{ row }">
-          <el-button text type="primary" @click="openEdit(row)">编辑</el-button>
-          <el-button text type="success" @click="openAssign(row)">分配菜单</el-button>
-          <el-button text type="danger" @click="remove(row)" :disabled="row.roleCode === 'admin'">删除</el-button>
+          <el-button
+            text
+            type="primary"
+            @click="openEdit(row)"
+          >
+            编辑
+          </el-button>
+          <el-button
+            text
+            type="success"
+            @click="openAssign(row)"
+          >
+            分配菜单
+          </el-button>
+          <el-button
+            text
+            type="danger"
+            :disabled="row.roleCode === 'admin'"
+            @click="remove(row)"
+          >
+            删除
+          </el-button>
         </template>
       </el-table-column>
     </el-table>
   </el-card>
 
   <!-- 新建/编辑 -->
-  <el-dialog v-model="showEdit" :title="editing.id ? '编辑角色' : '新建角色'" width="500">
-    <el-form :model="editing" label-width="100">
-      <el-form-item label="角色名"><el-input v-model="editing.roleName" /></el-form-item>
-      <el-form-item label="角色代码"><el-input v-model="editing.roleCode" :disabled="!!editing.id" /></el-form-item>
+  <el-dialog
+    v-model="showEdit"
+    :title="editing.id ? '编辑角色' : '新建角色'"
+    width="500"
+  >
+    <el-form
+      :model="editing"
+      label-width="100"
+    >
+      <el-form-item label="角色名">
+        <el-input v-model="editing.roleName" />
+      </el-form-item>
+      <el-form-item label="角色代码">
+        <el-input
+          v-model="editing.roleCode"
+          :disabled="!!editing.id"
+        />
+      </el-form-item>
       <el-form-item label="数据范围">
         <el-select v-model="editing.dataScope">
-          <el-option label="全部" value="ALL" />
-          <el-option label="本部门及下级" value="DEPT_AND_CHILD" />
-          <el-option label="本部门" value="DEPT" />
-          <el-option label="仅本人" value="SELF" />
+          <el-option
+            label="全部"
+            value="ALL"
+          />
+          <el-option
+            label="本部门及下级"
+            value="DEPT_AND_CHILD"
+          />
+          <el-option
+            label="本部门"
+            value="DEPT"
+          />
+          <el-option
+            label="仅本人"
+            value="SELF"
+          />
         </el-select>
       </el-form-item>
       <el-form-item label="状态">
         <el-radio-group v-model="editing.status">
-          <el-radio :value="1">正常</el-radio>
-          <el-radio :value="0">停用</el-radio>
+          <el-radio :value="1">
+            正常
+          </el-radio>
+          <el-radio :value="0">
+            停用
+          </el-radio>
         </el-radio-group>
       </el-form-item>
     </el-form>
     <template #footer>
-      <el-button @click="showEdit = false">取消</el-button>
-      <el-button type="primary" @click="save" style="background: #00a86b; border-color: #00a86b;">保存</el-button>
+      <el-button @click="showEdit = false">
+        取消
+      </el-button>
+      <el-button
+        type="primary"
+        style="background: #00a86b; border-color: #00a86b;"
+        @click="save"
+      >
+        保存
+      </el-button>
     </template>
   </el-dialog>
 
   <!-- 分配菜单 -->
-  <el-dialog v-model="showAssign" :title="`分配菜单 - ${assignTarget?.roleName}`" width="540">
-    <p style="margin-top: 0; color: #909399;">勾选要给该角色分配的菜单（包含子级会自动带父级）</p>
+  <el-dialog
+    v-model="showAssign"
+    :title="`分配菜单 - ${assignTarget?.roleName}`"
+    width="540"
+  >
+    <p style="margin-top: 0; color: #909399;">
+      勾选要给该角色分配的菜单（包含子级会自动带父级）
+    </p>
     <el-tree
       ref="treeRef"
       :data="tree"
@@ -149,8 +247,16 @@ onMounted(fetchData)
       style="max-height: 480px; overflow: auto;"
     />
     <template #footer>
-      <el-button @click="showAssign = false">取消</el-button>
-      <el-button type="primary" @click="doAssign" style="background: #00a86b; border-color: #00a86b;">保存分配</el-button>
+      <el-button @click="showAssign = false">
+        取消
+      </el-button>
+      <el-button
+        type="primary"
+        style="background: #00a86b; border-color: #00a86b;"
+        @click="doAssign"
+      >
+        保存分配
+      </el-button>
     </template>
   </el-dialog>
 </template>

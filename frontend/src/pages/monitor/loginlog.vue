@@ -22,21 +22,54 @@ onMounted(fetchData)
 
 <template>
   <el-card>
-    <el-table v-loading="loading" :data="list" stripe>
-      <el-table-column prop="username" label="用户" width="120" />
-      <el-table-column prop="ip" label="IP" width="140" />
-      <el-table-column prop="status" label="状态" width="100">
+    <el-table
+      v-loading="loading"
+      :data="list"
+      stripe
+    >
+      <el-table-column
+        prop="username"
+        label="用户"
+        width="120"
+      />
+      <el-table-column
+        prop="ip"
+        label="IP"
+        width="140"
+      />
+      <el-table-column
+        prop="status"
+        label="状态"
+        width="100"
+      >
         <template #default="{ row }">
-          <el-tag :type="row.status === 1 ? 'success' : 'danger'" size="small">
+          <el-tag
+            :type="row.status === 1 ? 'success' : 'danger'"
+            size="small"
+          >
             {{ row.status === 1 ? '成功' : '失败' }}
           </el-tag>
         </template>
       </el-table-column>
-      <el-table-column prop="msg" label="消息" />
-      <el-table-column prop="loginTime" label="登录时间" width="180" />
+      <el-table-column
+        prop="msg"
+        label="消息"
+      />
+      <el-table-column
+        prop="loginTime"
+        label="登录时间"
+        width="180"
+      />
     </el-table>
-    <el-pagination v-model:current-page="page" v-model:page-size="size" :total="total"
-      :page-sizes="[20, 50, 100]" layout="total, sizes, prev, pager, next"
-      style="margin-top: 16px; justify-content: flex-end;" @current-change="fetchData" @size-change="fetchData" />
+    <el-pagination
+      v-model:current-page="page"
+      v-model:page-size="size"
+      :total="total"
+      :page-sizes="[20, 50, 100]"
+      layout="total, sizes, prev, pager, next"
+      style="margin-top: 16px; justify-content: flex-end;"
+      @current-change="fetchData"
+      @size-change="fetchData"
+    />
   </el-card>
 </template>

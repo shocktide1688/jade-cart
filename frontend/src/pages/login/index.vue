@@ -18,7 +18,7 @@ async function handleLogin() {
     ElMessage.success('登录成功')
     const redirect = (route.query.redirect as string) || '/dashboard'
     router.push(redirect)
-  } catch (e) {
+  } catch {
     // 已在 request.ts 统一提示
   } finally {
     loading.value = false
@@ -30,16 +30,30 @@ async function handleLogin() {
   <div class="login-page">
     <div class="login-bg">
       <div class="brand">
-        <h1 class="title">Jade Platform</h1>
-        <p class="subtitle">温润如玉 · 稳定如石</p>
+        <h1 class="title">
+          Jade Platform
+        </h1>
+        <p class="subtitle">
+          温润如玉 · 稳定如石
+        </p>
       </div>
     </div>
 
     <div class="login-box">
-      <h2 class="form-title">欢迎登录</h2>
-      <el-form :model="form" label-position="top" @submit.prevent="handleLogin">
+      <h2 class="form-title">
+        欢迎登录
+      </h2>
+      <el-form
+        :model="form"
+        label-position="top"
+        @submit.prevent="handleLogin"
+      >
         <el-form-item label="用户名">
-          <el-input v-model="form.username" placeholder="请输入用户名" size="large" />
+          <el-input
+            v-model="form.username"
+            placeholder="请输入用户名"
+            size="large"
+          />
         </el-form-item>
         <el-form-item label="密码">
           <el-input
@@ -61,7 +75,9 @@ async function handleLogin() {
           登录
         </el-button>
       </el-form>
-      <p class="tip">默认账号：admin / admin123</p>
+      <p class="tip">
+        默认账号：admin / admin123
+      </p>
     </div>
   </div>
 </template>

@@ -54,91 +54,244 @@ onMounted(load)
 
     <el-row :gutter="16">
       <el-col :span="6">
-        <el-card class="stat-card" shadow="hover">
-          <el-icon class="stat-icon" :size="32" color="#409eff"><UserFilled /></el-icon>
-          <div class="stat-value">{{ stats.users }}</div>
-          <div class="stat-label">用户</div>
+        <el-card
+          class="stat-card"
+          shadow="hover"
+        >
+          <el-icon
+            class="stat-icon"
+            :size="32"
+            color="#409eff"
+          >
+            <UserFilled />
+          </el-icon>
+          <div class="stat-value">
+            {{ stats.users }}
+          </div>
+          <div class="stat-label">
+            用户
+          </div>
         </el-card>
       </el-col>
       <el-col :span="6">
-        <el-card class="stat-card" shadow="hover">
-          <el-icon class="stat-icon" :size="32" color="#67c23a"><Key /></el-icon>
-          <div class="stat-value">{{ stats.roles }}</div>
-          <div class="stat-label">角色</div>
+        <el-card
+          class="stat-card"
+          shadow="hover"
+        >
+          <el-icon
+            class="stat-icon"
+            :size="32"
+            color="#67c23a"
+          >
+            <Key />
+          </el-icon>
+          <div class="stat-value">
+            {{ stats.roles }}
+          </div>
+          <div class="stat-label">
+            角色
+          </div>
         </el-card>
       </el-col>
       <el-col :span="6">
-        <el-card class="stat-card" shadow="hover">
-          <el-icon class="stat-icon" :size="32" color="#e6a23c"><OfficeBuilding /></el-icon>
-          <div class="stat-value">{{ stats.depts }}</div>
-          <div class="stat-label">部门</div>
+        <el-card
+          class="stat-card"
+          shadow="hover"
+        >
+          <el-icon
+            class="stat-icon"
+            :size="32"
+            color="#e6a23c"
+          >
+            <OfficeBuilding />
+          </el-icon>
+          <div class="stat-value">
+            {{ stats.depts }}
+          </div>
+          <div class="stat-label">
+            部门
+          </div>
         </el-card>
       </el-col>
       <el-col :span="6">
-        <el-card class="stat-card" shadow="hover">
-          <el-icon class="stat-icon" :size="32" color="#f56c6c"><UserFilled /></el-icon>
-          <div class="stat-value">{{ stats.tenants }}</div>
-          <div class="stat-label">租户</div>
+        <el-card
+          class="stat-card"
+          shadow="hover"
+        >
+          <el-icon
+            class="stat-icon"
+            :size="32"
+            color="#f56c6c"
+          >
+            <UserFilled />
+          </el-icon>
+          <div class="stat-value">
+            {{ stats.tenants }}
+          </div>
+          <div class="stat-label">
+            租户
+          </div>
         </el-card>
       </el-col>
     </el-row>
 
-    <el-row :gutter="16" style="margin-top: 16px;">
+    <el-row
+      :gutter="16"
+      style="margin-top: 16px;"
+    >
       <el-col :span="6">
-        <el-card class="stat-card" shadow="hover">
-          <el-icon class="stat-icon" :size="32" color="#909399"><UserFilled /></el-icon>
-          <div class="stat-value">{{ stats.projects }}</div>
-          <div class="stat-label">项目</div>
+        <el-card
+          class="stat-card"
+          shadow="hover"
+        >
+          <el-icon
+            class="stat-icon"
+            :size="32"
+            color="#909399"
+          >
+            <UserFilled />
+          </el-icon>
+          <div class="stat-value">
+            {{ stats.projects }}
+          </div>
+          <div class="stat-label">
+            项目
+          </div>
         </el-card>
       </el-col>
       <el-col :span="6">
-        <el-card class="stat-card" shadow="hover">
-          <el-icon class="stat-icon" :size="32" color="#9c27b0"><Document /></el-icon>
-          <div class="stat-value">{{ stats.operLogs }}</div>
-          <div class="stat-label">操作日志</div>
+        <el-card
+          class="stat-card"
+          shadow="hover"
+        >
+          <el-icon
+            class="stat-icon"
+            :size="32"
+            color="#9c27b0"
+          >
+            <Document />
+          </el-icon>
+          <div class="stat-value">
+            {{ stats.operLogs }}
+          </div>
+          <div class="stat-label">
+            操作日志
+          </div>
         </el-card>
       </el-col>
       <el-col :span="6">
-        <el-card class="stat-card" shadow="hover">
-          <el-icon class="stat-icon" :size="32" color="#ff5722"><Key /></el-icon>
-          <div class="stat-value">{{ stats.loginLogs }}</div>
-          <div class="stat-label">登录日志</div>
+        <el-card
+          class="stat-card"
+          shadow="hover"
+        >
+          <el-icon
+            class="stat-icon"
+            :size="32"
+            color="#ff5722"
+          >
+            <Key />
+          </el-icon>
+          <div class="stat-value">
+            {{ stats.loginLogs }}
+          </div>
+          <div class="stat-label">
+            登录日志
+          </div>
         </el-card>
       </el-col>
       <el-col :span="6">
-        <el-card class="stat-card" shadow="hover">
-          <el-icon class="stat-icon" :size="32" color="#00a86b"><Document /></el-icon>
-          <div class="stat-value">{{ stats.notices }}</div>
-          <div class="stat-label">最新公告</div>
+        <el-card
+          class="stat-card"
+          shadow="hover"
+        >
+          <el-icon
+            class="stat-icon"
+            :size="32"
+            color="#00a86b"
+          >
+            <Document />
+          </el-icon>
+          <div class="stat-value">
+            {{ stats.notices }}
+          </div>
+          <div class="stat-label">
+            最新公告
+          </div>
         </el-card>
       </el-col>
     </el-row>
 
-    <el-row :gutter="16" style="margin-top: 16px;">
+    <el-row
+      :gutter="16"
+      style="margin-top: 16px;"
+    >
       <el-col :span="12">
         <el-card>
-          <template #header><span style="font-weight: 600;">最新公告</span></template>
-          <el-table :data="recentNotices" size="small" empty-text="暂无公告">
-            <el-table-column prop="noticeTitle" label="标题" show-overflow-tooltip />
-            <el-table-column prop="noticeType" label="类型" width="80">
+          <template #header>
+            <span style="font-weight: 600;">最新公告</span>
+          </template>
+          <el-table
+            :data="recentNotices"
+            size="small"
+            empty-text="暂无公告"
+          >
+            <el-table-column
+              prop="noticeTitle"
+              label="标题"
+              show-overflow-tooltip
+            />
+            <el-table-column
+              prop="noticeType"
+              label="类型"
+              width="80"
+            >
               <template #default="{ row }">
-                <el-tag :type="row.noticeType === 1 ? 'primary' : 'warning'" size="small">
+                <el-tag
+                  :type="row.noticeType === 1 ? 'primary' : 'warning'"
+                  size="small"
+                >
                   {{ row.noticeType === 1 ? '通知' : '公告' }}
                 </el-tag>
               </template>
             </el-table-column>
-            <el-table-column prop="createdBy" label="发布人" width="100" />
+            <el-table-column
+              prop="createdBy"
+              label="发布人"
+              width="100"
+            />
           </el-table>
         </el-card>
       </el-col>
       <el-col :span="12">
         <el-card>
-          <template #header><span style="font-weight: 600;">最近操作</span></template>
-          <el-table :data="recentOperLogs" size="small" empty-text="暂无操作">
-            <el-table-column prop="title" label="模块" width="100" />
-            <el-table-column prop="method" label="方法" show-overflow-tooltip />
-            <el-table-column prop="username" label="操作人" width="100" />
-            <el-table-column prop="durationMs" label="ms" width="60" />
+          <template #header>
+            <span style="font-weight: 600;">最近操作</span>
+          </template>
+          <el-table
+            :data="recentOperLogs"
+            size="small"
+            empty-text="暂无操作"
+          >
+            <el-table-column
+              prop="title"
+              label="模块"
+              width="100"
+            />
+            <el-table-column
+              prop="method"
+              label="方法"
+              show-overflow-tooltip
+            />
+            <el-table-column
+              prop="username"
+              label="操作人"
+              width="100"
+            />
+            <el-table-column
+              prop="durationMs"
+              label="ms"
+              width="60"
+            />
           </el-table>
         </el-card>
       </el-col>

@@ -32,20 +32,51 @@ onMounted(fetchTypes)
     <el-row :gutter="16">
       <el-col :span="8">
         <h4>字典类型</h4>
-        <el-table v-loading="loading" :data="list" highlight-current-row @row-click="(r) => { activeType = r.dictType; fetchItems() }">
-          <el-table-column prop="dictName" label="名称" />
-          <el-table-column prop="dictType" label="类型" />
+        <el-table
+          v-loading="loading"
+          :data="list"
+          highlight-current-row
+          @row-click="(r) => { activeType = r.dictType; fetchItems() }"
+        >
+          <el-table-column
+            prop="dictName"
+            label="名称"
+          />
+          <el-table-column
+            prop="dictType"
+            label="类型"
+          />
         </el-table>
       </el-col>
       <el-col :span="16">
         <h4>字典项（{{ activeType }}）</h4>
-        <el-table :data="items" stripe>
-          <el-table-column prop="dictLabel" label="标签" />
-          <el-table-column prop="dictValue" label="值" />
-          <el-table-column prop="sortOrder" label="排序" width="80" />
-          <el-table-column prop="status" label="状态" width="100">
+        <el-table
+          :data="items"
+          stripe
+        >
+          <el-table-column
+            prop="dictLabel"
+            label="标签"
+          />
+          <el-table-column
+            prop="dictValue"
+            label="值"
+          />
+          <el-table-column
+            prop="sortOrder"
+            label="排序"
+            width="80"
+          />
+          <el-table-column
+            prop="status"
+            label="状态"
+            width="100"
+          >
             <template #default="{ row }">
-              <el-tag :type="row.status === 1 ? 'success' : 'danger'" size="small">
+              <el-tag
+                :type="row.status === 1 ? 'success' : 'danger'"
+                size="small"
+              >
                 {{ row.status === 1 ? '正常' : '停用' }}
               </el-tag>
             </template>

@@ -87,48 +87,145 @@ onMounted(fetchData)
 <template>
   <el-card>
     <div class="toolbar">
-      <el-input v-model="keyword" placeholder="搜索用户名/昵称" clearable style="width: 240px;" @keyup.enter="fetchData" />
-      <el-button type="primary" @click="fetchData" style="background: #00a86b; border-color: #00a86b;">搜索</el-button>
-      <el-button type="success" @click="openCreate" plain>+ 新建</el-button>
+      <el-input
+        v-model="keyword"
+        placeholder="搜索用户名/昵称"
+        clearable
+        style="width: 240px;"
+        @keyup.enter="fetchData"
+      />
+      <el-button
+        type="primary"
+        style="background: #00a86b; border-color: #00a86b;"
+        @click="fetchData"
+      >
+        搜索
+      </el-button>
+      <el-button
+        type="success"
+        plain
+        @click="openCreate"
+      >
+        + 新建
+      </el-button>
     </div>
 
-    <el-table v-loading="loading" :data="list" stripe>
-      <el-table-column prop="id" label="ID" width="80" />
-      <el-table-column prop="username" label="用户名" />
-      <el-table-column prop="nickname" label="昵称" />
-      <el-table-column prop="email" label="邮箱" />
-      <el-table-column prop="phone" label="电话" width="120" />
-      <el-table-column prop="status" label="状态" width="80">
+    <el-table
+      v-loading="loading"
+      :data="list"
+      stripe
+    >
+      <el-table-column
+        prop="id"
+        label="ID"
+        width="80"
+      />
+      <el-table-column
+        prop="username"
+        label="用户名"
+      />
+      <el-table-column
+        prop="nickname"
+        label="昵称"
+      />
+      <el-table-column
+        prop="email"
+        label="邮箱"
+      />
+      <el-table-column
+        prop="phone"
+        label="电话"
+        width="120"
+      />
+      <el-table-column
+        prop="status"
+        label="状态"
+        width="80"
+      >
         <template #default="{ row }">
-          <el-switch :model-value="row.status === 1" @change="toggleStatus(row)" :disabled="row.username === 'admin'" />
+          <el-switch
+            :model-value="row.status === 1"
+            :disabled="row.username === 'admin'"
+            @change="toggleStatus(row)"
+          />
         </template>
       </el-table-column>
-      <el-table-column prop="createdAt" label="创建时间" width="180" />
-      <el-table-column label="操作" width="220" fixed="right">
+      <el-table-column
+        prop="createdAt"
+        label="创建时间"
+        width="180"
+      />
+      <el-table-column
+        label="操作"
+        width="220"
+        fixed="right"
+      >
         <template #default="{ row }">
-          <el-button text type="primary" @click="openEdit(row)">编辑</el-button>
-          <el-button text type="warning" @click="openResetPwd(row)">重置密码</el-button>
-          <el-button text type="danger" @click="remove(row)" :disabled="row.username === 'admin'">删除</el-button>
+          <el-button
+            text
+            type="primary"
+            @click="openEdit(row)"
+          >
+            编辑
+          </el-button>
+          <el-button
+            text
+            type="warning"
+            @click="openResetPwd(row)"
+          >
+            重置密码
+          </el-button>
+          <el-button
+            text
+            type="danger"
+            :disabled="row.username === 'admin'"
+            @click="remove(row)"
+          >
+            删除
+          </el-button>
         </template>
       </el-table-column>
     </el-table>
 
     <el-pagination
-      v-model:current-page="page" v-model:page-size="size" :total="total"
-      :page-sizes="[10, 20, 50]" layout="total, sizes, prev, pager, next, jumper"
+      v-model:current-page="page"
+      v-model:page-size="size"
+      :total="total"
+      :page-sizes="[10, 20, 50]"
+      layout="total, sizes, prev, pager, next, jumper"
       style="margin-top: 16px; justify-content: flex-end;"
-      @current-change="fetchData" @size-change="fetchData"
+      @current-change="fetchData"
+      @size-change="fetchData"
     />
   </el-card>
 
   <!-- 新建/编辑用户 -->
-  <el-dialog v-model="showEdit" :title="editing.id ? '编辑用户' : '新建用户'" width="540">
-    <el-form :model="editing" label-width="100" label-position="right">
+  <el-dialog
+    v-model="showEdit"
+    :title="editing.id ? '编辑用户' : '新建用户'"
+    width="540"
+  >
+    <el-form
+      :model="editing"
+      label-width="100"
+      label-position="right"
+    >
       <el-form-item label="用户名">
-        <el-input v-model="editing.username" :disabled="!!editing.id" />
+        <el-input
+          v-model="editing.username"
+          :disabled="!!editing.id"
+        />
       </el-form-item>
-      <el-form-item v-if="!editing.id" label="密码">
-        <el-input v-model="editing.password" type="password" show-password placeholder="新建时必填" />
+      <el-form-item
+        v-if="!editing.id"
+        label="密码"
+      >
+        <el-input
+          v-model="editing.password"
+          type="password"
+          show-password
+          placeholder="新建时必填"
+        />
       </el-form-item>
       <el-form-item label="昵称">
         <el-input v-model="editing.nickname" />
@@ -141,24 +238,53 @@ onMounted(fetchData)
       </el-form-item>
       <el-form-item label="状态">
         <el-radio-group v-model="editing.status">
-          <el-radio :value="1">启用</el-radio>
-          <el-radio :value="0">禁用</el-radio>
+          <el-radio :value="1">
+            启用
+          </el-radio>
+          <el-radio :value="0">
+            禁用
+          </el-radio>
         </el-radio-group>
       </el-form-item>
     </el-form>
     <template #footer>
-      <el-button @click="showEdit = false">取消</el-button>
-      <el-button type="primary" @click="save" style="background: #00a86b; border-color: #00a86b;">保存</el-button>
+      <el-button @click="showEdit = false">
+        取消
+      </el-button>
+      <el-button
+        type="primary"
+        style="background: #00a86b; border-color: #00a86b;"
+        @click="save"
+      >
+        保存
+      </el-button>
     </template>
   </el-dialog>
 
   <!-- 重置密码 -->
-  <el-dialog v-model="showResetPwd" title="重置密码" width="420">
+  <el-dialog
+    v-model="showResetPwd"
+    title="重置密码"
+    width="420"
+  >
     <p>用户：<b>{{ resetTarget?.username }}</b></p>
-    <el-input v-model="newPassword" type="password" show-password placeholder="新密码" />
+    <el-input
+      v-model="newPassword"
+      type="password"
+      show-password
+      placeholder="新密码"
+    />
     <template #footer>
-      <el-button @click="showResetPwd = false">取消</el-button>
-      <el-button type="primary" @click="doResetPwd" style="background: #00a86b; border-color: #00a86b;">确定</el-button>
+      <el-button @click="showResetPwd = false">
+        取消
+      </el-button>
+      <el-button
+        type="primary"
+        style="background: #00a86b; border-color: #00a86b;"
+        @click="doResetPwd"
+      >
+        确定
+      </el-button>
     </template>
   </el-dialog>
 </template>

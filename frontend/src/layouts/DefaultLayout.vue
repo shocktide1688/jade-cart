@@ -108,8 +108,14 @@ async function handleCommand(cmd: string) {
 
 <template>
   <el-container class="layout">
-    <el-aside :width="appStore.sidebarCollapsed ? '64px' : '220px'" class="aside">
-      <div class="logo" @click="router.push('/dashboard')">
+    <el-aside
+      :width="appStore.sidebarCollapsed ? '64px' : '220px'"
+      class="aside"
+    >
+      <div
+        class="logo"
+        @click="router.push('/dashboard')"
+      >
         <span v-if="!appStore.sidebarCollapsed">Jade Platform</span>
         <span v-else>玉</span>
       </div>
@@ -121,20 +127,37 @@ async function handleCommand(cmd: string) {
         text-color="#fff"
         active-text-color="#00a86b"
       >
-        <template v-for="m in menus" :key="m.path || m.name">
-          <el-sub-menu v-if="m.children && m.children.length" :index="m.path || m.name">
+        <template
+          v-for="m in menus"
+          :key="m.path || m.name"
+        >
+          <el-sub-menu
+            v-if="m.children && m.children.length"
+            :index="m.path || m.name"
+          >
             <template #title>
               <el-icon><component :is="resolveIcon(m.icon, m.name)" /></el-icon>
               <span>{{ m.name }}</span>
             </template>
-            <el-menu-item v-for="c in m.children" :key="c.path" :index="c.path">
+            <el-menu-item
+              v-for="c in m.children"
+              :key="c.path"
+              :index="c.path"
+            >
               <el-icon><component :is="resolveIcon(c.icon, c.name)" /></el-icon>
-              <template #title>{{ c.name }}</template>
+              <template #title>
+                {{ c.name }}
+              </template>
             </el-menu-item>
           </el-sub-menu>
-          <el-menu-item v-else-if="m.path" :index="m.path">
+          <el-menu-item
+            v-else-if="m.path"
+            :index="m.path"
+          >
             <el-icon><component :is="resolveIcon(m.icon, m.name)" /></el-icon>
-            <template #title>{{ m.name }}</template>
+            <template #title>
+              {{ m.name }}
+            </template>
           </el-menu-item>
         </template>
       </el-menu>
@@ -142,14 +165,28 @@ async function handleCommand(cmd: string) {
 
     <el-container>
       <el-header class="header">
-        <el-button text @click="appStore.toggleSidebar">
+        <el-button
+          text
+          @click="appStore.toggleSidebar"
+        >
           <el-icon><Expand v-if="appStore.sidebarCollapsed" /><Fold v-else /></el-icon>
         </el-button>
         <div class="header-right">
-          <el-tooltip content="刷新菜单" placement="bottom">
-            <el-button text @click="loadMenus"><el-icon><Refresh /></el-icon></el-button>
+          <el-tooltip
+            content="刷新菜单"
+            placement="bottom"
+          >
+            <el-button
+              text
+              @click="loadMenus"
+            >
+              <el-icon><Refresh /></el-icon>
+            </el-button>
           </el-tooltip>
-          <el-dropdown @command="handleCommand" trigger="click">
+          <el-dropdown
+            trigger="click"
+            @command="handleCommand"
+          >
             <span class="user-name">
               <el-icon><UserFilled /></el-icon>
               {{ userStore.username || '未登录' }}
@@ -159,7 +196,10 @@ async function handleCommand(cmd: string) {
                 <el-dropdown-item command="profile">
                   <el-icon><User /></el-icon> 个人中心
                 </el-dropdown-item>
-                <el-dropdown-item command="logout" divided>
+                <el-dropdown-item
+                  command="logout"
+                  divided
+                >
                   <el-icon><SwitchButton /></el-icon> 退出登录
                 </el-dropdown-item>
               </el-dropdown-menu>
@@ -169,9 +209,19 @@ async function handleCommand(cmd: string) {
       </el-header>
 
       <el-main class="main">
-        <el-breadcrumb v-if="breadcrumbs.length > 1" separator="/" class="breadcrumb">
-          <el-breadcrumb-item v-for="(c, i) in breadcrumbs" :key="c.path">
-            <router-link v-if="i < breadcrumbs.length - 1" :to="c.path">{{ c.name }}</router-link>
+        <el-breadcrumb
+          v-if="breadcrumbs.length > 1"
+          separator="/"
+          class="breadcrumb"
+        >
+          <el-breadcrumb-item
+            v-for="(c, i) in breadcrumbs"
+            :key="c.path"
+          >
+            <router-link
+              v-if="i < breadcrumbs.length - 1"
+              :to="c.path"
+            >{{ c.name }}</router-link>
             <span v-else>{{ c.name }}</span>
           </el-breadcrumb-item>
         </el-breadcrumb>

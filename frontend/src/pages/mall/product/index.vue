@@ -4,137 +4,356 @@
       <template #header>
         <div style="display:flex;justify-content:space-between;align-items:center">
           <span>商品管理</span>
-          <el-button type="primary" @click="openCreate">新建商品</el-button>
+          <el-button
+            type="primary"
+            @click="openCreate"
+          >
+            新建商品
+          </el-button>
         </div>
       </template>
       <div style="display:flex;gap:8px;margin-bottom:12px">
-        <el-input v-model="query.keyword" placeholder="标题搜索" style="width:220px" clearable @keyup.enter="load" />
-        <el-select v-model="query.status" placeholder="状态" style="width:130px" clearable>
-          <el-option label="草稿" value="DRAFT" />
-          <el-option label="上架" value="ACTIVE" />
-          <el-option label="归档" value="ARCHIVED" />
+        <el-input
+          v-model="query.keyword"
+          placeholder="标题搜索"
+          style="width:220px"
+          clearable
+          @keyup.enter="load"
+        />
+        <el-select
+          v-model="query.status"
+          placeholder="状态"
+          style="width:130px"
+          clearable
+        >
+          <el-option
+            label="草稿"
+            value="DRAFT"
+          />
+          <el-option
+            label="上架"
+            value="ACTIVE"
+          />
+          <el-option
+            label="归档"
+            value="ARCHIVED"
+          />
         </el-select>
-        <el-button @click="load">查询</el-button>
+        <el-button @click="load">
+          查询
+        </el-button>
       </div>
-      <el-table :data="rows" v-loading="loading" border>
-        <el-table-column label="图" width="72">
+      <el-table
+        v-loading="loading"
+        :data="rows"
+        border
+      >
+        <el-table-column
+          label="图"
+          width="72"
+        >
           <template #default="{ row }">
-            <img v-if="row.mainImagePath" :src="'/media/' + row.mainImagePath"
-                 style="width:48px;height:48px;object-fit:cover;border-radius:6px" />
-            <div v-else style="width:48px;height:48px;border-radius:6px;background:#f4f4f4;display:flex;align-items:center;justify-content:center;color:#ccc">✦</div>
+            <img
+              v-if="row.mainImagePath"
+              :src="'/media/' + row.mainImagePath"
+              style="width:48px;height:48px;object-fit:cover;border-radius:6px"
+            >
+            <div
+              v-else
+              style="width:48px;height:48px;border-radius:6px;background:#f4f4f4;display:flex;align-items:center;justify-content:center;color:#ccc"
+            >
+              ✦
+            </div>
           </template>
         </el-table-column>
-        <el-table-column prop="title" label="标题" min-width="170" />
-        <el-table-column label="状态" width="90">
+        <el-table-column
+          prop="title"
+          label="标题"
+          min-width="170"
+        />
+        <el-table-column
+          label="状态"
+          width="90"
+        >
           <template #default="{ row }">
             <el-tag :type="row.status === 'ACTIVE' ? 'success' : row.status === 'DRAFT' ? 'info' : 'warning'">
               {{ statusText(row.status) }}
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="起价" width="100">
-          <template #default="{ row }">{{ money(row.minPriceCents) }}</template>
-        </el-table-column>
-        <el-table-column prop="variantCount" label="变体" width="70" />
-        <el-table-column prop="totalAvailable" label="可售" width="70" />
-        <el-table-column label="操作" width="150" fixed="right">
+        <el-table-column
+          label="起价"
+          width="100"
+        >
           <template #default="{ row }">
-            <el-button link type="primary" @click="openDetail(row.id)">编辑</el-button>
-            <el-popconfirm title="归档后店面不再展示, 确定?" @confirm="archive(row.id)">
-              <template #reference><el-button link type="danger">归档</el-button></template>
+            {{ money(row.minPriceCents) }}
+          </template>
+        </el-table-column>
+        <el-table-column
+          prop="variantCount"
+          label="变体"
+          width="70"
+        />
+        <el-table-column
+          prop="totalAvailable"
+          label="可售"
+          width="70"
+        />
+        <el-table-column
+          label="操作"
+          width="150"
+          fixed="right"
+        >
+          <template #default="{ row }">
+            <el-button
+              link
+              type="primary"
+              @click="openDetail(row.id)"
+            >
+              编辑
+            </el-button>
+            <el-popconfirm
+              title="归档后店面不再展示, 确定?"
+              @confirm="archive(row.id)"
+            >
+              <template #reference>
+                <el-button
+                  link
+                  type="danger"
+                >
+                  归档
+                </el-button>
+              </template>
             </el-popconfirm>
           </template>
         </el-table-column>
       </el-table>
-      <el-pagination style="margin-top:12px" layout="total, prev, pager, next" :total="total"
-                     :page-size="query.size" v-model:current-page="query.page" @current-change="load" />
+      <el-pagination
+        v-model:current-page="query.page"
+        style="margin-top:12px"
+        layout="total, prev, pager, next"
+        :total="total"
+        :page-size="query.size"
+        @current-change="load"
+      />
     </el-card>
 
     <!-- 新建商品 -->
-    <el-dialog v-model="createVisible" title="新建商品" width="640px" top="6vh">
-      <el-form :model="createForm" label-width="100">
+    <el-dialog
+      v-model="createVisible"
+      title="新建商品"
+      width="640px"
+      top="6vh"
+    >
+      <el-form
+        :model="createForm"
+        label-width="100"
+      >
         <el-form-item label="商品图">
           <div style="display:flex;gap:12px;align-items:center">
-            <img v-if="createForm.mainImagePath" :src="'/media/' + createForm.mainImagePath"
-                 style="height:80px;border-radius:6px;border:1px solid #eee" />
-            <el-upload :show-file-list="false" accept="image/jpeg,image/png,image/webp" :auto-upload="false"
-                       :on-change="uploadCreateImage" :disabled="createUploading">
-              <el-button :loading="createUploading">{{ createForm.mainImagePath ? '更换商品图' : '上传商品图' }}</el-button>
+            <img
+              v-if="createForm.mainImagePath"
+              :src="'/media/' + createForm.mainImagePath"
+              style="height:80px;border-radius:6px;border:1px solid #eee"
+            >
+            <el-upload
+              :show-file-list="false"
+              accept="image/jpeg,image/png,image/webp"
+              :auto-upload="false"
+              :on-change="uploadCreateImage"
+              :disabled="createUploading"
+            >
+              <el-button :loading="createUploading">
+                {{ createForm.mainImagePath ? '更换商品图' : '上传商品图' }}
+              </el-button>
             </el-upload>
           </div>
         </el-form-item>
-        <el-form-item label="标题" required>
-          <el-input v-model="createForm.title" placeholder="商品标题" maxlength="200" show-word-limit />
+        <el-form-item
+          label="标题"
+          required
+        >
+          <el-input
+            v-model="createForm.title"
+            placeholder="商品标题"
+            maxlength="200"
+            show-word-limit
+          />
         </el-form-item>
         <el-form-item label="分类">
-          <el-select v-model="createForm.categoryIds" multiple placeholder="选择分类 (可多选)" style="width:100%">
-            <el-option v-for="c in categories" :key="c.id" :label="c.name" :value="c.id" />
+          <el-select
+            v-model="createForm.categoryIds"
+            multiple
+            placeholder="选择分类 (可多选)"
+            style="width:100%"
+          >
+            <el-option
+              v-for="c in categories"
+              :key="c.id"
+              :label="c.name"
+              :value="c.id"
+            />
           </el-select>
         </el-form-item>
-        <el-form-item label="价格 (元)" required>
-          <el-input-number v-model="createForm.priceYuan" :precision="2" :step="1" :min="0" style="width:180px" />
-          <span class="muted" style="margin-left:10px;font-size:12px">店面前台显示 {{ money(Math.round(createForm.priceYuan * 100)) }}</span>
+        <el-form-item
+          label="价格 (元)"
+          required
+        >
+          <el-input-number
+            v-model="createForm.priceYuan"
+            :precision="2"
+            :step="1"
+            :min="0"
+            style="width:180px"
+          />
+          <span
+            class="muted"
+            style="margin-left:10px;font-size:12px"
+          >店面前台显示 {{ money(Math.round(createForm.priceYuan * 100)) }}</span>
         </el-form-item>
         <el-form-item label="SKU">
-          <el-input v-model="createForm.defaultSku" placeholder="留空自动生成" style="width:240px" />
+          <el-input
+            v-model="createForm.defaultSku"
+            placeholder="留空自动生成"
+            style="width:240px"
+          />
         </el-form-item>
         <el-form-item label="描述">
-          <RichEditor v-model="createForm.description" style="width:100%" height="220px" />
+          <RichEditor
+            v-model="createForm.description"
+            style="width:100%"
+            height="220px"
+          />
         </el-form-item>
         <el-form-item label="SEO 描述">
-          <el-input v-model="createForm.seoDescription" type="textarea" :rows="2"
-                    placeholder="搜索引擎优化描述, 留空取描述前 160 字" />
+          <el-input
+            v-model="createForm.seoDescription"
+            type="textarea"
+            :rows="2"
+            placeholder="搜索引擎优化描述, 留空取描述前 160 字"
+          />
         </el-form-item>
         <el-form-item label="SEO 关键词">
-          <el-input v-model="createForm.seoKeywords" placeholder="逗号分隔: jade, necklace, jewelry" />
+          <el-input
+            v-model="createForm.seoKeywords"
+            placeholder="逗号分隔: jade, necklace, jewelry"
+          />
         </el-form-item>
         <el-form-item label="直接上架">
           <el-switch v-model="createForm.active" />
         </el-form-item>
       </el-form>
       <template #footer>
-        <el-button @click="createVisible = false">取消</el-button>
-        <el-button type="primary" :loading="saving" @click="create">创建</el-button>
+        <el-button @click="createVisible = false">
+          取消
+        </el-button>
+        <el-button
+          type="primary"
+          :loading="saving"
+          @click="create"
+        >
+          创建
+        </el-button>
       </template>
     </el-dialog>
 
     <!-- 商品编辑抽屉 -->
-    <el-drawer v-model="detailVisible" :title="detail?.title || '商品编辑'" size="60%" top="4vh"
-               @opened="drawerOpened = true" @close="drawerOpened = false">
+    <el-drawer
+      v-model="detailVisible"
+      :title="detail?.title || '商品编辑'"
+      size="60%"
+      top="4vh"
+      @opened="drawerOpened = true"
+      @close="drawerOpened = false"
+    >
       <template v-if="detail">
         <h4>基本信息</h4>
         <el-form label-width="90">
           <el-form-item label="标题">
-            <el-input v-model="detail.title" maxlength="200" show-word-limit />
+            <el-input
+              v-model="detail.title"
+              maxlength="200"
+              show-word-limit
+            />
           </el-form-item>
           <el-form-item label="Slug">
-            <el-input v-model="detail.slug" disabled />
+            <el-input
+              v-model="detail.slug"
+              disabled
+            />
           </el-form-item>
           <el-form-item label="分类">
-            <el-select v-model="detail.categoryIds" multiple placeholder="选择分类" style="width:100%">
-              <el-option v-for="c in categories" :key="c.id" :label="c.name" :value="c.id" />
+            <el-select
+              v-model="detail.categoryIds"
+              multiple
+              placeholder="选择分类"
+              style="width:100%"
+            >
+              <el-option
+                v-for="c in categories"
+                :key="c.id"
+                :label="c.name"
+                :value="c.id"
+              />
             </el-select>
           </el-form-item>
           <el-form-item label="描述">
-            <RichEditor v-if="drawerOpened" v-model="detail.description" style="width:100%" height="220px" />
-            <div v-else style="height:220px;border:1px dashed #dcdfe6;border-radius:4px;width:100%"></div>
+            <RichEditor
+              v-if="drawerOpened"
+              v-model="detail.description"
+              style="width:100%"
+              height="220px"
+            />
+            <div
+              v-else
+              style="height:220px;border:1px dashed #dcdfe6;border-radius:4px;width:100%"
+            />
           </el-form-item>
           <el-form-item label="SEO 描述">
-            <el-input v-model="detail.seoDescription" type="textarea" :rows="2" />
+            <el-input
+              v-model="detail.seoDescription"
+              type="textarea"
+              :rows="2"
+            />
           </el-form-item>
           <el-form-item label="SEO 关键词">
-            <el-input v-model="detail.seoKeywords" placeholder="逗号分隔: jade, necklace, jewelry" />
+            <el-input
+              v-model="detail.seoKeywords"
+              placeholder="逗号分隔: jade, necklace, jewelry"
+            />
           </el-form-item>
           <el-form-item label="状态 / 精选">
-            <el-select v-model="detail.status" style="width:130px">
-              <el-option label="草稿" value="DRAFT" />
-              <el-option label="上架" value="ACTIVE" />
-              <el-option label="归档" value="ARCHIVED" />
+            <el-select
+              v-model="detail.status"
+              style="width:130px"
+            >
+              <el-option
+                label="草稿"
+                value="DRAFT"
+              />
+              <el-option
+                label="上架"
+                value="ACTIVE"
+              />
+              <el-option
+                label="归档"
+                value="ARCHIVED"
+              />
             </el-select>
-            <el-switch v-model="detail.featured" active-text="首页精选" style="margin-left:16px" />
+            <el-switch
+              v-model="detail.featured"
+              active-text="首页精选"
+              style="margin-left:16px"
+            />
           </el-form-item>
           <el-form-item>
-            <el-button type="primary" :loading="savingBasic" @click="saveBasic">保存基本信息</el-button>
+            <el-button
+              type="primary"
+              :loading="savingBasic"
+              @click="saveBasic"
+            >
+              保存基本信息
+            </el-button>
           </el-form-item>
         </el-form>
 
@@ -142,61 +361,182 @@
 
         <h4>商品图</h4>
         <div style="display:flex;gap:12px;align-items:center;margin-bottom:8px">
-          <img v-if="detail.mainImagePath" :src="'/media/' + detail.mainImagePath"
-               style="width:80px;height:80px;object-fit:cover;border-radius:6px;border:1px solid #eee" />
-          <div v-else style="width:80px;height:80px;border-radius:6px;display:flex;align-items:center;justify-content:center;color:#ccc;background:#f4f4f4">✦</div>
-          <el-upload :show-file-list="false" accept="image/jpeg,image/png,image/webp"
-                     :auto-upload="false" :on-change="uploadImage" :disabled="uploading">
-            <el-button :loading="uploading">{{ detail.mainImagePath ? '更换主图' : '上传主图' }}</el-button>
+          <img
+            v-if="detail.mainImagePath"
+            :src="'/media/' + detail.mainImagePath"
+            style="width:80px;height:80px;object-fit:cover;border-radius:6px;border:1px solid #eee"
+          >
+          <div
+            v-else
+            style="width:80px;height:80px;border-radius:6px;display:flex;align-items:center;justify-content:center;color:#ccc;background:#f4f4f4"
+          >
+            ✦
+          </div>
+          <el-upload
+            :show-file-list="false"
+            accept="image/jpeg,image/png,image/webp"
+            :auto-upload="false"
+            :on-change="uploadImage"
+            :disabled="uploading"
+          >
+            <el-button :loading="uploading">
+              {{ detail.mainImagePath ? '更换主图' : '上传主图' }}
+            </el-button>
           </el-upload>
-          <el-button v-if="detail.mainImagePath" link type="danger" @click="removeImage">移除</el-button>
+          <el-button
+            v-if="detail.mainImagePath"
+            link
+            type="danger"
+            @click="removeImage"
+          >
+            移除
+          </el-button>
         </div>
 
         <el-divider />
 
-        <h4>变体轴 <span class="muted" style="font-size:12px;font-weight:400">(如颜色/尺码, 用于生成多规格)</span></h4>
-        <div v-for="opt in detail.options" :key="opt.id" style="margin-bottom:8px;display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+        <h4>
+          变体轴 <span
+            class="muted"
+            style="font-size:12px;font-weight:400"
+          >(如颜色/尺码, 用于生成多规格)</span>
+        </h4>
+        <div
+          v-for="opt in detail.options"
+          :key="opt.id"
+          style="margin-bottom:8px;display:flex;gap:8px;align-items:center;flex-wrap:wrap"
+        >
           <el-tag>{{ opt.displayName }}</el-tag>
-          <el-tag v-for="v in opt.values" :key="v" type="info" size="small">{{ v }}</el-tag>
-          <el-button link type="danger" size="small" @click="removeOption(opt.id)">删除轴</el-button>
+          <el-tag
+            v-for="v in opt.values"
+            :key="v"
+            type="info"
+            size="small"
+          >
+            {{ v }}
+          </el-tag>
+          <el-button
+            link
+            type="danger"
+            size="small"
+            @click="removeOption(opt.id)"
+          >
+            删除轴
+          </el-button>
         </div>
         <div style="display:flex;gap:8px;margin-bottom:8px;flex-wrap:wrap">
-          <el-input v-model="newOption.key" placeholder="轴名, 如 color" style="width:130px" />
-          <el-input v-model="newOption.values" placeholder="取值, 逗号分隔: Red,Blue" style="width:220px" />
-          <el-button @click="addOption">加轴</el-button>
-          <el-button type="primary" plain :disabled="!detail.options.length" @click="generate">生成变体矩阵</el-button>
+          <el-input
+            v-model="newOption.key"
+            placeholder="轴名, 如 color"
+            style="width:130px"
+          />
+          <el-input
+            v-model="newOption.values"
+            placeholder="取值, 逗号分隔: Red,Blue"
+            style="width:220px"
+          />
+          <el-button @click="addOption">
+            加轴
+          </el-button>
+          <el-button
+            type="primary"
+            plain
+            :disabled="!detail.options.length"
+            @click="generate"
+          >
+            生成变体矩阵
+          </el-button>
         </div>
 
         <el-divider />
 
         <h4>变体 / 库存 / 价格</h4>
-        <el-table :data="detail.variants" size="small" border>
-          <el-table-column prop="sku" label="SKU" min-width="130" />
-          <el-table-column prop="spec" label="规格" min-width="110" />
-          <el-table-column label="价格 (元)" width="140">
+        <el-table
+          :data="detail.variants"
+          size="small"
+          border
+        >
+          <el-table-column
+            prop="sku"
+            label="SKU"
+            min-width="130"
+          />
+          <el-table-column
+            prop="spec"
+            label="规格"
+            min-width="110"
+          />
+          <el-table-column
+            label="价格 (元)"
+            width="140"
+          >
             <template #default="{ row }">
-              <el-input-number v-model="row.priceYuan" :precision="2" :step="1" :min="0"
-                               :controls="false" size="small" style="width:110px"
-                               @change="saveVariant(row)" />
+              <el-input-number
+                v-model="row.priceYuan"
+                :precision="2"
+                :step="1"
+                :min="0"
+                :controls="false"
+                size="small"
+                style="width:110px"
+                @change="saveVariant(row)"
+              />
             </template>
           </el-table-column>
-          <el-table-column label="在库" width="90">
+          <el-table-column
+            label="在库"
+            width="90"
+          >
             <template #default="{ row }">
-              <el-input-number v-model="row.quantity" :min="0" :controls="false" size="small"
-                               style="width:70px" @change="saveInventory(row)" />
+              <el-input-number
+                v-model="row.quantity"
+                :min="0"
+                :controls="false"
+                size="small"
+                style="width:70px"
+                @change="saveInventory(row)"
+              />
             </template>
           </el-table-column>
-          <el-table-column prop="reserved" label="占用" width="60" />
-          <el-table-column prop="available" label="可售" width="60" />
-          <el-table-column label="" width="60">
+          <el-table-column
+            prop="reserved"
+            label="占用"
+            width="60"
+          />
+          <el-table-column
+            prop="available"
+            label="可售"
+            width="60"
+          />
+          <el-table-column
+            label=""
+            width="60"
+          >
             <template #default="{ row }">
-              <el-popconfirm title="删除该变体?" @confirm="deleteVariant(row.id)">
-                <template #reference><el-button link type="danger" size="small">删</el-button></template>
+              <el-popconfirm
+                title="删除该变体?"
+                @confirm="deleteVariant(row.id)"
+              >
+                <template #reference>
+                  <el-button
+                    link
+                    type="danger"
+                    size="small"
+                  >
+                    删
+                  </el-button>
+                </template>
               </el-popconfirm>
             </template>
           </el-table-column>
         </el-table>
-        <el-button size="small" style="margin-top:8px" @click="addManualVariant">手动加变体</el-button>
+        <el-button
+          size="small"
+          style="margin-top:8px"
+          @click="addManualVariant"
+        >
+          手动加变体
+        </el-button>
       </template>
     </el-drawer>
   </div>
