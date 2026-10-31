@@ -99,7 +99,8 @@
     </el-dialog>
 
     <!-- 商品编辑抽屉 -->
-    <el-drawer v-model="detailVisible" :title="detail?.title || '商品编辑'" size="60%" top="4vh">
+    <el-drawer v-model="detailVisible" :title="detail?.title || '商品编辑'" size="60%" top="4vh"
+               @opened="drawerOpened = true" @close="drawerOpened = false">
       <template v-if="detail">
         <h4>基本信息</h4>
         <el-form label-width="90">
@@ -115,7 +116,8 @@
             </el-select>
           </el-form-item>
           <el-form-item label="描述">
-            <RichEditor v-model="detail.description" style="width:100%" height="220px" />
+            <RichEditor v-if="drawerOpened" v-model="detail.description" style="width:100%" height="220px" />
+            <div v-else style="height:220px;border:1px dashed #dcdfe6;border-radius:4px;width:100%"></div>
           </el-form-item>
           <el-form-item label="SEO 描述">
             <el-input v-model="detail.seoDescription" type="textarea" :rows="2" />
@@ -223,6 +225,7 @@ const detail = ref<any>(null)
 const uploading = ref(false)
 const savingBasic = ref(false)
 const newOption = reactive({ key: '', values: '' })
+const drawerOpened = ref(false)
 
 const money = (c: number) => '$' + (c / 100).toFixed(2)
 const statusText = (s: string) => ({ DRAFT: '草稿', ACTIVE: '上架', ARCHIVED: '归档' }[s] || s)

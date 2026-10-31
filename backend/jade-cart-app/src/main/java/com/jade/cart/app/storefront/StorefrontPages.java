@@ -311,7 +311,7 @@ public class StorefrontPages {
                     return Response.ok(blogPostTpl
                             .data("post", post)
                             .data("storeName", storeName).data("baseUrl", baseUrl)
-                            .data("theme", themeService.tokens()).data("seo", seo(desc, ogImage, false, "article", "/blog/" + post.slug))
+                            .data("theme", themeService.tokens()).data("seo", seo(desc, ogImage, false, "article", "/blog/" + post.slug, post.seoKeywords))
                             .data("jsonLd", ld(seoJsonLd.blogPosting(post, baseUrl, storeName)))
                             .render()).build();
                 })

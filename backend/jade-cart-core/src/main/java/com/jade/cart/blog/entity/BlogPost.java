@@ -58,6 +58,10 @@ public class BlogPost extends PanacheEntityBase {
     @Column(name = "seo_description", length = 500)
     public String seoDescription;
 
+    /** SEO 关键词 (逗号分隔, 店面 meta keywords) */
+    @Column(name = "seo_keywords", length = 300)
+    public String seoKeywords;
+
     @Column(nullable = false, length = 20)
     public String status = STATUS_DRAFT;
 

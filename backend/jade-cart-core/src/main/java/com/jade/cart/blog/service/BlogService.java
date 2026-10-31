@@ -2,6 +2,7 @@ package com.jade.cart.blog.service;
 
 import com.jade.cart.blog.entity.BlogPost;
 import com.jade.cart.content.service.ContentService;
+import com.jade.cart.catalog.service.HtmlSanitizer;
 import com.jade.common.exception.BizException;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
@@ -27,7 +28,8 @@ public class BlogService {
 
     @Transactional
     public BlogPost create(String slug, String title, String excerpt, String bodyMarkdown,
-                           String coverPath, String seoDescription, boolean publish) {
+                           String bodyHtml, String coverPath, String seoDescription,
+                           String seoKeywords, boolean publish) {
         String normalized = slug == null || slug.isBlank()
                 ? slugify(title) + "-" + UUID.randomUUID().toString().substring(0, 6)
                 : slug.trim().toLowerCase(Locale.ROOT).replaceAll("[^a-z0-9-]", "-");
@@ -43,7 +45,8 @@ public class BlogService {
         post.excerpt = excerpt;
         post.coverPath = coverPath;
         post.seoDescription = seoDescription;
-        setBody(post, bodyMarkdown);
+        post.seoKeywords = seoKeywords;
+        setBody(post, bodyMarkdown, bodyHtml);
         if (publish) {
             post.status = BlogPost.STATUS_ACTIVE;
             post.publishedAt = LocalDateTime.now();
@@ -54,7 +57,8 @@ public class BlogService {
 
     @Transactional
     public BlogPost update(Long id, String title, String excerpt, String bodyMarkdown,
-                           String coverPath, String seoDescription, String status) {
+                           String bodyHtml, String coverPath, String seoDescription,
+                           String seoKeywords, String status) {
         BlogPost post = BlogPost.findById(id);
         if (post == null) {
             throw new BizException("文章不存在");
@@ -71,7 +75,14 @@ public class BlogService {
         if (seoDescription != null) {
             post.seoDescription = seoDescription;
         }
-        if (bodyMarkdown != null) {
+        if (seoKeywords != null) {
+            post.seoKeywords = seoKeywords.isBlank() ? null : seoKeywords;
+        }
+        // 富文本编辑优先; markdown 兼容旧数据初始渲染
+        if (bodyHtml != null) {
+            post.bodyHtml = HtmlSanitizer.sanitize(bodyHtml);
+            post.bodyMarkdown = null;
+        } else if (bodyMarkdown != null) {
             setBody(post, bodyMarkdown);
         }
         if (status != null) {
@@ -97,7 +108,17 @@ public class BlogService {
 
     private void setBody(BlogPost post, String bodyMarkdown) {
         post.bodyMarkdown = bodyMarkdown;
-        post.bodyHtml = contentService.renderMarkdown(bodyMarkdown);
+        post.bodyHtml = HtmlSanitizer.sanitize(contentService.renderMarkdown(bodyMarkdown));
+    }
+
+    /** 富文本优先: bodyHtml 非空走净化直存 (wangEditor); 否则走 markdown 渲染 */
+    private void setBody(BlogPost post, String bodyMarkdown, String bodyHtml) {
+        if (bodyHtml != null && !bodyHtml.isBlank()) {
+            post.bodyHtml = HtmlSanitizer.sanitize(bodyHtml);
+            post.bodyMarkdown = null;
+        } else {
+            setBody(post, bodyMarkdown);
+        }
     }
 
     private String slugify(String s) {

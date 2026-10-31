@@ -35,7 +35,8 @@ public class AdminBlogController {
     BlogService blogService;
 
     public record PostReq(String slug, String title, String excerpt, String bodyMarkdown,
-                          String coverPath, String seoDescription, String status) {}
+                          String bodyHtml, String coverPath, String seoDescription,
+                          String seoKeywords, String status) {}
 
     @GET
     @RolesAllowed("admin")
@@ -50,7 +51,8 @@ public class AdminBlogController {
     @Operation(summary = "创建文章 (status=ACTIVE 直接发布)")
     public R<BlogPost> create(PostReq req) {
         return R.ok(blogService.create(req.slug(), req.title(), req.excerpt(), req.bodyMarkdown(),
-                req.coverPath(), req.seoDescription(), BlogPost.STATUS_ACTIVE.equals(req.status())));
+                req.bodyHtml(), req.coverPath(), req.seoDescription(), req.seoKeywords(),
+                BlogPost.STATUS_ACTIVE.equals(req.status())));
     }
 
     @PUT
@@ -60,7 +62,8 @@ public class AdminBlogController {
     @Operation(summary = "更新文章")
     public R<BlogPost> update(@PathParam("id") Long id, PostReq req) {
         return R.ok(blogService.update(id, req.title(), req.excerpt(), req.bodyMarkdown(),
-                req.coverPath(), req.seoDescription(), req.status()));
+                req.bodyHtml(), req.coverPath(), req.seoDescription(), req.seoKeywords(),
+                req.status()));
     }
 
     @DELETE
