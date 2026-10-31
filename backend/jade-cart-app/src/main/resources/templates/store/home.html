@@ -1,0 +1,40 @@
+{#storePage title='Home' store=storeName seo=seo baseUrl=baseUrl}
+
+{jsonLd.raw}
+
+{#if featured.isEmpty() && latest.isEmpty()}
+  <h1>Welcome</h1>
+  <p class="muted">No products yet. Admin console: <a href="/admin">/admin</a></p>
+{/if}
+
+{#if !featured.isEmpty()}
+  <h1>Featured</h1>
+  <div class="grid">
+    {#for p in featured}
+    <a class="card" href="/products/{p.slug}">
+      {#if p.mainImagePath}<img src="/media/{p.mainImagePath}" alt="{p.title}" loading="lazy" style="width:100%;height:160px;object-fit:cover;display:block">{#else}<div class="ph">✦</div>{/if}
+      <div class="body">
+        <div class="name">{p.title}</div>
+        <div class="price">from {p.minPriceCents.money}</div>
+      </div>
+    </a>
+    {/for}
+  </div>
+{/if}
+
+{#if !latest.isEmpty()}
+  <h1 style="margin-top:40px">{featured.isEmpty() ? 'All Products' : 'New Arrivals'}</h1>
+  <div class="grid">
+    {#for p in latest}
+    <a class="card" href="/products/{p.slug}">
+      {#if p.mainImagePath}<img src="/media/{p.mainImagePath}" alt="{p.title}" loading="lazy" style="width:100%;height:160px;object-fit:cover;display:block">{#else}<div class="ph">✦</div>{/if}
+      <div class="body">
+        <div class="name">{p.title}</div>
+        <div class="price">from {p.minPriceCents.money}</div>
+      </div>
+    </a>
+    {/for}
+  </div>
+{/if}
+
+{/storePage}

@@ -1,0 +1,32 @@
+/* Jade Platform 全局样式 */
+
+:root {
+  --jade-primary: #00a86b;
+  --jade-primary-light: #4cd393;
+  --jade-primary-dark: #008553;
+  --jade-bg: #f5f7fa;
+  --jade-text: #303133;
+  --jade-text-secondary: #909399;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC',
+    'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+  background: var(--jade-bg);
+  color: var(--jade-text);
+}
+
+/* Element Plus 主题色覆盖 */
+.el-button--primary {
+  --el-button-bg-color: var(--jade-primary);
+  --el-button-border-color: var(--jade-primary);
+  --el-button-hover-bg-color: var(--jade-primary-light);
+  --el-button-hover-border-color: var(--jade-primary-light);
+  --el-button-active-bg-color: var(--jade-primary-dark);
+  --el-button-active-border-color: var(--jade-primary-dark);
+}
+
+.el-link.el-link--primary {
+  --el-link-text-color: var(--jade-primary);
+  --el-link-hover-text-color: var(--jade-primary-light);
+}

@@ -1,0 +1,65 @@
+{#storePage title='Cart' store=storeName seo=seo baseUrl=baseUrl}
+
+<h1>Your Cart</h1>
+
+{#if error}<div class="error">{error}</div>{/if}
+
+{#if cart.items.isEmpty()}
+  <p class="muted">Your cart is empty. <a href="/products">Continue shopping</a>.</p>
+{#else}
+  <table>
+    <thead>
+    <tr><th>Item</th><th>Price</th><th style="width:150px">Qty</th><th>Subtotal</th><th></th></tr>
+    </thead>
+    <tbody>
+    {#for line in cart.items}
+    <tr>
+      <td>
+        <strong>{line.productTitle}</strong><br>
+        {#if line.spec}<span class="muted" style="font-size:14px">{line.spec}</span>{/if}
+      </td>
+      <td>{line.unitPriceCents.money}</td>
+      <td>
+        <form method="post" action="/cart/update" style="display:flex;gap:6px">
+          <input type="hidden" name="variantId" value="{line.variantId}">
+          <input type="number" name="quantity" value="{line.quantity}" min="0" max="{line.available}" style="margin:0;width:90px">
+          <button class="btn ghost" type="submit">Update</button>
+        </form>
+        {#if line.available == 0}<span class="muted" style="font-size:12px">out of stock</span>{/if}
+      </td>
+      <td>{line.lineTotalCents.money}</td>
+      <td>
+        <form method="post" action="/cart/remove">
+          <input type="hidden" name="variantId" value="{line.variantId}">
+          <button class="btn ghost" type="submit">Remove</button>
+        </form>
+      </td>
+    </tr>
+    {/for}
+    </tbody>
+  </table>
+
+  <p class="total">Subtotal: {cart.subtotalCents.money}</p>
+
+  <div class="panel" style="max-width:480px">
+    <h2 style="margin-top:0">Checkout</h2>
+    <form method="post" action="/checkout">
+      <label for="email">Email</label>
+      <input type="email" id="email" name="email" required placeholder="you@example.com">
+      <label for="shipName">Name</label>
+      <input type="text" id="shipName" name="shipName" placeholder="Your name">
+      <label for="country">Country</label>
+      <select name="country" id="country">
+        <option value="US" selected>United States</option>
+        <option value="CA">Canada</option>
+        <option value="GB">United Kingdom</option>
+        <option value="DE">Germany</option>
+        <option value="AU">Australia</option>
+      </select>
+      <button class="btn" type="submit" style="width:100%">Continue to payment</button>
+    </form>
+    <p class="muted" style="font-size:13px;margin-bottom:0">Unpaid orders hold stock for 30 minutes.</p>
+  </div>
+{/if}
+
+{/storePage}

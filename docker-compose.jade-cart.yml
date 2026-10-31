@@ -1,0 +1,79 @@
+# =====================================================
+# Jade Cart 一键部署 (自包含: PG + Redis + 后端 + 管理端前端)
+# 用法:
+#   docker compose -f docker-compose.jade-cart.yml up -d
+#   docker compose -f docker-compose.jade-cart.yml --profile build up -d --build
+# 端口: app 8090 / frontend 8088 / pg 5432 / redis 6380
+# 生产务必替换 JADE_JWT_SECRET / JADE_CRYPTO_MASTER_KEY / DB 密码
+# =====================================================
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: jade-cart-postgres
+    environment:
+      POSTGRES_DB: jade_cart
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - jade-cart-pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d jade_cart"]
+      interval: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    container_name: jade-cart-redis
+    ports:
+      - "6380:6379"
+    command: redis-server --appendonly yes
+    volumes:
+      - jade-cart-redisdata:/data
+
+  app:
+    image: jade-cart-app:local
+    build:
+      context: backend
+      dockerfile: Dockerfile
+    container_name: jade-cart-app
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    ports:
+      - "8090:8090"
+    environment:
+      DB_URL: jdbc:postgresql://postgres:5432/jade_cart?currentSchema=public
+      DB_USERNAME: postgres
+      DB_PASSWORD: postgres
+      REDIS_URL: redis://redis:6379
+      JADE_JWT_SECRET: "${JADE_JWT_SECRET:-dev-only-change-me-in-prod-min-32-bytes-required!!}"
+      JADE_JWT_EXPIRE_SECONDS: "7200"
+      JADE_JWT_ISSUER: jade-cart
+      JADE_CRYPTO_MASTER_KEY: "${JADE_CRYPTO_MASTER_KEY:-dev-only-aes-key-32-bytes-required-please!!}"
+      JADE_CART_STORE_BASE_URL: "${JADE_CART_STORE_BASE_URL:-http://localhost:8090}"
+      TZ: Asia/Shanghai
+    volumes:
+      - jade-cart-data:/app/data          # 媒体 + 备份
+
+  frontend:
+    image: jade-cart-frontend:local
+    build:
+      context: frontend
+      dockerfile: Dockerfile
+      args:
+        VITE_API_BASE: ""
+    container_name: jade-cart-frontend
+    depends_on:
+      - app
+    ports:
+      - "8088:80"
+    # nginx 需将 /api /media /q 反代到 app:8090 (frontend/nginx.conf 已含 /api 时改 target)
+
+volumes:
+  jade-cart-pgdata:
+  jade-cart-redisdata:
+  jade-cart-data:

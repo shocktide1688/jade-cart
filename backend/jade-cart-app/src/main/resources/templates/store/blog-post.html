@@ -1,0 +1,19 @@
+{#storePage title=post.title store=storeName seo=seo baseUrl=baseUrl}
+
+{jsonLd.raw}
+
+<p class="muted" style="margin-bottom:8px">
+  {#if post.publishedAt}{post.publishedAt} · {/if}<a href="/blog" class="muted">← All posts</a>
+</p>
+
+<h1>{post.title}</h1>
+
+{#if post.coverPath}
+<img src="/media/{post.coverPath}" alt="{post.title}" style="width:100%;max-height:380px;object-fit:cover;border-radius:8px;margin:16px 0">
+{/if}
+
+<div class="content">
+{post.bodyHtml.raw}
+</div>
+
+{/storePage}

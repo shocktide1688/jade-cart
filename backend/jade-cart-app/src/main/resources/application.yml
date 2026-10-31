@@ -1,0 +1,169 @@
+quarkus:
+  application:
+    name: jade-cart
+    version: 1.0.0-SNAPSHOT
+
+  http:
+    # 8080 被 jade-ldap 容器占用, jade-cart 用 8090
+    port: "${JADE_CART_HTTP_PORT:8090}"
+    # CORS 用自定义 CorsFilter (jade-web), 前端 dev 在 5174
+    cors:
+      origins: http://localhost:5173,http://localhost:5174
+      methods: GET,POST,PUT,DELETE,OPTIONS,PATCH
+      headers: accept,authorization,content-type,x-requested-with,x-trace-id,x-idempotency-key
+      exposed-headers: x-trace-id
+
+  datasource:
+    db-kind: postgresql
+    username: "${DB_USERNAME:postgres}"
+    password: "${DB_PASSWORD:postgres}"
+    jdbc:
+      url: "${DB_URL:jdbc:postgresql://localhost:5432/jade_cart?currentSchema=public}"
+      max-size: 20
+      min-size: 2
+    devservices:
+      enabled: false
+
+  redis:
+    hosts: "${REDIS_URL:redis://localhost:6380}"
+    devservices:
+      enabled: false
+
+  hibernate-orm:
+    database:
+      generation: validate
+    log:
+      sql: false
+    jdbc:
+      timezone: Asia/Shanghai
+
+  flyway:
+    migrate-at-start: true
+    # 多模块合并迁移: admin 自包含(V4~V8) + mail(V14) + ldap-client(V15) + cart 业务(V16+)
+    locations: classpath:db/migration/${jade.db.vendor},classpath:com/jade/mail/db/migration/${jade.db.vendor},classpath:com/jade/ldapclient/db/migration/${jade.db.vendor},classpath:com/jade/cart/db/migration/${jade.db.vendor}
+    baseline-on-migrate: true
+    validate-on-migrate: false
+    # 允许晚到的版本号插队 (多模块合并迁移必需)
+    out-of-order: true
+
+  smallrye-openapi:
+    enable: true
+
+  smallrye-health:
+    root-path: /q/health
+
+  micrometer:
+    binder:
+      jvm: true
+      system: true
+    distribution:
+      percentiles-histogram:
+        http.server.requests: true
+      slo:
+        http.server.requests: 10ms,50ms,100ms,200ms,500ms,1s,2s,5s
+    export:
+      prometheus:
+        path: /q/metrics
+
+  log:
+    level: INFO
+    console:
+      format: "%d{HH:mm:ss.SSS} %-5p [%X{traceId}] %c{1.} - %m%n"
+    category:
+      org.hibernate.orm.jdbc:
+        level: WARN
+      org.hibernate.engine.transaction:
+        level: WARN
+      io.netty:
+        level: WARN
+      io.vertx:
+        level: WARN
+
+mp:
+  openapi:
+    info:
+      title: Jade Cart API
+      version: 1.0.0-SNAPSHOT
+      description: Jade Cart 电商系统 (管理端 + 店面 API)
+  jwt:
+    verify:
+      issuer: jade-cart
+      publickey:
+        location: META-INF/jwt-public.pem
+
+smallrye:
+  jwt:
+    sign:
+      key:
+        location: META-INF/jwt-private.pem
+    new-token:
+      issuer: jade-cart
+      lifetime: 7200
+
+jade:
+  jwt:
+    secret: "${JADE_JWT_SECRET:dev-only-change-me-in-prod-min-32-bytes-required!!}"
+    expire-seconds: "${JADE_JWT_EXPIRE_SECONDS:7200}"
+    issuer: "${JADE_JWT_ISSUER:jade-cart}"
+  crypto:
+    master-key: "${JADE_CRYPTO_MASTER_KEY:dev-only-aes-key-32-bytes-required-please!!}"
+  cors:
+    enabled: "${JADE_CORS_ENABLED:true}"
+  db:
+    vendor: "${JADE_DB_VENDOR:postgresql}"
+  cart:
+    # 店面 (Qute SSR) 配置
+    store-name: "${JADE_CART_STORE_NAME:Jade Cart Store}"
+    currency: "${JADE_CART_CURRENCY:USD}"
+    # 市场注册表: CODE:CURRENCY 逗号分隔 (P3-17, 当前经营市场用设置 KV market 切换)
+    markets: "${JADE_CART_MARKETS:US:USD,EU:EUR}"
+    # 未支付订单库存预留分钟数 (kartwo: 30)
+    reservation-minutes: "${JADE_CART_RESERVATION_MINUTES:30}"
+
+# ============ 测试 profile (P3-14): @QuarkusTest 自动启用, 独立库 jade_test ============
+"%test":
+  quarkus:
+    datasource:
+      jdbc:
+        url: "jdbc:postgresql://localhost:5432/jade_test?currentSchema=public"
+        max-size: 8
+    redis:
+      hosts: "redis://localhost:6380"
+    http:
+      test-port: 0
+    flyway:
+      migrate-at-start: true
+  jade:
+    cart:
+      media-dir: "./target/test-media"
+      backup-dir: "./target/test-backups"
+
+"%dev":
+  quarkus:
+    dev-ui:
+      enabled: false
+    continuous-testing:
+      enabled: DISABLED
+    hibernate-orm:
+      log:
+        sql: true
+    log:
+      level: INFO
+      category:
+        org.hibernate.SQL:
+          level: DEBUG
+        org.hibernate.orm.jdbc.bind:
+          level: TRACE
+
+"%prod":
+  quarkus:
+    hibernate-orm:
+      log:
+        sql: false
+  jade:
+    jwt:
+      secret: "${JADE_JWT_SECRET}"
+      expire-seconds: "${JADE_JWT_EXPIRE_SECONDS}"
+      issuer: "${JADE_JWT_ISSUER}"
+    crypto:
+      master-key: "${JADE_CRYPTO_MASTER_KEY}"

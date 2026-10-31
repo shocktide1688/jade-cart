@@ -1,0 +1,22 @@
+# build
+target/
+dist/
+node_modules/
+tsconfig.tsbuildinfo
+
+# runtime data (媒体/备份/本地库)
+**/data/
+!**/data/.gitkeep
+
+# logs & tmp
+*.log
+*.out
+.DS_Store
+
+# ide
+.idea/
+*.iml
+.vscode/
+
+# vite
+frontend/.vite/

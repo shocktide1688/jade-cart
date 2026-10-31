@@ -1,0 +1,24 @@
+{#storePage title='Mock Checkout' store=storeName seo=seo baseUrl=baseUrl}
+
+<h1>Mock Payment Gateway</h1>
+<p class="muted">This is a simulated cashier page (Stripe/PayPal style hosted checkout). No real money involved.</p>
+
+<div class="panel" style="max-width:520px">
+  <table>
+    <tr><th>Order</th><td>{o.orderNumber}</td></tr>
+    <tr><th>Email</th><td>{o.email}</td></tr>
+    <tr><th>Amount</th><td><strong>{o.totalCents.money} {o.currency}</strong></td></tr>
+    <tr><th>Status</th><td><span class="status st-{o.status}">{o.status}</span></td></tr>
+  </table>
+
+  {#if o.status == 'PENDING'}
+  <form method="post" action="/pay/mock/{o.publicId}/confirm" style="margin-top:20px">
+    <button class="btn" type="submit" style="width:100%">Pay {o.totalCents.money} now</button>
+  </form>
+  <p class="muted" style="font-size:13px;margin-bottom:0">Confirming simulates the gateway webhook callback (idempotent).</p>
+  {#else}
+  <p style="margin-top:20px"><a class="btn ghost" href="/orders/{o.publicId}">View order status</a></p>
+  {/if}
+</div>
+
+{/storePage}

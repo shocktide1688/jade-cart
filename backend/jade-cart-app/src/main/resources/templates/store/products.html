@@ -1,0 +1,34 @@
+{#storePage title=categoryName store=storeName seo=seo baseUrl=baseUrl}
+
+<h1>{categoryName ?: 'All Products'}</h1>
+
+<form method="get" action="/products" style="display:flex;gap:8px;max-width:420px;margin-bottom:24px">
+  <input type="text" name="q" placeholder="Search products…" value="{q}">
+  <button class="btn" type="submit">Search</button>
+</form>
+
+<div style="margin-bottom:16px">
+  <span class="badge"><a href="/products">All</a></span>
+  {#for c in categories}
+  <span class="badge"><a href="/products?category={c.slug}">{c.name}</a></span>
+  {/for}
+</div>
+
+{#if items.isEmpty()}
+  <p class="muted">Nothing here yet.</p>
+{#else}
+  <div class="grid">
+    {#for p in items}
+    <a class="card" href="/products/{p.slug}">
+      {#if p.mainImagePath}<img src="/media/{p.mainImagePath}" alt="{p.title}" loading="lazy" style="width:100%;height:160px;object-fit:cover;display:block">{#else}<div class="ph">✦</div>{/if}
+      <div class="body">
+        <div class="name">{p.title}</div>
+        <div class="price">from {p.minPriceCents.money}</div>
+        {#if p.totalAvailable == 0}<div class="price muted">Out of stock</div>{/if}
+      </div>
+    </a>
+    {/for}
+  </div>
+{/if}
+
+{/storePage}

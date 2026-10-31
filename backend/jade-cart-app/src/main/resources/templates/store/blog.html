@@ -1,0 +1,26 @@
+{#storePage title='Blog' store=storeName seo=seo baseUrl=baseUrl}
+
+<h1>Blog</h1>
+
+{#if posts.isEmpty()}
+  <p class="muted">No posts yet.</p>
+{#else}
+  <div class="grid">
+    {#for post in posts}
+    <a class="card blog-card" href="/blog/{post.slug}">
+      {#if post.coverPath}
+      <img src="/media/{post.coverPath}" alt="{post.title}" loading="lazy" style="width:100%;height:160px;object-fit:cover;display:block">
+      {#else}
+      <div class="ph">✎</div>
+      {/if}
+      <div class="body">
+        <div class="date">{post.publishedAt ?: post.updatedAt}</div>
+        <div class="name">{post.title}</div>
+        {#if post.excerpt}<div class="price">{post.excerpt}</div>{/if}
+      </div>
+    </a>
+    {/for}
+  </div>
+{/if}
+
+{/storePage}

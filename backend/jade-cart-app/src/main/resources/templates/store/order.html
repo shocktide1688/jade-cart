@@ -1,0 +1,57 @@
+{#storePage title=o.orderNumber store=storeName seo=seo baseUrl=baseUrl}
+
+<h1>Order {o.orderNumber}</h1>
+
+<p>
+  Status: <span class="status st-{o.status}">{o.status}</span>
+  {#if o.status == 'PAID'}<span class="ok">✓ Paid</span>{/if}
+</p>
+
+{#if o.status == 'PENDING' && o.paymentProvider == 'mock'}
+  <p><a class="btn" href="/pay/mock/{o.publicId}">Complete payment</a></p>
+{/if}
+
+<div class="panel">
+  <table>
+    <thead>
+    <tr><th>Item</th><th>Unit price</th><th>Qty</th><th>Total</th></tr>
+    </thead>
+    <tbody>
+    {#for line in o.items}
+    <tr>
+      <td>
+        <strong>{line.productTitle}</strong><br>
+        {#if line.variantSpec}<span class="muted" style="font-size:14px">{line.variantSpec}</span>{/if}
+      </td>
+      <td>{line.unitPriceCents.money}</td>
+      <td>{line.quantity}</td>
+      <td>{line.lineTotalCents.money}</td>
+    </tr>
+    {/for}
+    </tbody>
+  </table>
+
+  <table style="margin-top:16px">
+    <tr><th>Email</th><td>{o.email}</td></tr>
+    <tr><th>Placed at</th><td>{o.createdAt}</td></tr>
+    {#if o.paidAt}<tr><th>Paid at</th><td>{o.paidAt}</td></tr>{/if}
+    {#if o.fulfilledAt}<tr><th>Fulfilled at</th><td>{o.fulfilledAt}</td></tr>{/if}
+    {#if o.cancelledAt}<tr><th>Cancelled at</th><td>{o.cancelledAt}</td></tr>{/if}
+    {#if o.refundedAt}<tr><th>Refunded at</th><td>{o.refundedAt}</td></tr>{/if}
+  </table>
+
+  <p class="total">Total: {o.totalCents.money} {o.currency} <span class="muted" style="font-weight:400;font-size:14px">(items {o.subtotalCents.money} + shipping {o.shippingCents.money})</span></p>
+
+  {#if o.shipment}
+  <div class="panel" style="border-color:#175cd3;margin-top:16px">
+    <strong>Shipment</strong>
+    <table style="margin-top:8px">
+      {#if o.shipment.carrier}<tr><th>Carrier</th><td>{o.shipment.carrier}</td></tr>{/if}
+      {#if o.shipment.trackingNumber}<tr><th>Tracking</th><td>{o.shipment.trackingNumber}</td></tr>{/if}
+      {#if o.shipment.trackingUrl}<tr><th>Link</th><td><a href="{o.shipment.trackingUrl}">Track package</a></td></tr>{/if}
+    </table>
+  </div>
+  {/if}
+</div>
+
+{/storePage}

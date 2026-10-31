@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{title ?: 'Home'} · {store}</title>
+
+{#if seo.noindex}
+<meta name="robots" content="noindex, nofollow">
+{/if}
+
+<meta name="description" content="{seo.desc ?: ''}">
+{#if seo.canon}<link rel="canonical" href="{baseUrl}{seo.canon}">{/if}
+
+<meta property="og:site_name" content="{store}">
+<meta property="og:title" content="{title ?: 'Home'} · {store}">
+<meta property="og:description" content="{seo.desc ?: ''}">
+<meta property="og:type" content="{seo.ogType ?: 'website'}">
+{#if seo.canon}<meta property="og:url" content="{baseUrl}{seo.canon}">{/if}
+{#if seo.image}<meta property="og:image" content="{seo.image}">{/if}
+
+<meta name="twitter:card" content="{seo.image ? 'summary_large_image' : 'summary'}">
+<meta name="twitter:title" content="{title ?: 'Home'} · {store}">
+<meta name="twitter:description" content="{seo.desc ?: ''}">
+{#if seo.image}<meta name="twitter:image" content="{seo.image}">{/if}
+<style>
+  :root { --ink:#1a1a1a; --muted:#767676; --line:#e6e6e6; --accent:#1a1a1a; }
+  * { box-sizing:border-box; }
+  body { margin:0; color:var(--ink); font:16px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif; background:#fff; }
+  a { color:inherit; text-decoration:none; }
+  header { display:flex; justify-content:space-between; align-items:center; padding:18px 24px; border-bottom:1px solid var(--line); }
+  header .brand { font-weight:700; font-size:20px; letter-spacing:.02em; }
+  header nav a { margin-left:20px; color:var(--muted); }
+  header nav a:hover { color:var(--ink); }
+  main { max-width:1080px; margin:0 auto; padding:32px 24px 64px; }
+  footer { border-top:1px solid var(--line); color:var(--muted); text-align:center; padding:20px; font-size:13px; }
+  h1 { font-size:28px; margin:0 0 20px; }
+  h2 { font-size:20px; }
+  .grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:24px; }
+  .card { border:1px solid var(--line); border-radius:8px; overflow:hidden; transition:box-shadow .15s; }
+  .card:hover { box-shadow:0 2px 10px rgba(0,0,0,.06); }
+  .card .ph { height:160px; background:linear-gradient(135deg,#f4f4f4,#e9e9e9); display:flex; align-items:center; justify-content:center; color:#bbb; font-size:40px; }
+  .card .body { padding:14px 16px; }
+  .card .name { font-weight:600; }
+  .card .price { color:var(--muted); margin-top:4px; }
+  .muted { color:var(--muted); }
+  .badge { display:inline-block; font-size:12px; border:1px solid var(--line); border-radius:99px; padding:2px 10px; color:var(--muted); margin-right:6px; }
+  .btn { display:inline-block; background:var(--accent); color:#fff; border:none; border-radius:6px; padding:10px 18px; font-size:15px; cursor:pointer; }
+  .btn:hover { opacity:.85; }
+  .btn.ghost { background:#fff; color:var(--ink); border:1px solid var(--ink); }
+  table { width:100%; border-collapse:collapse; }
+  th,td { text-align:left; padding:12px 8px; border-bottom:1px solid var(--line); vertical-align:top; }
+  .total { text-align:right; font-size:18px; font-weight:600; margin:16px 0; }
+  .panel { border:1px solid var(--line); border-radius:8px; padding:24px; margin-top:24px; }
+  input[type=email],input[type=text],input[type=number],select { width:100%; padding:10px 12px; border:1px solid var(--line); border-radius:6px; font:inherit; margin-bottom:12px; }
+  label { font-size:14px; color:var(--muted); display:block; margin-bottom:4px; }
+  .error { background:#fdf2f2; color:#b42318; border:1px solid #f4c7c3; border-radius:6px; padding:10px 14px; margin-bottom:16px; }
+  .ok { color:#067647; font-weight:600; }
+  .status { display:inline-block; padding:4px 12px; border-radius:6px; font-size:13px; font-weight:600; }
+  .st-PENDING { background:#fff8e6; color:#a15c00; }
+  .st-PAID { background:#e7f6ec; color:#067647; }
+  .st-FULFILLED { background:#e7f0fa; color:#175cd3; }
+  .st-CANCELLED { background:#f2f4f7; color:#475467; }
+  .st-REFUNDED { background:#f4f4f4; color:#767676; }
+  .st-PAYMENT_REVIEW { background:#fdeaea; color:#b42318; }
+  .content h2 { margin-top:28px; }
+  .content ul { padding-left:20px; }
+  .blog-card .date { font-size:13px; color:var(--muted); margin-bottom:6px; }
+</style>
+</head>
+<body>
+<header>
+  <a class="brand" href="/">{store}</a>
+  <nav>
+    <a href="/products">Products</a>
+    <a href="/blog">Blog</a>
+    <a href="/contact">Contact</a>
+    <a href="/cart">Cart</a>
+  </nav>
+</header>
+<main>
+{nested-content}
+</main>
+<footer>
+  <div style="margin-bottom:8px">
+    <a href="/pages/privacy-policy" style="margin:0 10px">Privacy</a>
+    <a href="/pages/refund-policy" style="margin:0 10px">Refund</a>
+    <a href="/pages/terms-of-service" style="margin:0 10px">Terms</a>
+    <a href="/pages/shipping-policy" style="margin:0 10px">Shipping</a>
+    <a href="/contact" style="margin:0 10px">Contact</a>
+  </div>
+  {store} · Powered by Jade Cart
+</footer>
+</body>
+</html>
