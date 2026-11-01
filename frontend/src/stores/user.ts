@@ -13,6 +13,9 @@ export interface UserInfo {
 export interface LoginPayload {
   username: string
   password: string
+  /** 图形验证码凭据（后端要求时携带） */
+  uuid?: string
+  code?: string
 }
 
 export interface LoginResult {

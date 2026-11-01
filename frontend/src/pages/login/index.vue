@@ -3,13 +3,24 @@ import { reactive, ref } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { useUserStore } from '@/stores/user'
+import request, { BizError } from '@/utils/request'
 
 const router = useRouter()
 const route = useRoute()
 const userStore = useUserStore()
 
-const form = reactive({ username: 'admin', password: 'admin123' })
+const form = reactive({ username: 'admin', password: 'admin123', uuid: '', code: '' })
 const loading = ref(false)
+// 失败超次（1005）或验证码错误（1006）后显示验证码行
+const captchaVisible = ref(false)
+const captchaImage = ref('')
+
+async function refreshCaptcha() {
+  const res = await request({ url: '/api/v1/auth/captcha', method: 'GET' })
+  const data = res.data.data as { uuid: string; image: string }
+  captchaImage.value = data.image
+  form.uuid = data.uuid
+}
 
 async function handleLogin() {
   loading.value = true
@@ -18,8 +29,13 @@ async function handleLogin() {
     ElMessage.success('登录成功')
     const redirect = (route.query.redirect as string) || '/dashboard'
     router.push(redirect)
-  } catch {
-    // 已在 request.ts 统一提示
+  } catch (e) {
+    // 需要验证码/验证码错误 → 显示验证码行并换图（错误提示已在 request.ts 统一弹出）
+    if (e instanceof BizError && (e.code === 1005 || e.code === 1006)) {
+      captchaVisible.value = true
+      form.code = ''
+      await refreshCaptcha()
+    }
   } finally {
     loading.value = false
   }
@@ -65,6 +81,25 @@ async function handleLogin() {
             @keyup.enter="handleLogin"
           />
         </el-form-item>
+        <el-form-item v-if="captchaVisible" label="验证码">
+          <div class="captcha-row">
+            <el-input
+              v-model="form.code"
+              placeholder="请输入验证码"
+              size="large"
+              maxlength="4"
+              @keyup.enter="handleLogin"
+            />
+            <img
+              v-if="captchaImage"
+              :src="captchaImage"
+              class="captcha-img"
+              title="看不清？点击刷新"
+              alt="验证码"
+              @click="refreshCaptcha"
+            />
+          </div>
+        </el-form-item>
         <el-button
           type="primary"
           size="large"
@@ -109,4 +144,7 @@ async function handleLogin() {
 }
 .form-title { text-align: center; margin: 0 0 32px; color: #303133; }
 .tip { text-align: center; color: #909399; font-size: 12px; margin-top: 16px; }
+
+.captcha-row { display: flex; gap: 12px; width: 100%; }
+.captcha-img { height: 40px; border-radius: 4px; cursor: pointer; flex-shrink: 0; }
 </style>

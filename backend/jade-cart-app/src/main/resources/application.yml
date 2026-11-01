@@ -6,12 +6,17 @@ quarkus:
   http:
     # 8080 被 jade-ldap 容器占用, jade-cart 用 8090
     port: "${JADE_CART_HTTP_PORT:8090}"
-    # CORS 用自定义 CorsFilter (jade-web), 前端 dev 在 5174
+    # CORS: Quarkus 内置 Vert.x 层过滤器 (jade-web 自定义 CorsFilter 已删除)。
+    # 必须留在 HTTP 层: 安全层 401 也会带 CORS 头, 否则浏览器把过期 token 的
+    # 401 拦截成 Network Error, 前端"登录已过期"提示失效
     cors:
-      origins: http://localhost:5173,http://localhost:5174
+      enabled: "${JADE_CORS_ENABLED:true}"
+      origins: "${JADE_CORS_ORIGINS:http://localhost:5173,http://localhost:5174}"
       methods: GET,POST,PUT,DELETE,OPTIONS,PATCH
       headers: accept,authorization,content-type,x-requested-with,x-trace-id,x-idempotency-key
       exposed-headers: x-trace-id
+      access-control-max-age: 3600
+      access-control-allow-credentials: true
 
   datasource:
     db-kind: postgresql
@@ -107,8 +112,6 @@ jade:
     issuer: "${JADE_JWT_ISSUER:jade-cart}"
   crypto:
     master-key: "${JADE_CRYPTO_MASTER_KEY:dev-only-aes-key-32-bytes-required-please!!}"
-  cors:
-    enabled: "${JADE_CORS_ENABLED:true}"
   db:
     vendor: "${JADE_DB_VENDOR:postgresql}"
   cart:
