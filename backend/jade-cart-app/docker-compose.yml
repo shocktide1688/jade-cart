@@ -1,0 +1,30 @@
+# Jade Cart 单机部署 (SQLite + Redis, 1C/1G 小机型)
+# 服务器: /opt/jade-cart/{docker-compose.yml,.env,data/}
+services:
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: ["redis-server", "--maxmemory", "64mb", "--maxmemory-policy", "allkeys-lru"]
+
+  app:
+    image: jade-cart:sqlite
+    restart: unless-stopped
+    depends_on:
+      - redis
+    environment:
+      REDIS_URL: redis://redis:6379
+      JADE_CART_HTTP_PORT: "8090"
+      # .env 里提供 (公网部署必改): openssl rand -base64 48
+      JADE_JWT_SECRET: "${JADE_JWT_SECRET}"
+      JADE_CRYPTO_MASTER_KEY: "${JADE_CRYPTO_MASTER_KEY}"
+      JAVA_OPTS: "-Xmx512m -Xms128m -XX:+UseSerialGC -XX:MaxMetaspaceSize=160m"
+    ports:
+      - "8090:8090"
+    volumes:
+      - ./data:/app/data
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:8090/q/health || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 40s
