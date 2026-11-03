@@ -11,6 +11,8 @@ import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.sql.ResultSet;
+import java.sql.Statement;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -20,6 +22,7 @@ import java.util.Map;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
+import org.hibernate.Session;
 
 /**
  * 全量备份 (kartwo backup 对齐): ZIP = manifest + mall_* 表 JSON 快照 + 媒体文件 本地定时 (每日 04:00) + 保留 N 份; 恢复用
@@ -95,13 +98,13 @@ public class BackupService {
             manifest.put("product_count", products);
             putZipEntry(zip, "manifest.json", mapper.writeValueAsBytes(manifest));
 
-            // ② 各表 JSON 快照 (原生 SQL → 独立于实体)
+            // ② 各表 JSON 快照 (JDBC 通用导出 → 独立于实体, 兼容 PostgreSQL/SQLite)
             for (String table : TABLES) {
                 try {
-                    List<?> rows =
-                            em.createNativeQuery("SELECT to_jsonb(t) FROM " + table + " t")
-                                    .getResultList();
-                    putZipEntry(zip, "data/" + table + ".json", mapper.writeValueAsBytes(rows));
+                    putZipEntry(
+                            zip,
+                            "data/" + table + ".json",
+                            mapper.writeValueAsBytes(exportTable(table)));
                 } catch (Exception e) {
                     Log.warnf("backup table skipped: %s (%s)", table, e.getMessage());
                 }
@@ -206,6 +209,32 @@ public class BackupService {
         } catch (Exception e) {
             return 0;
         }
+    }
+
+    /**
+     * 通用表导出: SELECT * + ResultSetMetaData 拼行对象。不依赖 PostgreSQL 专有 to_jsonb 函数, SQLite
+     * (QUARKUS_PROFILE=sqlite) 下同样可用; 产出干净 JSON 数组 (替代原先 jsonb 字符串再编码的双层形式)
+     */
+    @SuppressWarnings(
+            "PMD.CloseResource") // Session 由 CDI 管理的 EntityManager unwrap 而来, 生命周期归容器, 不可关闭
+    private List<Map<String, Object>> exportTable(String table) {
+        Session session = em.unwrap(Session.class);
+        return session.doReturningWork(
+                connection -> {
+                    List<Map<String, Object>> rows = new ArrayList<>();
+                    try (Statement st = connection.createStatement();
+                            ResultSet rs = st.executeQuery("SELECT * FROM " + table)) {
+                        int cols = rs.getMetaData().getColumnCount();
+                        while (rs.next()) {
+                            Map<String, Object> row = new LinkedHashMap<>();
+                            for (int i = 1; i <= cols; i++) {
+                                row.put(rs.getMetaData().getColumnLabel(i), rs.getObject(i));
+                            }
+                            rows.add(row);
+                        }
+                    }
+                    return rows;
+                });
     }
 
     private void putZipEntry(ZipOutputStream zip, String name, byte[] bytes) throws Exception {
