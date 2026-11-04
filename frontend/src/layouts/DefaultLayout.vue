@@ -4,6 +4,8 @@ import { useRouter, useRoute } from 'vue-router'
 import { REGISTERED_PATHS } from '@/router'
 import { useUserStore } from '@/stores/user'
 import { useAppStore } from '@/stores/app'
+import { useTagsViewStore } from '@/stores/tagsView'
+import TagsView from '@/components/TagsView.vue'
 import request from '@/utils/request'
 import {
   House, Expand, Fold, UserFilled, User, Menu, OfficeBuilding, Reading,
@@ -22,6 +24,12 @@ const appStore = useAppStore()
 const router = useRouter()
 const route = useRoute()
 const menus = ref<any[]>([])
+
+// keep-alive 缓存哪些页面：以打开的标签页路由 name 为准，关 tab 即释放缓存
+const tagsStore = useTagsViewStore()
+const cachedViews = computed(
+  () => tagsStore.visitedViews.map((v) => v.name).filter(Boolean) as string[]
+)
 
 // 路径 -> 图标 的映射 (菜单未配 icon 时按名称回退)
 const ICON_MAP: Record<string, any> = {
@@ -208,6 +216,8 @@ async function handleCommand(cmd: string) {
         </div>
       </el-header>
 
+      <TagsView />
+
       <el-main class="main">
         <el-breadcrumb
           v-if="breadcrumbs.length > 1"
@@ -225,7 +235,11 @@ async function handleCommand(cmd: string) {
             <span v-else>{{ c.name }}</span>
           </el-breadcrumb-item>
         </el-breadcrumb>
-        <router-view />
+        <router-view v-slot="{ Component }">
+          <keep-alive :include="cachedViews">
+            <component :is="Component" />
+          </keep-alive>
+        </router-view>
       </el-main>
     </el-container>
   </el-container>

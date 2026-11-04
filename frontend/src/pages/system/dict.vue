@@ -1,4 +1,5 @@
 <script setup lang="ts">
+defineOptions({ name: 'SystemDict' })
 import { onMounted, reactive, ref } from 'vue'
 import request from '@/utils/request'
 import { ElMessage, ElMessageBox } from 'element-plus'

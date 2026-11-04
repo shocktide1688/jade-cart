@@ -279,6 +279,7 @@
 </template>
 
 <script setup lang="ts">
+defineOptions({ name: 'MallOrder' })
 import { onMounted, reactive, ref } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import request from '@/utils/request'

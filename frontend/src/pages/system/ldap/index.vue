@@ -104,6 +104,7 @@
 </template>
 
 <script setup lang="ts">
+defineOptions({ name: 'SystemLdap' })
 import { onMounted, ref } from 'vue'
 import request from '@/utils/request'
 import { ElMessage } from 'element-plus'

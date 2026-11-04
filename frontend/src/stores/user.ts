@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { getToken, setToken, removeToken } from '@/utils/auth'
+import { useTagsViewStore } from '@/stores/tagsView'
 import request from '@/utils/request'
 
 export interface UserInfo {
@@ -51,6 +52,8 @@ export const useUserStore = defineStore(
       accessToken.value = ''
       userInfo.value = null
       removeToken()
+      // 登出清空打开的标签页，避免换账号登录后残留
+      useTagsViewStore().clearViews()
     }
 
     function setUser(u: any) {

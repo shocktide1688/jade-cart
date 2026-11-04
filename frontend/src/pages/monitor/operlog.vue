@@ -1,4 +1,5 @@
 <script setup lang="ts">
+defineOptions({ name: 'MonitorOperLog' })
 import { onMounted, ref } from 'vue'
 import request from '@/utils/request'
 

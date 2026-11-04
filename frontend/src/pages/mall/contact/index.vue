@@ -120,6 +120,7 @@
 </template>
 
 <script setup lang="ts">
+defineOptions({ name: 'MallContact' })
 import { onMounted, reactive, ref } from 'vue'
 import { ElMessage } from 'element-plus'
 import request from '@/utils/request'

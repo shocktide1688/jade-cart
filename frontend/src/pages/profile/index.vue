@@ -1,4 +1,5 @@
 <script setup lang="ts">
+defineOptions({ name: 'Profile' })
 import { onMounted, reactive, ref } from 'vue'
 import request from '@/utils/request'
 import { ElMessage } from 'element-plus'

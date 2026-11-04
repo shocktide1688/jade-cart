@@ -145,6 +145,7 @@
 </template>
 
 <script setup lang="ts">
+defineOptions({ name: 'MallImport' })
 import { onMounted, ref } from 'vue'
 import { ElMessage } from 'element-plus'
 import request from '@/utils/request'
