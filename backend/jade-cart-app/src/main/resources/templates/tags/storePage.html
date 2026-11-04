@@ -56,8 +56,8 @@
   header .cart-link { position:relative; color:var(--c-ink); }
   /* 语言切换 (右上角): 国旗触发器 + 白卡下拉 (details 原生展开, 无 JS); 旗帜 = CSS 渐变绘制 */
   .lang-drop { position:relative; padding:0 10px; border-left:1px solid var(--c-line); }
-  .lang-drop summary { list-style:none; display:inline-flex; align-items:center; cursor:pointer; border:1.5px solid var(--c-line); border-radius:999px; padding:4px 10px; }
-  .lang-drop summary:hover { border-color:var(--c-ink); }
+  .lang-drop summary { list-style:none; display:inline-flex; align-items:center; cursor:pointer; border-radius:999px; padding:4px 8px; }
+  .lang-drop summary:hover { background:rgba(0,0,0,.05); }
   .lang-drop summary::-webkit-details-marker { display:none; }
   .flag { width:22px; height:15px; border-radius:2.5px; display:inline-block; position:relative; overflow:hidden; background:#e5e7eb; }
   .flag-de { background:linear-gradient(180deg,#1d1d1d 0 33.4%,#dd0000 33.4% 66.7%,#ffce00 66.7%); }
@@ -71,7 +71,6 @@
   .lang-item.on::after { content:"✓"; margin-left:auto; }
   .lang-item .lang-code { letter-spacing:.03em; }
   .theme-teawone .lang-drop { border-left-color:rgba(29,29,29,.12); }
-  .theme-teawone .lang-drop summary { border-color:var(--c-ink); }
   .cart-count { position:absolute; top:-7px; right:-9px; background:var(--c-primary); color:#fff; border-radius:999px; font-size:11px; line-height:16px; min-width:16px; height:16px; text-align:center; padding:0 4px; font-weight:600; }
   main { max-width:1080px; margin:0 auto; padding:32px 24px 64px; }
   footer { border-top:1px solid var(--c-line); color:var(--c-muted); padding:44px 24px 22px; font-size:14px; }
