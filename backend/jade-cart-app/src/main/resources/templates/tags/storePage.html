@@ -54,12 +54,23 @@
   header .actions a:first-child { border-left:none; }
   .theme-teawone header .actions a { border-left-color:rgba(29,29,29,.12); }
   header .cart-link { position:relative; color:var(--c-ink); }
-  /* 语言切换 (右上角): 紧凑码位 EN·DE·FR, 当前项加粗下划线 */
-  .lang-sw { display:flex; align-items:center; gap:2px; padding:4px 14px; border-left:1px solid var(--c-line); font-size:12px; letter-spacing:.04em; }
-  .lang-sw a { color:var(--c-muted); padding:2px 4px; border-left:none; }
-  .lang-sw a:hover { color:var(--c-ink); }
-  .lang-sw a.on { color:var(--c-ink); font-weight:700; text-decoration:underline; text-underline-offset:3px; }
-  .theme-teawone .lang-sw { border-left-color:rgba(29,29,29,.12); }
+  /* 语言切换 (右上角): 国旗触发器 + 白卡下拉 (details 原生展开, 无 JS); 旗帜 = CSS 渐变绘制 */
+  .lang-drop { position:relative; padding:0 10px; border-left:1px solid var(--c-line); }
+  .lang-drop summary { list-style:none; display:inline-flex; align-items:center; cursor:pointer; border:1.5px solid var(--c-line); border-radius:999px; padding:4px 10px; }
+  .lang-drop summary:hover { border-color:var(--c-ink); }
+  .lang-drop summary::-webkit-details-marker { display:none; }
+  .flag { width:22px; height:15px; border-radius:2.5px; display:inline-block; position:relative; overflow:hidden; background:#e5e7eb; }
+  .flag-de { background:linear-gradient(180deg,#1d1d1d 0 33.4%,#dd0000 33.4% 66.7%,#ffce00 66.7%); }
+  .flag-fr { background:linear-gradient(90deg,#0055a4 0 33.4%,#fff 33.4% 66.7%,#ef4135 66.7%); }
+  .flag-us, .flag-en { background:repeating-linear-gradient(180deg,#b22234 0 1.5px,#fff 1.5px 3px); }
+  .flag-us::before, .flag-en::before { content:""; position:absolute; left:0; top:0; width:45%; height:52%; background:#3c3b6e; }
+  .lang-menu { position:absolute; top:calc(100% + 12px); right:0; background:#fff; border-radius:16px; box-shadow:0 12px 32px rgba(0,0,0,.16); padding:8px; display:flex; flex-direction:column; gap:2px; min-width:132px; z-index:60; }
+  .lang-item { display:flex; align-items:center; gap:10px; padding:9px 12px; border-radius:10px; color:var(--c-ink); font-size:14px; font-weight:500; }
+  .lang-item:hover { background:#f2f4f2; }
+  .lang-item.on { box-shadow:inset 0 0 0 1.5px var(--c-ink); }
+  .lang-item .lang-code { letter-spacing:.03em; }
+  .theme-teawone .lang-drop { border-left-color:rgba(29,29,29,.12); }
+  .theme-teawone .lang-drop summary { border-color:var(--c-ink); }
   .cart-count { position:absolute; top:-7px; right:-9px; background:var(--c-primary); color:#fff; border-radius:999px; font-size:11px; line-height:16px; min-width:16px; height:16px; text-align:center; padding:0 4px; font-weight:600; }
   main { max-width:1080px; margin:0 auto; padding:32px 24px 64px; }
   footer { border-top:1px solid var(--c-line); color:var(--c-muted); padding:44px 24px 22px; font-size:14px; }
@@ -426,9 +437,19 @@
   </nav>
   <div class="actions">
     {#if langs.size > 1}
-    <div class="lang-sw" aria-label="Language">
-      {#for l in langs}<a class="lang-opt{#if l.current} on{/if}" href="?lang={l.code}">{l.code.toUpperCase()}</a>{/for}
-    </div>
+    <details class="lang-drop">
+      <summary aria-label="Language">
+        {#for l in langs}{#if l.current}<span class="flag flag-{l.code}"></span>{/if}{/for}
+      </summary>
+      <div class="lang-menu">
+        {#for l in langs}
+        <a class="lang-item{#if l.current} on{/if}" href="?lang={l.code}">
+          <span class="flag flag-{l.code}"></span>
+          <span class="lang-code">{l.code.toUpperCase()}</span>
+        </a>
+        {/for}
+      </div>
+    </details>
     {/if}
     <a href="/products" aria-label="{t.ariaSearch}"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg></a>
     <a href="/cart" class="cart-link" aria-label="{t.ariaCart}"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8h12l-1.2 12H7.2L6 8Z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/></svg><span class="cart-count" hidden></span></a>
