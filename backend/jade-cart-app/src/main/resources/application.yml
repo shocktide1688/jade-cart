@@ -124,6 +124,8 @@ jade:
     # 店面 (Qute SSR) 配置
     store-name: "${JADE_CART_STORE_NAME:Jade Cart Store}"
     currency: "${JADE_CART_CURRENCY:USD}"
+    # 店面语言注册表: CODE:Label 逗号分隔, 首个为默认 (翻资产 = classpath i18n/store_<code>.properties)
+    locales: "${JADE_CART_LOCALES:en:English,de:Deutsch,fr:Français}"
     # 市场注册表: CODE:CURRENCY 逗号分隔 (P3-17, 当前经营市场用设置 KV market 切换)
     markets: "${JADE_CART_MARKETS:US:USD,EU:EUR}"
     # 未支付订单库存预留分钟数 (kartwo: 30)
