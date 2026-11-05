@@ -1,3 +1,4 @@
+name: jade-cart
 # Jade Cart 单机部署 (SQLite + Redis, 1C/1G 小机型)
 # 服务器: /opt/jade-cart/{docker-compose.yml,.env,data/}
 services:
