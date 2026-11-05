@@ -35,6 +35,11 @@ public class HeroSection implements SectionRenderer {
         c.putIfAbsent("ctaText", "");
         c.putIfAbsent("ctaHref", "");
         c.putIfAbsent("align", "");
+        // 强调词: *word* → 衬线斜体 + 粉紫下划线 (仅允许词内安全字符, 输出用 .raw)
+        String headline = String.valueOf(c.get("headline"));
+        String html =
+                headline.replaceAll("\\*([A-Za-z0-9 ,.'\\u2019-]+)\\*", "<em class=\"hl\">$1</em>");
+        c.put("headlineHtml", html);
         return tpl.data("cfg", c).render();
     }
 }

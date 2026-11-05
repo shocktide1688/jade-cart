@@ -1,23 +1,23 @@
-{#storePage title='Home' store=storeName seo=seo theme=theme baseUrl=baseUrl}
+{#storePage title=t.homeTitle store=storeName seo=seo t=t langs=langs theme=theme baseUrl=baseUrl pill=true navCats=navCats}
 
 {jsonLd.raw}
 
 {#if sections.isEmpty()}
 
 {#if featured.isEmpty() && latest.isEmpty()}
-  <h1>Welcome</h1>
-  <p class="muted">No products yet. Admin console: <a href="/admin">/admin</a></p>
+  <h1>{t.welcomeTitle}</h1>
+  <p class="muted">{t.noProductsYet} <a href="/admin">/admin</a></p>
 {/if}
 
 {#if !featured.isEmpty()}
-  <h1>Featured</h1>
+  <h1>{t.featuredTitle}</h1>
   <div class="grid">
     {#for p in featured}
     <a class="card" href="/products/{p.slug}">
       {#if p.mainImagePath}<img src="/media/{p.mainImagePath}" alt="{p.title}" loading="lazy" style="width:100%;height:160px;object-fit:cover;display:block">{#else}<div class="ph">✦</div>{/if}
       <div class="body">
         <div class="name">{p.title}</div>
-        <div class="price">from {p.minPriceCents.money}</div>
+        <div class="price">{t.from} {p.minPriceCents.money}</div>
       </div>
     </a>
     {/for}
@@ -25,14 +25,14 @@
 {/if}
 
 {#if !latest.isEmpty()}
-  <h1 style="margin-top:40px">{featured.isEmpty() ? 'All Products' : 'New Arrivals'}</h1>
+  <h1 style="margin-top:40px">{featured.isEmpty() ? t.allProducts : t.newArrivals}</h1>
   <div class="grid">
     {#for p in latest}
     <a class="card" href="/products/{p.slug}">
       {#if p.mainImagePath}<img src="/media/{p.mainImagePath}" alt="{p.title}" loading="lazy" style="width:100%;height:160px;object-fit:cover;display:block">{#else}<div class="ph">✦</div>{/if}
       <div class="body">
         <div class="name">{p.title}</div>
-        <div class="price">from {p.minPriceCents.money}</div>
+        <div class="price">{t.from} {p.minPriceCents.money}</div>
       </div>
     </a>
     {/for}

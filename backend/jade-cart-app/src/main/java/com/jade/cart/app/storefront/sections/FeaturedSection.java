@@ -51,7 +51,28 @@ public class FeaturedSection implements SectionRenderer {
                 products = catalogService.activeProducts(null, null, limit);
             }
         }
-        List<ProductView.Summary> items = products.stream().map(catalogService::toSummary).toList();
+        List<ProductView.Summary> summaries =
+                products.stream().map(catalogService::toSummary).toList();
+        // 视图组装: 附带首个变体 (快速加购用); 变体数>1 时按钮跳详情页选规格
+        List<Map<String, Object>> items = new java.util.ArrayList<>();
+        for (ProductView.Summary s : summaries) {
+            Map<String, Object> m = new java.util.LinkedHashMap<>();
+            m.put("title", s.title());
+            m.put("slug", s.slug());
+            m.put("mainImagePath", s.mainImagePath());
+            m.put("minPriceCents", s.minPriceCents());
+            m.put("totalAvailable", s.totalAvailable());
+            com.jade.cart.catalog.entity.Variant first =
+                    com.jade.cart.catalog.entity.Variant.find(
+                                    "productId = ?1 and deleted = false order by id", s.id())
+                            .firstResult();
+            long variantCount =
+                    com.jade.cart.catalog.entity.Variant.count(
+                            "productId = ?1 and deleted = false", s.id());
+            m.put("variantId", first == null ? null : first.id);
+            m.put("multi", variantCount > 1);
+            items.add(m);
+        }
 
         Map<String, Object> c = mapper.readValue(cfg.toString(), Map.class);
         c.putIfAbsent("title", "");

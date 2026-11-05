@@ -1,8 +1,11 @@
 <section class="sec-cats">
   {#if cfg.title}<h2>{cfg.title}</h2>{/if}
-  <div style="display:flex;flex-wrap:wrap;gap:12px">
+  <div class="cat-grid">
     {#for c in categories}
-    <a class="badge" href="/products?category={c.slug}" style="font-size:15px;padding:10px 18px;border-radius:var(--radius)">{c.name}</a>
+    <a class="cat-card" href="/products?category={c.slug}">
+      {#if c.cover}<img src="/media/{c.cover}" alt="{c.name}" loading="lazy">{#else}<div class="cat-ph">✦</div>{/if}
+      <div class="cat-name">{c.name}</div>
+    </a>
     {/for}
   </div>
 </section>

@@ -78,9 +78,9 @@ service.interceptors.response.use(
       return Promise.reject(new BizError(res.code, res.message))
     }
 
-    // 1003 无权限
+    // 1003 无权限（后端可能带真实原因, 如"账号已被禁用", 优先展示）
     if (res.code === 1003) {
-      ElMessage.error('您没有权限执行此操作')
+      ElMessage.error(res.message || '您没有权限执行此操作')
       return Promise.reject(new BizError(res.code, res.message))
     }
 
@@ -116,8 +116,10 @@ service.interceptors.response.use(
     }
 
     if (status === 403 || bizCode === 1003) {
-      ElMessage.error('您没有权限执行此操作')
-      return Promise.reject(new BizError(bizCode ?? status ?? 0, '您没有权限执行此操作', error.response))
+      // CORS 过滤器 403 空 body 无 message, 此时回退通用文案; 其余优先后端真实原因
+      const msg403 = error.response?.data?.message || '您没有权限执行此操作'
+      ElMessage.error(msg403)
+      return Promise.reject(new BizError(bizCode ?? status ?? 0, msg403, error.response))
     }
 
     const msg = error.response?.data?.message || error.message || '网络异常'

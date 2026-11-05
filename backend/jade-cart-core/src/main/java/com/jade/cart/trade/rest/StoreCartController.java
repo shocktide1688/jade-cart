@@ -1,6 +1,7 @@
 package com.jade.cart.trade.rest;
 
 import com.jade.cart.trade.dto.CartView;
+import com.jade.cart.trade.entity.Cart;
 import com.jade.cart.trade.service.CartService;
 import com.jade.common.api.R;
 import jakarta.annotation.security.PermitAll;
@@ -44,6 +45,17 @@ public class StoreCartController {
     public Response get(@Context HttpHeaders headers) {
         TokenBox box = resolve(headers);
         return wrap(box, cartService.view(cartService.getOrCreate(box.token)));
+    }
+
+    @GET
+    @Path("/count")
+    @Operation(summary = "购物车件数 (店面导航徽章; 无会话 = 0, 不建会话)")
+    public R<Integer> count(@Context HttpHeaders headers) {
+        return R.ok(
+                CartService.readToken(headers)
+                        .flatMap(Cart::activeByToken)
+                        .map(c -> c.items().size())
+                        .orElse(0));
     }
 
     @POST

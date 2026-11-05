@@ -1,19 +1,32 @@
-{#storePage title=post.title store=storeName seo=seo theme=theme baseUrl=baseUrl}
+{#storePage title=post.title store=storeName seo=seo t=t langs=langs theme=theme baseUrl=baseUrl pill=false navCats=navCats}
 
 {jsonLd.raw}
 
-<p class="muted" style="margin-bottom:8px">
-  {#if post.publishedAt}{post.publishedAt} · {/if}<a href="/blog" class="muted">← All posts</a>
-</p>
+<nav class="crumb">
+  <a href="/">{t.crumbHome}</a><span class="sep">›</span><a href="/blog">{t.journal}</a><span class="sep">›</span><span class="cur">{post.title}</span>
+</nav>
 
-<h1>{post.title}</h1>
+<article class="post">
+  {#if dateStr}<span class="date-badge inline">{dateStr}</span>{/if}
+  <h1 class="post-title">{post.title}</h1>
+  {#if post.coverPath}
+  <img class="post-cover" src="/media/{post.coverPath}" alt="{post.title}">
+  {/if}
+  <div class="content">
+  {post.bodyHtml.raw}
+  </div>
 
-{#if post.coverPath}
-<img src="/media/{post.coverPath}" alt="{post.title}" style="width:100%;max-height:380px;object-fit:cover;border-radius:8px;margin:16px 0">
-{/if}
-
-<div class="content">
-{post.bodyHtml.raw}
-</div>
+  <div class="post-nav">
+    {#if prevPost}
+    <a class="post-nav-btn" href="/blog/{prevPost.slug}"><span class="arr">‹</span> {t.prevPost}</a>
+    {#else}<span></span>{/if}
+    {#if nextPost}
+    <a class="post-nav-btn" href="/blog/{nextPost.slug}">{t.nextPost} <span class="arr">›</span></a>
+    {#else}<span></span>{/if}
+  </div>
+  <div class="post-back">
+    <a class="post-back-btn" href="/blog"><span class="arr">‹</span> {t.backToBlog}</a>
+  </div>
+</article>
 
 {/storePage}

@@ -35,7 +35,8 @@ public class AdminStorefrontController {
                     "usp",
                     "rich_text",
                     "blog_latest",
-                    "banner_strip");
+                    "banner_strip",
+                    "newsletter");
 
     private final ObjectMapper mapper = new ObjectMapper();
 

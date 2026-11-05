@@ -182,7 +182,7 @@
                   :key="p.name"
                   :style="{ border: themeForm.preset === p.name ? '2px solid #409eff' : '1px solid #ddd',
                             borderRadius: '8px', padding: '10px 14px', cursor: 'pointer', minWidth: '110px' }"
-                  @click="themeForm.preset = p.name"
+                  @click="selectPreset(p)"
                 >
                   <div style="font-weight:600;text-transform:capitalize">
                     {{ p.name }}
@@ -229,6 +229,9 @@
                 </el-radio>
                 <el-radio value="mono">
                   等宽
+                </el-radio>
+                <el-radio value="jost">
+                  Jost (几何无衬线)
                 </el-radio>
               </el-radio-group>
             </el-form-item>
@@ -381,8 +384,16 @@ async function uploadLogo(file: any) {
   } finally { logoUploading.value = false }
 }
 
-async function saveTheme() {
-  themeSaving.value = true
+/** 选择预设: 控件同步为该预设默认值 (清空颜色覆盖), 商家可再显式微调 */
+function selectPreset(p: any) {
+  themeForm.preset = p.name
+  themeForm.font = p.font || 'sans'
+  themeForm.radiusNum = parseInt(p.radius) || 8
+  themeForm.primary = ''
+  themeForm.bg = ''
+}
+
+async function saveTheme() {  themeSaving.value = true
   try {
     const overrides: Record<string, string> = {}
     if (themeForm.primary) overrides.primary = themeForm.primary

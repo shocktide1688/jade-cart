@@ -1,23 +1,23 @@
-{#storePage title='PayPal Checkout' store=storeName seo=seo theme=theme baseUrl=baseUrl}
+{#storePage title=t.paypalTitle store=storeName seo=seo t=t langs=langs theme=theme baseUrl=baseUrl pill=false navCats=navCats}
 
-<h1>PayPal Checkout</h1>
-<p class="muted">You returned from PayPal. Complete the payment to finalize your order.</p>
+<h1>{t.paypalTitle}</h1>
+<p class="muted">{t.paypalIntro}</p>
 
 <div class="panel" style="max-width:520px">
   <table>
-    <tr><th>Order</th><td>{o.orderNumber}</td></tr>
-    <tr><th>Amount</th><td><strong>{o.totalCents.money} {o.currency}</strong></td></tr>
-    <tr><th>Status</th><td><span class="status st-{o.status}">{o.status}</span></td></tr>
+    <tr><th>{t.thOrder}</th><td>{o.orderNumber}</td></tr>
+    <tr><th>{t.thAmount}</th><td><strong>{o.totalCents.money} {o.currency}</strong></td></tr>
+    <tr><th>{t.thStatus}</th><td><span class="status st-{o.status}">{o.status}</span></td></tr>
   </table>
 
   {#if o.status == 'PENDING'}
   <form method="post" action="/pay/paypal/{o.publicId}/capture" style="margin-top:20px">
     <input type="hidden" name="paypalOrderId" value="{paypalOrderId}">
-    <button class="btn" type="submit" style="width:100%">Complete payment — {o.totalCents.money}</button>
+    <button class="btn" type="submit" style="width:100%">{t.completePayment} — {o.totalCents.money}</button>
   </form>
-  {#if paypalOrderId.isEmpty()}<p class="error" style="margin-top:12px">Missing PayPal order token — please restart checkout.</p>{/if}
+  {#if paypalOrderId.isEmpty()}<p class="error" style="margin-top:12px">{t.paypalMissingToken}</p>{/if}
   {#else}
-  <p style="margin-top:20px"><a class="btn ghost" href="/orders/{o.publicId}">View order status</a></p>
+  <p style="margin-top:20px"><a class="btn ghost" href="/orders/{o.publicId}">{t.viewOrder}</a></p>
   {/if}
 </div>
 

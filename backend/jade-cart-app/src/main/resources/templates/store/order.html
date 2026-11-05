@@ -1,20 +1,20 @@
-{#storePage title=o.orderNumber store=storeName seo=seo theme=theme baseUrl=baseUrl}
+{#storePage title=o.orderNumber store=storeName seo=seo t=t langs=langs theme=theme baseUrl=baseUrl pill=false navCats=navCats}
 
-<h1>Order {o.orderNumber}</h1>
+<h1>{t.orderWord} {o.orderNumber}</h1>
 
 <p>
-  Status: <span class="status st-{o.status}">{o.status}</span>
-  {#if o.status == 'PAID'}<span class="ok">✓ Paid</span>{/if}
+  {t.statusLabel} <span class="status st-{o.status}">{o.status}</span>
+  {#if o.status == 'PAID'}<span class="ok">{t.paidOk}</span>{/if}
 </p>
 
 {#if o.status == 'PENDING' && o.paymentProvider == 'mock'}
-  <p><a class="btn" href="/pay/mock/{o.publicId}">Complete payment</a></p>
+  <p><a class="btn" href="/pay/mock/{o.publicId}">{t.completePayment}</a></p>
 {/if}
 
 <div class="panel">
   <table>
     <thead>
-    <tr><th>Item</th><th>Unit price</th><th>Qty</th><th>Total</th></tr>
+    <tr><th>{t.thItem}</th><th>{t.thUnitPrice}</th><th>{t.thQty}</th><th>{t.thTotal}</th></tr>
     </thead>
     <tbody>
     {#for line in o.items}
@@ -32,23 +32,23 @@
   </table>
 
   <table style="margin-top:16px">
-    <tr><th>Email</th><td>{o.email}</td></tr>
-    <tr><th>Placed at</th><td>{o.createdAt}</td></tr>
-    {#if o.paidAt}<tr><th>Paid at</th><td>{o.paidAt}</td></tr>{/if}
-    {#if o.fulfilledAt}<tr><th>Fulfilled at</th><td>{o.fulfilledAt}</td></tr>{/if}
-    {#if o.cancelledAt}<tr><th>Cancelled at</th><td>{o.cancelledAt}</td></tr>{/if}
-    {#if o.refundedAt}<tr><th>Refunded at</th><td>{o.refundedAt}</td></tr>{/if}
+    <tr><th>{t.emailLabel}</th><td>{o.email}</td></tr>
+    <tr><th>{t.placedAt}</th><td>{o.createdAt}</td></tr>
+    {#if o.paidAt}<tr><th>{t.paidAt}</th><td>{o.paidAt}</td></tr>{/if}
+    {#if o.fulfilledAt}<tr><th>{t.fulfilledAt}</th><td>{o.fulfilledAt}</td></tr>{/if}
+    {#if o.cancelledAt}<tr><th>{t.cancelledAt}</th><td>{o.cancelledAt}</td></tr>{/if}
+    {#if o.refundedAt}<tr><th>{t.refundedAt}</th><td>{o.refundedAt}</td></tr>{/if}
   </table>
 
-  <p class="total">Total: {o.totalCents.money} {o.currency} <span class="muted" style="font-weight:400;font-size:14px">(items {o.subtotalCents.money} + shipping {o.shippingCents.money})</span></p>
+  <p class="total">{t.totalLabel} {o.totalCents.money} {o.currency} <span class="muted" style="font-weight:400;font-size:14px">({t.itemsWord} {o.subtotalCents.money} + {t.shippingWord} {o.shippingCents.money})</span></p>
 
   {#if o.shipment}
   <div class="panel" style="border-color:#175cd3;margin-top:16px">
-    <strong>Shipment</strong>
+    <strong>{t.shipment}</strong>
     <table style="margin-top:8px">
-      {#if o.shipment.carrier}<tr><th>Carrier</th><td>{o.shipment.carrier}</td></tr>{/if}
-      {#if o.shipment.trackingNumber}<tr><th>Tracking</th><td>{o.shipment.trackingNumber}</td></tr>{/if}
-      {#if o.shipment.trackingUrl}<tr><th>Link</th><td><a href="{o.shipment.trackingUrl}">Track package</a></td></tr>{/if}
+      {#if o.shipment.carrier}<tr><th>{t.carrier}</th><td>{o.shipment.carrier}</td></tr>{/if}
+      {#if o.shipment.trackingNumber}<tr><th>{t.tracking}</th><td>{o.shipment.trackingNumber}</td></tr>{/if}
+      {#if o.shipment.trackingUrl}<tr><th>{t.linkLabel}</th><td><a href="{o.shipment.trackingUrl}">{t.trackPackage}</a></td></tr>{/if}
     </table>
   </div>
   {/if}

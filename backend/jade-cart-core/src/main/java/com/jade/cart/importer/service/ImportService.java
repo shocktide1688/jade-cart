@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.jade.cart.catalog.entity.Inventory;
 import com.jade.cart.catalog.entity.Product;
+import com.jade.cart.catalog.entity.ProductImage;
 import com.jade.cart.catalog.entity.Variant;
 import com.jade.cart.importer.entity.ImportJob;
 import com.jade.cart.importer.entity.Redirect;
@@ -228,14 +229,22 @@ public class ImportService {
                 p.put("handle", handle);
                 p.put("variants", new ArrayList<Map<String, Object>>());
                 String image = cell(header, r, "image src");
-                p.put("images", image.isBlank() ? List.of() : List.of(image));
+                p.put("images", new ArrayList<String>());
+                if (!image.isBlank()) {
+                    ((List<String>) p.get("images")).add(image);
+                }
                 byHandle.put(handle, p);
                 products.add(p);
             }
             String sku = cell(header, r, "variant sku");
             String priceStr = cell(header, r, "variant price");
             if (sku.isBlank() && priceStr.isBlank()) {
-                continue; // 纯图片/补充行
+                // 纯图片/补充行: 收集相册图 (Shopify 多图导出格式)
+                String extra = cell(header, r, "image src");
+                if (!extra.isBlank()) {
+                    ((List<String>) p.get("images")).add(extra);
+                }
+                continue;
             }
             long price = parsePrice(priceStr, rowNo, errors);
             if (price < 0) {
@@ -291,11 +300,15 @@ public class ImportService {
                     p.path("stock").asInt(0));
         }
 
-        // 主图: 远程图片下载进媒体库 (失败不阻断)
+        // 主图: 远程图片下载进媒体库 (失败不阻断); 相册图同样入库
         JsonNode images = p.path("images");
+        int imagePos = 0;
         if (images.isArray() && images.size() > 0) {
-            String imageUrl = images.get(0).asText("");
-            if (!imageUrl.isBlank()) {
+            for (JsonNode imgNode : images) {
+                String imageUrl = imgNode.asText("");
+                if (imageUrl.isBlank()) {
+                    continue;
+                }
                 try {
                     HttpResponse<byte[]> resp =
                             http.send(
@@ -303,21 +316,31 @@ public class ImportService {
                                             .timeout(Duration.ofSeconds(30))
                                             .build(),
                                     HttpResponse.BodyHandlers.ofByteArray());
-                    if (resp.statusCode() == 200) {
-                        try (InputStream in = new ByteArrayInputStream(resp.body())) {
-                            var asset =
-                                    mediaService.upload(
-                                            in,
-                                            imageUrl.substring(imageUrl.lastIndexOf('/') + 1),
-                                            null);
+                    if (resp.statusCode() != 200) {
+                        continue;
+                    }
+                    try (InputStream in = new ByteArrayInputStream(resp.body())) {
+                        var asset =
+                                mediaService.upload(
+                                        in,
+                                        imageUrl.substring(imageUrl.lastIndexOf('/') + 1),
+                                        null);
+                        if (imagePos == 0) {
                             product.mainImagePath = asset.path;
+                        } else {
+                            ProductImage pi = new ProductImage();
+                            pi.productId = product.id;
+                            pi.path = asset.path;
+                            pi.position = imagePos;
+                            pi.persist();
                         }
-                        product.persist();
+                        imagePos++;
                     }
                 } catch (Exception e) {
                     Log.warnf("import image download failed: %s (%s)", imageUrl, e.getMessage());
                 }
             }
+            product.persist();
         }
 
         // Shopify 旧 handle → 301 (不覆盖)

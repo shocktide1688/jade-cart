@@ -1,0 +1,23 @@
+<section class="sec-news">
+  <h2>{cfg.title ?: 'Sign up for 20% off your first order!'}</h2>
+  {#if cfg.text}<p class="muted">{cfg.text}</p>{/if}
+  <form method="post" action="/contact" class="news-form">
+    <input
+      type="email"
+      name="email"
+      placeholder="{cfg.placeholder ?: 'Email'}"
+      required
+    >
+    <input type="hidden" name="name" value="Newsletter">
+    <input type="hidden" name="message" value="Newsletter subscription">
+    <input type="hidden" name="topic" value="general">
+    <input
+      type="text"
+      name="website"
+      style="display:none"
+      tabindex="-1"
+      autocomplete="off"
+    >
+    <button class="btn" type="submit">{cfg.button ?: 'Sign-up'}</button>
+  </form>
+</section>

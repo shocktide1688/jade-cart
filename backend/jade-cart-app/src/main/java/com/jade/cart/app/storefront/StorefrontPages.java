@@ -1,8 +1,11 @@
 package com.jade.cart.app.storefront;
 
+import com.jade.cart.app.storefront.i18n.StoreMessages;
+import com.jade.cart.app.storefront.i18n.UiText;
 import com.jade.cart.catalog.dto.ProductView;
 import com.jade.cart.catalog.entity.Category;
 import com.jade.cart.catalog.entity.Product;
+import com.jade.cart.catalog.entity.ProductImage;
 import com.jade.cart.catalog.service.CatalogService;
 import com.jade.cart.trade.dto.CartView;
 import com.jade.cart.trade.entity.Order;
@@ -29,7 +32,11 @@ import jakarta.ws.rs.core.NewCookie;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.UriInfo;
 import java.net.URI;
+import java.text.MessageFormat;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
@@ -96,6 +103,8 @@ public class StorefrontPages {
 
     @Inject StorefrontService storefrontService;
 
+    @Inject StoreMessages messages;
+
     @Inject
     @Location("store/blog")
     Template blogTpl;
@@ -111,7 +120,7 @@ public class StorefrontPages {
     // ---------- 页面 ----------
 
     @GET
-    public Response index() {
+    public Response index(@Context HttpHeaders headers) {
         List<ProductView.Summary> featured =
                 catalogService.featuredProducts(8).stream().map(catalogService::toSummary).toList();
         List<ProductView.Summary> latest =
@@ -121,18 +130,17 @@ public class StorefrontPages {
         String homeDesc =
                 com.jade.cart.settings.entity.StoreSetting.getValue("announcement")
                         .filter(v -> !v.isBlank())
-                        .orElseGet(
-                                () ->
-                                        "Shop "
-                                                + storeName
-                                                + " — curated products, fast worldwide shipping and easy returns.");
+                        .orElseGet(() -> fmt(t(headers).seoHome(), storeName));
         return Response.ok(
                         home.data("sections", storefrontService.renderHome())
                                 .data("featured", featured)
                                 .data("latest", latest)
                                 .data("storeName", storeName)
                                 .data("baseUrl", baseUrl)
+                                .data("navCats", navTree())
                                 .data("theme", themeService.tokens())
+                                .data("t", t(headers))
+                                .data("langs", langs(headers))
                                 .data("seo", seo(homeDesc, null, false, "website", "/"))
                                 .data("jsonLd", ld(seoJsonLd.website(baseUrl, storeName)))
                                 .render())
@@ -142,7 +150,9 @@ public class StorefrontPages {
     @GET
     @Path("products")
     public Response productList(
-            @QueryParam("q") String q, @QueryParam("category") String categorySlug) {
+            @Context HttpHeaders headers,
+            @QueryParam("q") String q,
+            @QueryParam("category") String categorySlug) {
         Long categoryId = null;
         String categoryName = null;
         if (categorySlug != null && !categorySlug.isBlank()) {
@@ -158,24 +168,22 @@ public class StorefrontPages {
                         .toList();
         String desc =
                 categoryName != null
-                        ? "Browse "
-                                + categoryName
-                                + " products at "
-                                + storeName
-                                + ". Worldwide shipping."
+                        ? fmt(t(headers).seoCategory(), categoryName, storeName)
                         : q != null && !q.isBlank()
-                                ? "Search results for \u201C" + q + "\u201D at " + storeName + "."
-                                : "All products at "
-                                        + storeName
-                                        + ". Curated quality, fast shipping.";
+                                ? fmt(t(headers).seoSearch(), q, storeName)
+                                : fmt(t(headers).seoAllProducts(), storeName);
         return Response.ok(
                         products.data("items", items)
                                 .data("q", q == null ? "" : q)
                                 .data("categoryName", categoryName)
+                                .data("currentSlug", categorySlug)
                                 .data("categories", Category.listActive())
                                 .data("storeName", storeName)
                                 .data("baseUrl", baseUrl)
+                                .data("navCats", navTree())
                                 .data("theme", themeService.tokens())
+                                .data("t", t(headers))
+                                .data("langs", langs(headers))
                                 .data("seo", seo(desc, null, false, "website", "/products"))
                                 .data(
                                         "jsonLd",
@@ -190,12 +198,28 @@ public class StorefrontPages {
 
     @GET
     @Path("products/{slug}")
-    public Response productDetail(@PathParam("slug") String slug) {
+    public Response productDetail(
+            @Context HttpHeaders headers,
+            @PathParam("slug") String slug,
+            @QueryParam("img") Integer img) {
         Product entity = Product.findBySlug(slug);
         if (entity == null || !entity.isActive()) {
             return Response.status(Response.Status.NOT_FOUND).entity("Product not found").build();
         }
         ProductView view = catalogService.toView(entity);
+        // 相册 (主图 + 补充图); ?img=N 切换主展示图 (无 JS 画廊)
+        List<Map<String, Object>> gallery = new ArrayList<>();
+        if (entity.mainImagePath != null && !entity.mainImagePath.isBlank()) {
+            gallery.add(Map.of("idx", 0, "path", entity.mainImagePath));
+        }
+        List<ProductImage> extras = ProductImage.find("productId", entity.id).list();
+        int extraPos = gallery.isEmpty() ? 0 : 1;
+        for (ProductImage pi : extras) {
+            gallery.add(Map.of("idx", extraPos, "path", pi.path));
+            extraPos++;
+        }
+        int curIdx = (img == null || img < 0 || img >= gallery.size()) ? 0 : img;
+        String mainImg = gallery.isEmpty() ? null : (String) gallery.get(curIdx).get("path");
         List<ProductView.Summary> related =
                 catalogService.activeProducts(null, null, 4).stream()
                         .filter(pr -> !pr.id.equals(entity.id))
@@ -216,18 +240,45 @@ public class StorefrontPages {
                         + ld(
                                 seoJsonLd.breadcrumb(
                                         baseUrl,
-                                        "Home",
+                                        t(headers).crumbHome(),
                                         "/",
-                                        "Products",
+                                        t(headers).crumbProducts(),
                                         "/products",
                                         entity.title,
                                         "/products/" + entity.slug));
+        // 面包屑 (首个分类) + 购买区数据
+        String crumbName = null;
+        String crumbSlug = null;
+        if (view.categoryIds() != null && !view.categoryIds().isEmpty()) {
+            Category c = Category.findById(view.categoryIds().get(0));
+            if (c != null) {
+                crumbName = c.name;
+                crumbSlug = c.slug;
+            }
+        }
+        long priceCents = view.variants().isEmpty() ? 0 : view.variants().get(0).priceCents();
+        int totalAvail =
+                view.variants().stream()
+                        .mapToInt(v -> v.available() == null ? 0 : v.available())
+                        .sum();
+        boolean lowStock = totalAvail > 0 && totalAvail <= 5;
         return Response.ok(
                         product.data("p", view)
                                 .data("related", related)
+                                .data("crumbName", crumbName)
+                                .data("crumbSlug", crumbSlug)
+                                .data("priceCents", priceCents)
+                                .data("totalAvail", totalAvail)
+                                .data("lowStock", lowStock)
+                                .data("gallery", gallery)
+                                .data("mainImg", mainImg)
+                                .data("curIdx", curIdx)
                                 .data("storeName", storeName)
                                 .data("baseUrl", baseUrl)
+                                .data("navCats", navTree())
                                 .data("theme", themeService.tokens())
+                                .data("t", t(headers))
+                                .data("langs", langs(headers))
                                 .data(
                                         "seo",
                                         seo(
@@ -249,22 +300,30 @@ public class StorefrontPages {
                 Optional.ofNullable(CartService.readToken(headers).orElse(null))
                         .map(token -> cartService.view(cartService.getOrCreate(token)))
                         .orElseGet(() -> new CartView(null, "USD", List.of(), 0L));
+        // Cross-Sell: 空购物车时展示在售商品 (对标 Shopify 空车推荐位)
+        List<ProductView.Summary> cross =
+                catalogService.activeProducts(null, null, 4).stream()
+                        .map(catalogService::toSummary)
+                        .toList();
         return Response.ok(
                         cart.data("cart", view)
+                                .data("cross", cross)
                                 .data("error", error)
                                 .data("storeName", storeName)
                                 .data("baseUrl", baseUrl)
+                                .data("navCats", navTree())
                                 .data("theme", themeService.tokens())
-                                .data(
-                                        "seo",
-                                        seo("Your shopping cart at " + storeName + ".", null, true))
+                                .data("t", t(headers))
+                                .data("langs", langs(headers))
+                                .data("seo", seo(fmt(t(headers).seoCart(), storeName), null, true))
                                 .render())
                 .build();
     }
 
     @GET
     @Path("pay/mock/{publicId}")
-    public Response mockPayPage(@PathParam("publicId") String publicId) {
+    public Response mockPayPage(
+            @Context HttpHeaders headers, @PathParam("publicId") String publicId) {
         Order order = Order.byPublicId(publicId).orElse(null);
         if (order == null) {
             return Response.status(Response.Status.NOT_FOUND).entity("Order not found").build();
@@ -273,8 +332,11 @@ public class StorefrontPages {
                         payMock.data("o", order)
                                 .data("storeName", storeName)
                                 .data("baseUrl", baseUrl)
+                                .data("navCats", navTree())
                                 .data("theme", themeService.tokens())
-                                .data("seo", seo("Complete your payment.", null, true))
+                                .data("t", t(headers))
+                                .data("langs", langs(headers))
+                                .data("seo", seo(t(headers).seoPay(), null, true))
                                 .render())
                 .build();
     }
@@ -282,7 +344,9 @@ public class StorefrontPages {
     @GET
     @Path("pay/paypal/{publicId}")
     public Response paypalReturn(
-            @PathParam("publicId") String publicId, @QueryParam("token") String paypalOrderId) {
+            @Context HttpHeaders headers,
+            @PathParam("publicId") String publicId,
+            @QueryParam("token") String paypalOrderId) {
         Order order = Order.byPublicId(publicId).orElse(null);
         if (order == null) {
             return Response.status(Response.Status.NOT_FOUND).entity("Order not found").build();
@@ -291,8 +355,11 @@ public class StorefrontPages {
                         payPaypal
                                 .data("o", order)
                                 .data("paypalOrderId", paypalOrderId == null ? "" : paypalOrderId)
+                                .data("navCats", navTree())
                                 .data("theme", themeService.tokens())
-                                .data("seo", seo("Complete your PayPal payment.", null, true))
+                                .data("t", t(headers))
+                                .data("langs", langs(headers))
+                                .data("seo", seo(t(headers).seoPaypal(), null, true))
                                 .render())
                 .build();
     }
@@ -356,19 +423,33 @@ public class StorefrontPages {
 
     @GET
     @Path("blog")
-    public Response blogList() {
+    public Response blogList(@Context HttpHeaders headers) {
         var posts = com.jade.cart.blog.entity.BlogPost.listActive();
+        java.time.format.DateTimeFormatter fmt =
+                java.time.format.DateTimeFormatter.ofPattern("MMMM d, yyyy", Locale.ENGLISH);
+        List<Map<String, Object>> view = new ArrayList<>();
+        for (var p : posts) {
+            Map<String, Object> m = new LinkedHashMap<>();
+            m.put("slug", p.slug);
+            m.put("title", p.title);
+            m.put("excerpt", p.excerpt);
+            m.put("coverPath", p.coverPath);
+            var when = p.publishedAt != null ? p.publishedAt : p.updatedAt;
+            m.put("date", when == null ? "" : when.format(fmt));
+            view.add(m);
+        }
         return Response.ok(
-                        blogTpl.data("posts", posts)
+                        blogTpl.data("posts", view)
                                 .data("storeName", storeName)
                                 .data("baseUrl", baseUrl)
+                                .data("navCats", navTree())
                                 .data("theme", themeService.tokens())
+                                .data("t", t(headers))
+                                .data("langs", langs(headers))
                                 .data(
                                         "seo",
                                         seo(
-                                                "Blog — news, guides and stories from "
-                                                        + storeName
-                                                        + ".",
+                                                fmt(t(headers).seoBlog(), storeName),
                                                 null,
                                                 false,
                                                 "website",
@@ -379,10 +460,25 @@ public class StorefrontPages {
 
     @GET
     @Path("blog/{slug}")
-    public Response blogPostPage(@PathParam("slug") String slug) {
+    public Response blogPostPage(@Context HttpHeaders headers, @PathParam("slug") String slug) {
         return com.jade.cart.blog.entity.BlogPost.activeBySlug(slug)
                 .map(
                         post -> {
+                            // 前后篇 (listActive 按 publishedAt desc: i-1 更新, i+1 更旧)
+                            var all = com.jade.cart.blog.entity.BlogPost.listActive();
+                            com.jade.cart.blog.entity.BlogPost prevPost = null;
+                            com.jade.cart.blog.entity.BlogPost nextPost = null;
+                            for (int i = 0; i < all.size(); i++) {
+                                if (all.get(i).id.equals(post.id)) {
+                                    if (i > 0) {
+                                        prevPost = all.get(i - 1);
+                                    }
+                                    if (i < all.size() - 1) {
+                                        nextPost = all.get(i + 1);
+                                    }
+                                    break;
+                                }
+                            }
                             String desc =
                                     post.seoDescription != null && !post.seoDescription.isBlank()
                                             ? post.seoDescription
@@ -393,12 +489,25 @@ public class StorefrontPages {
                                     post.coverPath == null
                                             ? null
                                             : baseUrl + "/media/" + post.coverPath;
+                            var when = post.publishedAt != null ? post.publishedAt : post.updatedAt;
+                            String dateStr =
+                                    when == null
+                                            ? ""
+                                            : when.format(
+                                                    java.time.format.DateTimeFormatter.ofPattern(
+                                                            "MMMM d, yyyy", Locale.ENGLISH));
                             return Response.ok(
                                             blogPostTpl
                                                     .data("post", post)
+                                                    .data("dateStr", dateStr)
+                                                    .data("prevPost", prevPost)
+                                                    .data("nextPost", nextPost)
                                                     .data("storeName", storeName)
                                                     .data("baseUrl", baseUrl)
+                                                    .data("navCats", navTree())
                                                     .data("theme", themeService.tokens())
+                                                    .data("t", t(headers))
+                                                    .data("langs", langs(headers))
                                                     .data(
                                                             "seo",
                                                             seo(
@@ -426,7 +535,7 @@ public class StorefrontPages {
 
     @GET
     @Path("pages/{slug}")
-    public Response contentPage(@PathParam("slug") String slug) {
+    public Response contentPage(@Context HttpHeaders headers, @PathParam("slug") String slug) {
         return com.jade.cart.content.entity.ContentPage.activeBySlug(slug)
                 .map(
                         page ->
@@ -435,7 +544,10 @@ public class StorefrontPages {
                                                         .data("page", page)
                                                         .data("storeName", storeName)
                                                         .data("baseUrl", baseUrl)
+                                                        .data("navCats", navTree())
                                                         .data("theme", themeService.tokens())
+                                                        .data("t", t(headers))
+                                                        .data("langs", langs(headers))
                                                         .data(
                                                                 "seo",
                                                                 seo(
@@ -457,20 +569,21 @@ public class StorefrontPages {
 
     @GET
     @Path("contact")
-    public Response contactPage() {
+    public Response contactPage(@Context HttpHeaders headers) {
         return Response.ok(
                         contactTpl
                                 .data("sent", false)
                                 .data("error", (String) null)
                                 .data("storeName", storeName)
                                 .data("baseUrl", baseUrl)
+                                .data("navCats", navTree())
                                 .data("theme", themeService.tokens())
+                                .data("t", t(headers))
+                                .data("langs", langs(headers))
                                 .data(
                                         "seo",
                                         seo(
-                                                "Contact "
-                                                        + storeName
-                                                        + " — we reply within one business day.",
+                                                fmt(t(headers).seoContact(), storeName),
                                                 null,
                                                 false,
                                                 "website",
@@ -483,6 +596,7 @@ public class StorefrontPages {
     @Path("contact")
     @Transactional
     public Response contactSubmit(
+            @Context HttpHeaders headers,
             @FormParam("name") String name,
             @FormParam("email") String email,
             @FormParam("topic") String topic,
@@ -494,11 +608,19 @@ public class StorefrontPages {
                 return Response.ok(
                                 contactTpl
                                         .data("sent", false)
-                                        .data("error", "Please provide a valid email and message.")
+                                        .data("error", t(headers).contactErrInvalid())
                                         .data("storeName", storeName)
                                         .data("baseUrl", baseUrl)
+                                        .data("navCats", navTree())
                                         .data("theme", themeService.tokens())
-                                        .data("seo", seo("Contact " + storeName + ".", null, true))
+                                        .data("t", t(headers))
+                                        .data("langs", langs(headers))
+                                        .data(
+                                                "seo",
+                                                seo(
+                                                        fmt(t(headers).seoContact(), storeName),
+                                                        null,
+                                                        true))
                                         .render())
                         .build();
             }
@@ -508,19 +630,35 @@ public class StorefrontPages {
                                     .data("sent", true)
                                     .data("storeName", storeName)
                                     .data("baseUrl", baseUrl)
+                                    .data("navCats", navTree())
                                     .data("theme", themeService.tokens())
-                                    .data("seo", seo("Message sent — thank you!", null, true))
+                                    .data("t", t(headers))
+                                    .data("langs", langs(headers))
+                                    .data(
+                                            "seo",
+                                            seo(
+                                                    fmt(t(headers).seoContact(), storeName),
+                                                    null,
+                                                    true))
                                     .render())
                     .build();
         } catch (Exception e) {
             return Response.ok(
                             contactTpl
                                     .data("sent", false)
-                                    .data("error", "Failed to send, please try later.")
+                                    .data("error", t(headers).contactErrFailed())
                                     .data("storeName", storeName)
                                     .data("baseUrl", baseUrl)
+                                    .data("navCats", navTree())
                                     .data("theme", themeService.tokens())
-                                    .data("seo", seo("Contact " + storeName + ".", null, true))
+                                    .data("t", t(headers))
+                                    .data("langs", langs(headers))
+                                    .data(
+                                            "seo",
+                                            seo(
+                                                    fmt(t(headers).seoContact(), storeName),
+                                                    null,
+                                                    true))
                                     .render())
                     .build();
         }
@@ -528,7 +666,8 @@ public class StorefrontPages {
 
     @GET
     @Path("orders/{publicId}")
-    public Response orderPage(@PathParam("publicId") String publicId) {
+    public Response orderPage(
+            @Context HttpHeaders headers, @PathParam("publicId") String publicId) {
         return Order.byPublicId(publicId)
                 .map(
                         o ->
@@ -536,13 +675,17 @@ public class StorefrontPages {
                                                 orderTpl.data("o", orderService.toView(o))
                                                         .data("storeName", storeName)
                                                         .data("baseUrl", baseUrl)
+                                                        .data("navCats", navTree())
                                                         .data("theme", themeService.tokens())
+                                                        .data("t", t(headers))
+                                                        .data("langs", langs(headers))
                                                         .data(
                                                                 "seo",
                                                                 seo(
-                                                                        "Order "
-                                                                                + o.orderNumber
-                                                                                + " status.",
+                                                                        fmt(
+                                                                                t(headers)
+                                                                                        .seoOrder(),
+                                                                                o.orderNumber),
                                                                         null,
                                                                         true))
                                                         .render())
@@ -643,7 +786,53 @@ public class StorefrontPages {
 
     // ---------- 内部 ----------
 
+    /** 当前请求语言文案集 (cookie store_lang / Accept-Language / 店铺默认) */
+    private UiText t(HttpHeaders headers) {
+        return messages.forRequest(headers);
+    }
+
+    /** 页脚语言切换器数据 */
+    private List<Map<String, Object>> langs(HttpHeaders headers) {
+        return messages.languages(messages.resolveCode(headers));
+    }
+
+    /** 翻译模板拼装 (UiText seo* 字段含 {0} 占位符; 模板值内禁用单引号) */
+    private String fmt(String pattern, Object... args) {
+        return MessageFormat.format(pattern, args);
+    }
+
     /** 页面级 SEO 元数据 (desc/image/noindex/ogType), 经 seo=seo 传给布局标签 */
+    /** 导航分类树 (父分类 + children, 供 Category mega 面板) */
+    private List<Map<String, Object>> navTree() {
+        List<Category> all =
+                Category.listAllLive().stream()
+                        .sorted(
+                                java.util.Comparator.comparing(
+                                        c -> c.sortOrder == null ? 0 : c.sortOrder))
+                        .toList();
+        List<Map<String, Object>> roots = new ArrayList<>();
+        for (Category c : all) {
+            if (c.parentId != null) {
+                continue;
+            }
+            Map<String, Object> m = new LinkedHashMap<>();
+            m.put("name", c.name);
+            m.put("slug", c.slug);
+            List<Map<String, Object>> children = new ArrayList<>();
+            for (Category ch : all) {
+                if (c.id.equals(ch.parentId)) {
+                    Map<String, Object> cm = new LinkedHashMap<>();
+                    cm.put("name", ch.name);
+                    cm.put("slug", ch.slug);
+                    children.add(cm);
+                }
+            }
+            m.put("children", children);
+            roots.add(m);
+        }
+        return roots;
+    }
+
     private Map<String, Object> seo(String desc, String image, boolean noindex) {
         return seo(desc, image, noindex, "website", null, null);
     }
@@ -660,7 +849,7 @@ public class StorefrontPages {
             String ogType,
             String canon,
             String keywords) {
-        Map<String, Object> m = new java.util.LinkedHashMap<>();
+        Map<String, Object> m = new LinkedHashMap<>();
         m.put("desc", desc == null ? "" : desc);
         m.put("image", (image == null || image.isBlank()) ? null : image);
         m.put("noindex", noindex);

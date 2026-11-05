@@ -59,6 +59,8 @@ public class AdminImportController {
     @Path("/{publicId}/confirm")
     @RolesAllowed("admin")
     @Transactional
+    @io.quarkus.narayana.jta.runtime.TransactionConfiguration(
+            timeout = 600) // 同步下载全部商品图, 默认 60s 事务超时会回滚
     @Operation(summary = "确认执行导入 (已 CONFIRMED 的任务拒绝重复执行)")
     public R<ImportJob> confirm(@PathParam("publicId") String publicId) {
         return R.ok(importService.confirm(publicId));

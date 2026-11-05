@@ -1,14 +1,27 @@
-<section class="sec-featured">
+<section class="sec-featured{#if cfg.overlap} overlap{/if}">
   {#if cfg.title}<h2>{cfg.title}</h2>{/if}
   <div class="grid">
     {#for p in items}
-    <a class="card" href="/products/{p.slug}">
-      {#if p.mainImagePath}<img src="/media/{p.mainImagePath}" alt="{p.title}" loading="lazy" style="width:100%;height:160px;object-fit:cover;display:block">{#else}<div class="ph">✦</div>{/if}
-      <div class="body">
-        <div class="name">{p.title}</div>
-        <div class="price">from {p.minPriceCents.money}</div>
-      </div>
-    </a>
+    <div class="card">
+      <span class="imgwrap">
+        {#if p.mainImagePath}<img class="pimg" src="/media/{p.mainImagePath}" alt="{p.title}" loading="lazy">{#else}<div class="ph">✦</div>{/if}
+        {#if p.multi}
+        <a class="quick" href="/products/{p.slug}" aria-label="Choose options"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></a>
+        {#else if p.variantId != null}
+        <form class="quick" method="post" action="/cart/add">
+          <input type="hidden" name="variantId" value="{p.variantId}">
+          <input type="hidden" name="quantity" value="1">
+          <button type="submit" aria-label="Add to cart"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></button>
+        </form>
+        {/if}
+      </span>
+      <a class="cardlink" href="/products/{p.slug}">
+        <div class="body">
+          <div class="name">{p.title}</div>
+          <div class="price"><span class="from">from </span>{p.minPriceCents.money}</div>
+        </div>
+      </a>
+    </div>
     {/for}
   </div>
 </section>

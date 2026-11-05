@@ -1,65 +1,87 @@
-{#storePage title='Cart' store=storeName seo=seo theme=theme baseUrl=baseUrl}
-
-<h1>Your Cart</h1>
+{#storePage title=t.cartTitle store=storeName seo=seo t=t langs=langs theme=theme baseUrl=baseUrl pill=false navCats=navCats}
 
 {#if error}<div class="error">{error}</div>{/if}
 
 {#if cart.items.isEmpty()}
-  <p class="muted">Your cart is empty. <a href="/products">Continue shopping</a>.</p>
-{#else}
-  <table>
-    <thead>
-    <tr><th>Item</th><th>Price</th><th style="width:150px">Qty</th><th>Subtotal</th><th></th></tr>
-    </thead>
-    <tbody>
-    {#for line in cart.items}
-    <tr>
-      <td>
-        <strong>{line.productTitle}</strong><br>
-        {#if line.spec}<span class="muted" style="font-size:14px">{line.spec}</span>{/if}
-      </td>
-      <td>{line.unitPriceCents.money}</td>
-      <td>
-        <form method="post" action="/cart/update" style="display:flex;gap:6px">
-          <input type="hidden" name="variantId" value="{line.variantId}">
-          <input type="number" name="quantity" value="{line.quantity}" min="0" max="{line.available}" style="margin:0;width:90px">
-          <button class="btn ghost" type="submit">Update</button>
-        </form>
-        {#if line.available == 0}<span class="muted" style="font-size:12px">out of stock</span>{/if}
-      </td>
-      <td>{line.lineTotalCents.money}</td>
-      <td>
-        <form method="post" action="/cart/remove">
-          <input type="hidden" name="variantId" value="{line.variantId}">
-          <button class="btn ghost" type="submit">Remove</button>
-        </form>
-      </td>
-    </tr>
+<div class="cart-empty">
+  <h1>{t.cartEmptyTitle}</h1>
+  <p class="muted">{t.cartEmptyBody}</p>
+  <a class="btn dark" href="/products">{t.continueShopping}</a>
+</div>
+{#if !cross.isEmpty()}
+<div class="crosssell">
+  <div class="crosssell-label">{t.crossSell}</div>
+  <div class="plp-grid">
+    {#for p in cross}
+    <a class="plp-card" href="/products/{p.slug}">
+      <div class="plp-imgwrap">
+        {#if p.mainImagePath}<img src="/media/{p.mainImagePath}" alt="{p.title}" loading="lazy">{#else}<div class="ph">✦</div>{/if}
+      </div>
+      <div class="name">{p.title}</div>
+      <div class="price">{t.from} {p.minPriceCents.money}</div>
+    </a>
     {/for}
-    </tbody>
-  </table>
-
-  <p class="total">Subtotal: {cart.subtotalCents.money}</p>
-
-  <div class="panel" style="max-width:480px">
-    <h2 style="margin-top:0">Checkout</h2>
-    <form method="post" action="/checkout">
-      <label for="email">Email</label>
-      <input type="email" id="email" name="email" required placeholder="you@example.com">
-      <label for="shipName">Name</label>
-      <input type="text" id="shipName" name="shipName" placeholder="Your name">
-      <label for="country">Country</label>
-      <select name="country" id="country">
-        <option value="US" selected>United States</option>
-        <option value="CA">Canada</option>
-        <option value="GB">United Kingdom</option>
-        <option value="DE">Germany</option>
-        <option value="AU">Australia</option>
-      </select>
-      <button class="btn" type="submit" style="width:100%">Continue to payment</button>
-    </form>
-    <p class="muted" style="font-size:13px;margin-bottom:0">Unpaid orders hold stock for 30 minutes.</p>
   </div>
+</div>
+{/if}
+{#else}
+<div class="cart-layout">
+  <div>
+    <h1 style="margin-top:0">{t.yourCart}</h1>
+    <table>
+      <thead>
+      <tr><th>{t.thItem}</th><th>{t.thPrice}</th><th style="width:130px">{t.thQty}</th><th>{t.thSubtotal}</th><th></th></tr>
+      </thead>
+      <tbody>
+      {#for line in cart.items}
+      <tr>
+        <td>
+          <strong>{line.productTitle}</strong><br>
+          {#if line.spec}<span class="muted" style="font-size:14px">{line.spec}</span>{/if}
+        </td>
+        <td>{line.unitPriceCents.money}</td>
+        <td>
+          <form method="post" action="/cart/update" style="display:flex;gap:6px">
+            <input type="hidden" name="variantId" value="{line.variantId}">
+            <input type="number" name="quantity" value="{line.quantity}" min="0" max="{line.available}" style="margin:0;width:70px" class="qty-input">
+            <button class="btn ghost" type="submit">{t.update}</button>
+          </form>
+          {#if line.available == 0}<span class="muted" style="font-size:12px">{t.outOfStock}</span>{/if}
+        </td>
+        <td>{line.lineTotalCents.money}</td>
+        <td>
+          <form method="post" action="/cart/remove">
+            <input type="hidden" name="variantId" value="{line.variantId}">
+            <button class="btn ghost" type="submit">{t.remove}</button>
+          </form>
+        </td>
+      </tr>
+      {/for}
+      </tbody>
+    </table>
+    <p class="total">{t.subtotalLabel} {cart.subtotalCents.money}</p>
+  </div>
+
+  <div class="panel checkout-panel">
+    <h2 style="margin-top:0">{t.checkout}</h2>
+    <form method="post" action="/checkout">
+      <label for="email">{t.emailLabel}</label>
+      <input type="email" id="email" name="email" required placeholder="you@example.com">
+      <label for="shipName">{t.nameLabel}</label>
+      <input type="text" id="shipName" name="shipName" placeholder="{t.nameLabel}">
+      <label for="country">{t.countryLabel}</label>
+      <select name="country" id="country">
+        <option value="US" selected>{t.countryUS}</option>
+        <option value="CA">{t.countryCA}</option>
+        <option value="GB">{t.countryGB}</option>
+        <option value="DE">{t.countryDE}</option>
+        <option value="AU">{t.countryAU}</option>
+      </select>
+      <button class="btn dark" type="submit" style="width:100%">{t.continueToPayment}</button>
+    </form>
+    <p class="muted" style="font-size:13px;margin-bottom:0">{t.holdNote}</p>
+  </div>
+</div>
 {/if}
 
 {/storePage}

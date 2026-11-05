@@ -1,36 +1,32 @@
-{#storePage title='Contact Us' store=storeName seo=seo theme=theme baseUrl=baseUrl}
+{#storePage title=t.contactTitle store=storeName seo=seo t=t langs=langs theme=theme baseUrl=baseUrl pill=false navCats=navCats}
 
-<h1>Contact Us</h1>
+<nav class="crumb">
+  <a href="/">{t.crumbHome}</a><span class="sep">›</span><span class="cur">{t.contactTitle}</span>
+</nav>
 
-{#if sent}
-<div class="panel" style="max-width:520px">
-  <p class="ok">✓ Thanks! Your message has been received. We reply within one business day.</p>
+<div class="contact-split">
+  <div class="contact-intro">
+    <h1>{t.contactTitle}</h1>
+    <p>{t.contactIntro}</p>
+    <a class="btn intro-btn" href="/products">{t.shopNow}</a>
+  </div>
+  <div class="contact-form-panel">
+    {#if sent}
+    <p class="ok">{t.sentOk}</p>
+    {#else}
+    {#if error}<div class="error">{error}</div>{/if}
+    <form method="post" action="/contact">
+      <div class="row2">
+        <input type="text" name="name" placeholder="{t.phName}" aria-label="{t.phName}">
+        <input type="email" name="email" required placeholder="{t.phEmail}" aria-label="{t.emailLabel}">
+      </div>
+      <textarea name="message" required rows="5" placeholder="{t.phComment}"></textarea>
+      <!-- honeypot: 人类不可见, 机器人填写即丢弃 -->
+      <input type="text" name="website" style="display:none" tabindex="-1" autocomplete="off">
+      <button class="btn dark" type="submit">{t.send}</button>
+    </form>
+    {/if}
+  </div>
 </div>
-{#else}
-
-{#if error}<div class="error">{error}</div>{/if}
-
-<div class="panel" style="max-width:520px">
-  <form method="post" action="/contact">
-    <label for="c-name">Name</label>
-    <input type="text" id="c-name" name="name" placeholder="Your name">
-    <label for="c-email">Email *</label>
-    <input type="email" id="c-email" name="email" required placeholder="you@example.com">
-    <label for="c-topic">Topic</label>
-    <select name="topic" id="c-topic">
-      <option value="general" selected>General question</option>
-      <option value="order">Order issue</option>
-      <option value="shipping">Shipping</option>
-      <option value="return">Return / Refund</option>
-      <option value="other">Other</option>
-    </select>
-    <label for="c-msg">Message *</label>
-    <textarea id="c-msg" name="message" required rows="4" placeholder="How can we help?"></textarea>
-    <!-- honeypot: 人类不可见, 机器人填写即丢弃 -->
-    <input type="text" name="website" style="display:none" tabindex="-1" autocomplete="off">
-    <button class="btn" type="submit" style="width:100%">Send message</button>
-  </form>
-</div>
-{/if}
 
 {/storePage}

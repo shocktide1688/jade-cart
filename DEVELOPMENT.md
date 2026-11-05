@@ -1,25 +1,27 @@
 # 开发流程 (jade-cart 多店体系)
 
-> 架构: jade-cart = 开源通用引擎; teawone / sinivora = 同一镜像的两个独立部署实例 (差异全在环境变量 + 数据)。
+> 架构: jade-cart = 开源通用引擎; 各店铺 = 同一镜像的独立部署实例 (差异全在环境变量 + 数据)。
 > 分工决策树: 通用功能/bugfix → 改 jade-cart 代码; 店铺内容(商品/博客/主题) → 直接生产管理后台操作;
-> 店铺专属代码逻辑 → 未来建 jade-brands 私有覆盖层 (出现第一个品牌专属代码需求时再建)。
+> 店铺专属代码逻辑 → 私有品牌覆盖层仓库 (出现第一个品牌专属代码需求时再建)。
+> 本文所有域名/IP/账号均为占位符, 真实值在各部署环境的服务器 .env / 运维文档中, **不入库**。
 
 ## 一、三套环境
 
 | 环境 | 位置 | 数据库 | 用途 |
 |---|---|---|---|
-| 本地开发 | Mac, localhost:8090 (后端) + :5173 (前端) | PG (Docker `jade-postgres`:5432, 库 jade_cart) + Redis (`jade-redis`:6380) | 写代码调试 |
-| teawone 生产 | https://shop.teawone.com + shop-admin.teawone.com | 服务器 SQLite `/opt/teawone/data/jade_cart.db` | 正式运营 |
-| sinivora 生产 | https://sinivora.teawone.com + sinivora-admin.store.teawone.com | 服务器 SQLite `/opt/sinivora/data/jade_cart.db` | 正式运营 |
+| 本地开发 | 开发机, localhost:8090 (后端) + :5173 (前端) | PG (Docker 容器:5432, 库 jade_cart) + Redis (:6380) | 写代码调试 |
+| 店铺 A 生产 | https://shop.example.com + admin 域名 | 服务器 SQLite `/opt/<shop-a>/data/jade_cart.db` | 正式运营 |
+| 店铺 B 生产 | 按 brand B 域名 | 服务器 SQLite `/opt/<shop-b>/data/jade_cart.db` | 正式运营 |
 
-⚠️ 本地 PG 与生产 SQLite 已分家 (11-05 同步后各自演化), 不要假设数据一致。
+⚠️ 本地 PG 与生产 SQLite 各自演化, 不要假设数据一致。
 ⚠️ 本地后端用**默认 profile 构建** (PG); 服务器镜像用 **sqlite profile 构建** (`-Dquarkus.profile=sqlite`, db-kind 构建期固化)。
+⚠️ 生产域名/服务器 IP/凭证通过 `JADE_CORS_ORIGINS` 等**环境变量**注入, 代码默认值仅 localhost/内网正则。
 
 ## 二、本地环境启动
 
 ```bash
 # 前置容器 (通常已在跑)
-docker start jade-postgres jade-redis
+docker start <pg-container> <redis-container>
 
 # 后端 (默认 PG profile; jar 若是 sqlite 构建版需先重构建)
 cd backend
@@ -34,11 +36,11 @@ cd frontend && npm run dev    # localhost:5173, 代理 /api /media /q → 8090
 
 ```
 1. 本地写代码 + localhost:5173 调试 (PG 数据)
-2. 测试: cd backend && mvn test            # 需要 PG(5432) + Redis(6380)
+2. 测试: cd backend && mvn test            # 需要 PG + Redis 服务
 3. 前端检查: cd frontend && npm run lint && npm run type-check
 4. git commit (Conventional Commits 中文)
-5. 构建部署 (两店同镜像, 都要更新, 见 §五)
-6. 生产验证 (两店域名各走一遍)
+5. 构建部署 (各店同镜像, 都要更新, 见 §五)
+6. 生产验证 (各店域名各走一遍)
 ```
 
 新增数据库迁移注意: **PG 和 SQLite 双方言都要写**
@@ -52,14 +54,13 @@ cd frontend && npm run dev    # localhost:5173, 代理 /api /media /q → 8090
 
 直接在对应管理后台操作, 数据落各店自己的 SQLite:
 
-| 内容 | teawone | sinivora |
-|---|---|---|
-| 商品/分类/库存 | shop-admin.teawone.com → 商城管理 | sinivora-admin.store.teawone.com → 商城管理 |
-| 博客/内容页 | 同上 → 内容管理/博客管理 | 同上 |
-| 主题 (预设+覆盖) | 商城管理 → 店面装修 | 同上 |
-| 市场设置 | 商城设置 (KV, AES 加密) | 同上 |
-| 语言 | 店面右上角 EN/DE/FR | 同上 |
-| LDAP 用户 | 统一目录: jade-ldap (ldap.store.teawone.com 管理) | 同一目录, 用户两店通用 |
+| 内容 | 位置 |
+|---|---|
+| 商品/分类/库存 | 管理后台 → 商城管理 |
+| 博客/内容页 | 管理后台 → 内容管理/博客管理 |
+| 主题 (预设+覆盖) | 管理后台 → 店面装修 (预设: minimal/classic/bold/warm/emerald) |
+| 语言 | 店面右上角切换器 (语言注册表: `jade.cart.locales`, 翻译包 i18n/store_<code>.properties) |
+| LDAP 用户目录 | LDAP 管理后台 (统一目录, 登录时本地账号优先) |
 
 ## 五、构建部署 (手动阶段, 未来 Drone 自动化)
 
@@ -68,30 +69,28 @@ cd frontend && npm run dev    # localhost:5173, 代理 /api /media /q → 8090
 cd backend && mvn package -DskipTests -Dquarkus.profile=sqlite -pl jade-cart-app -am
 cd jade-cart-app && docker buildx build --platform linux/amd64 -t jade-cart:sqlite --load .
 docker save jade-cart:sqlite | gzip > /tmp/img.tar.gz
-scp /tmp/img.tar.gz root@45.32.83.6:/tmp/
+scp /tmp/img.tar.gz root@<SERVER_IP>:/tmp/
 
-# ② 服务器更新两店 (IP 已固定, Lucky 上游不受影响)
-ssh root@45.32.83.6 '
+# ② 服务器更新各店 (容器 IP 已固定, 网关上游不受影响)
+ssh root@<SERVER_IP> '
   docker load -i /tmp/img.tar.gz && rm /tmp/img.tar.gz
-  cd /opt/teawone && docker compose up -d --force-recreate app      # .env: APP_IMAGE
-  docker rm -f sinivora-app && docker run -d --name sinivora-app \
-    --restart unless-stopped --network jade-cart_default --ip 172.18.0.8 \
-    --env-file /opt/sinivora/sinivora.env -p 8091:8090 \
-    -v /opt/sinivora/data:/app/data jade-cart:sqlite'
+  cd /opt/<shop-a> && docker compose up -d --force-recreate app
+  docker rm -f <shop-b>-app && docker run -d --name <shop-b>-app \
+    --restart unless-stopped --network jade-cart_default --ip <固定IP> \
+    --env-file /opt/<shop-b>/<shop-b>.env -p <端口>:8090 \
+    -v /opt/<shop-b>/data:/app/data jade-cart:sqlite'
 
-# ③ 管理端前端 (teawone 通用版 / sinivora 品牌版分开构建)
+# ③ 管理端前端 (各店品牌版: VITE_APP_TITLE=<品牌> npm run build)
 cd frontend && npm run build && tar czf /tmp/d.tar.gz -C dist .
-scp /tmp/d.tar.gz root@45.32.83.6:/tmp/
-ssh root@45.32.83.6 'rm -rf /opt/teawone/admin-dist/* && tar xzf /tmp/d.tar.gz -C /opt/teawone/admin-dist && rm /tmp/d.tar.gz'
-# sinivora 版: VITE_APP_TITLE="Sinivora Admin" npm run build → 同法更新 /opt/sinivora/admin-dist
+scp /tmp/d.tar.gz root@<SERVER_IP>:/tmp/
+ssh root@<SERVER_IP> 'rm -rf /opt/<shop>/admin-dist/* && tar xzf /tmp/d.tar.gz -C /opt/<shop>/admin-dist'
 
 # ④ 验证
-curl -s -o /dev/null -w "%{http_code}\n" https://shop.teawone.com/
-curl -s -o /dev/null -w "%{http_code}\n" https://sinivora.teawone.com/
+curl -s -o /dev/null -w "%{http_code}\n" https://<shop-domain>/
 ```
 
-容器 IP 已固定 (Lucky 上游依赖): redis=.2 app=.3 lucky=.4 admin-web=.5 ldap-web=.6
-jade-ldap=.7 sinivora-app=.8 sinivora-admin-web=.9 — **重建容器必须保持这些 IP**。
+容器 IP 固定 (网关上游依赖): 每容器一个 static IP, **重建容器必须保持同 IP**;
+生产域名走环境变量 (`JADE_CORS_ORIGINS` 等), 代码/镜像不含任何部署专属地址。
 
 ## 六、未来 CI/CD (已定案: Gitea + Drone + 华为云 SWR)
 
@@ -105,8 +104,7 @@ git push → Drone: 内核流水线 (test/构建基础镜像 → push SWR)
 ## 七、服务器目录速查
 
 ```
-/opt/teawone/    docker-compose.yml + .env(APP_IMAGE/密钥) + data/(SQLite+media) + admin-dist + admin-conf
-/opt/sinivora/   同结构 + sinivora.env (docker run --env-file 用)
-/opt/jade-ldap/  data/(SQLite+ldif) + web-dist + web-conf
-/opt/lucky/conf  Lucky 配置 (v3.7.1 配置在容器 /app/conf, 已挂载持久化!)
+/opt/<shop>/    compose/.env(APP_IMAGE/密钥/CORS) + data/(SQLite+media) + admin-dist + admin-conf
+/opt/jade-ldap/ data/(SQLite+ldif) + web-dist + web-conf
+/opt/lucky/conf 网关配置 (v3.7.1 配置在容器 /app/conf, 必须挂载持久化!)
 ```

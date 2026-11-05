@@ -280,6 +280,35 @@
                 />
               </el-form-item>
             </template>
+
+            <!-- newsletter -->
+            <template v-if="editing.type === 'newsletter'">
+              <el-form-item label="标题">
+                <el-input v-model="editing.config.title" />
+              </el-form-item>
+              <el-form-item label="副文案">
+                <el-input
+                  v-model="editing.config.text"
+                  type="textarea"
+                  :rows="2"
+                />
+              </el-form-item>
+              <el-form-item label="占位符">
+                <el-input
+                  v-model="editing.config.placeholder"
+                  placeholder="Email"
+                />
+              </el-form-item>
+              <el-form-item label="按钮文案">
+                <el-input
+                  v-model="editing.config.button"
+                  placeholder="Sign-up"
+                />
+              </el-form-item>
+              <el-form-item>
+                <span class="muted" style="font-size:12px">提交落到 客服留言 (topic=general)</span>
+              </el-form-item>
+            </template>
           </el-form>
         </el-card>
 
@@ -346,6 +375,13 @@ function blankFor(type: string) {
   if (type === 'rich_text') Object.assign(base, { title: '', markdown: '' })
   if (type === 'blog_latest') Object.assign(base, { title: 'From the Blog', limit: 3 })
   if (type === 'banner_strip') Object.assign(base, { text: '', bg: '', href: '' })
+  if (type === 'newsletter')
+    Object.assign(base, {
+      title: 'Sign up for 20% off your first order!',
+      text: 'Join our newsletter to be the first to know about new arrivals and exclusive deals.',
+      placeholder: 'Email',
+      button: 'Sign-up',
+    })
   return base
 }
 

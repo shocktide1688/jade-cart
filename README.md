@@ -43,7 +43,7 @@ jade-admin V4~V8(自带) + mail V14 + ldap-client V15 + **cart V16(商品) V17(�
 
 ## 店面主题 + 装修
 
-- **主题层**: 商城设置 → 店面主题 — 4 套预设 (minimal/classic/bold/warm) + 主色/背景/圆角/字体覆盖 + Logo/Favicon 上传; CSS 变量注入, 保存即时生效
+- **主题层**: 商城设置 → 店面主题 — 5 套预设 (minimal/classic/bold/warm/emerald, emerald: 品牌墨绿 #108474 + Jost 字体 + 12px 圆角) + 主色/背景/圆角/字体覆盖 + Logo/Favicon 上传; CSS 变量注入, 保存即时生效
 - **装修层**: 店面装修 — 首页区块编排 (Hero 首屏 / 商品网格 / 分类导航 / 卖点条 / 富文本 / 最新文章 / 公告条), 排序显隐 + 手机桌面预览; 空编排回退内置布局
 - REST: `/api/v1/theme` (preset + overrides), `/api/v1/storefront` (区块整体保存)
 

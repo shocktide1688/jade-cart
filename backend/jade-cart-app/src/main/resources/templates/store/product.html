@@ -1,56 +1,158 @@
-{#storePage title=p.title store=storeName seo=seo theme=theme baseUrl=baseUrl}
+{#storePage title=p.title store=storeName seo=seo t=t langs=langs theme=theme baseUrl=baseUrl pill=false navCats=navCats}
 
 {jsonLd.raw}
 
-<h1>{p.title}</h1>
+<nav class="crumb">
+  <a href="/">{t.crumbHome}</a><span class="sep">›</span>
+  {#if crumbName}<a href="/products?category={crumbSlug}">{crumbName}</a><span class="sep">›</span>{/if}
+  <span class="cur">{p.title}</span>
+</nav>
 
-<div style="display:grid;grid-template-columns:1fr 1fr;gap:40px">
-  <div>
-    {#if p.mainImagePath}
-    <img src="/media/{p.mainImagePath}" alt="{p.title}" style="width:100%;height:360px;object-fit:cover;border-radius:8px">
+<div class="pdp">
+  <div class="pdp-gallery">
+    {#if mainImg}
+    <img class="pdp-main" src="/media/{mainImg}" alt="{p.title}">
+    {#if gallery.size > 1}
+    <div class="pdp-thumbs">
+      {#for g in gallery}
+      <a class="pdp-thumb {#if g.idx == curIdx}on{/if}" href="/products/{p.slug}?img={g.idx}">
+        <img src="/media/{g.path}" alt="{p.title} {g.idx + 1}" loading="lazy">
+      </a>
+      {/for}
+    </div>
+    {/if}
     {#else}
-    <div class="ph" style="height:360px;background:linear-gradient(135deg,#f4f4f4,#e9e9e9);display:flex;align-items:center;justify-content:center;color:#bbb;font-size:80px;border-radius:8px">✦</div>
+    <div class="pdp-main ph">✦</div>
     {/if}
   </div>
-  <div>
-    {#if p.description}
-    <div class="content">{p.description.raw}</div>
+
+  <div class="pdp-info">
+    <h1>{p.title}</h1>
+    <div class="pdp-price">{priceCents.money} USD</div>
+    <div class="pdp-divider"></div>
+    {#if lowStock}
+    <div class="pdp-stock">◎ {t.lowStock} {totalAvail} {t.left}</div>
     {/if}
+  </div>
+
+  <div class="pdp-buy">
+    <details class="acc">
+      <summary>{t.accShipTitle}</summary>
+      <div class="acc-body">{t.accShipBody}</div>
+    </details>
+    <details class="acc">
+      <summary>{t.accSupportTitle}</summary>
+      <div class="acc-body">{t.accSupportBodyPre}
+      <a href="/contact" style="text-decoration:underline">{t.contactLink}</a>{t.faqReturnAPost}</div>
+    </details>
+    <details class="acc">
+      <summary>{t.accBenefitsTitle}</summary>
+      <div class="acc-body">{t.accBenefitsBody}</div>
+    </details>
 
     {#if p.variants.isEmpty()}
-      <p class="muted">Currently unavailable.</p>
+    <p class="muted">{t.unavailable}</p>
     {#else}
-    <form method="post" action="/cart/add">
-      <label for="variant">Option</label>
-      <select name="variantId" id="variant" required>
+    <form method="post" action="/cart/add" class="pdp-buyform">
+      {#if p.variants.size > 1}
+      <label for="pdp-variant">{t.optionLabel}</label>
+      <select name="variantId" id="pdp-variant" required>
         {#for v in p.variants}
         {#if v.available > 0}
-        <option value="{v.id}">{v.spec ?: 'Standard'} — {v.priceCents.money}</option>
+        <option value="{v.id}">{v.spec ?: t.standard} — {v.priceCents.money}</option>
         {/if}
         {/for}
       </select>
-
-      <label for="qty">Quantity</label>
-      <input type="number" id="qty" name="quantity" value="1" min="1" style="max-width:120px">
-
-      <div style="margin-top:16px">
-        <button class="btn" type="submit">Add to cart</button>
-      </div>
+      {#else}
+      <input type="hidden" name="variantId" value="{p.variants.first.id}">
+      {/if}
+      <label for="pdp-qty">{t.quantity}</label>
+      <input type="number" id="pdp-qty" name="quantity" value="1" min="1" class="qty-input">
+      <button class="btn pdp-atc" type="submit">{t.addToCart}</button>
     </form>
-    <p class="muted" style="margin-top:12px;font-size:14px">In-stock options shown. Checkout in USD.</p>
+    {/if}
+  </div>
+</div>
+
+{#if p.description}
+<section class="pdp-tabs">
+  <div class="pdp-tabs-nav">
+    <span class="on">{t.tabDescription}</span>
+    <span>{t.accShipTitle}</span>
+  </div>
+  <div class="content">{p.description.raw}</div>
+</section>
+{/if}
+
+<div class="pdp-reviews">
+  <div class="pdp-reviews-inner">
+    <h2>{t.reviewsTitle}</h2>
+    <p class="muted">{t.reviewsEmpty}</p>
+    <a class="btn pdp-atc" href="/contact">{t.writeReview}</a>
+  </div>
+</div>
+
+<section class="pdp-faq">
+  <h2>{t.faqTitle}</h2>
+  <div class="pdp-faq-body">
+    <details class="acc" open>
+      <summary>{t.faqShipQ}</summary>
+      <div class="acc-body">{t.faqShipA}</div>
+    </details>
+    <details class="acc">
+      <summary>{t.faqUniqueQ}</summary>
+      <div class="acc-body">{t.faqUniqueA}</div>
+    </details>
+    <details class="acc">
+      <summary>{t.faqCareQ}</summary>
+      <div class="acc-body">{t.faqCareA}</div>
+    </details>
+    <details class="acc">
+      <summary>{t.faqReturnQ}</summary>
+      <div class="acc-body">{t.faqReturnAPre}
+      <a href="/pages/refund-policy" style="text-decoration:underline">{t.refundLink}</a>{t.faqReturnAPost}</div>
+    </details>
+  </div>
+</section>
+
+<div class="pdp-bar">
+  <div class="pdp-bar-inner">
+    <div class="pdp-bar-thumbwrap">
+      {#if p.mainImagePath}<img class="pdp-bar-thumb" src="/media/{p.mainImagePath}" alt="">{/if}
+    </div>
+    <div class="pdp-bar-meta">
+      <div class="t">{p.title}</div>
+      <div class="pr">{priceCents.money} USD</div>
+    </div>
+    {#if !p.variants.isEmpty()}
+    <form method="post" action="/cart/add" class="pdp-bar-form">
+    {#if p.variants.size > 1}
+    <select name="variantId" required>
+      {#for v in p.variants}
+      {#if v.available > 0}
+      <option value="{v.id}">{v.spec ?: t.standard}</option>
+      {/if}
+      {/for}
+    </select>
+    {#else}
+    <input type="hidden" name="variantId" value="{p.variants.first.id}">
+    {/if}
+    <input type="number" name="quantity" value="1" min="1" class="qty-input">
+    <button class="btn pdp-atc" type="submit">{t.addToCart}</button>
+    </form>
     {/if}
   </div>
 </div>
 
 {#if !related.isEmpty()}
-<h2 style="margin-top:48px">You may also like</h2>
+<h2 style="margin-top:48px">{t.youMayLike}</h2>
 <div class="grid">
-  {#for p in related}
-  <a class="card" href="/products/{p.slug}">
-    <div class="ph">✦</div>
+  {#for r in related}
+  <a class="card" href="/products/{r.slug}">
+    {#if r.mainImagePath}<img src="/media/{r.mainImagePath}" alt="{r.title}" loading="lazy" style="width:100%;height:160px;object-fit:cover;display:block">{#else}<div class="ph">✦</div>{/if}
     <div class="body">
-      <div class="name">{p.title}</div>
-      <div class="price">from {p.minPriceCents.money}</div>
+      <div class="name">{r.title}</div>
+      <div class="price">{t.from} {r.minPriceCents.money}</div>
     </div>
   </a>
   {/for}

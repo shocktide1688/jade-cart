@@ -21,7 +21,7 @@ public class ThemeService {
 
     public static final String KV_KEY = "theme_config";
     private static final Pattern COLOR = Pattern.compile("^#[0-9a-fA-F]{3,8}$");
-    private static final List<String> FONTS = List.of("sans", "serif", "mono");
+    private static final List<String> FONTS = List.of("sans", "serif", "mono", "jost");
 
     /** 非 token 附加键: 媒体路径 (不可 blank 之外无格式校验) */
     private static final List<String> MEDIA_KEYS = List.of("logoPath", "faviconPath");
@@ -57,6 +57,12 @@ public class ThemeService {
                 Map.of(
                         "primary", "#b45309", "bg", "#fffbeb", "ink", "#451a03", "muted", "#a16207",
                         "line", "#fde68a", "radius", "12", "font", "sans"));
+        // 墨绿几何风: 白底墨字 + 品牌墨绿 #108474 + 几何无衬线 Jost + 大圆角胶囊按钮
+        PRESETS.put(
+                "emerald",
+                Map.of(
+                        "primary", "#108474", "bg", "#ffffff", "ink", "#1d1d1d", "muted", "#6f6f6f",
+                        "line", "#ececec", "radius", "12", "font", "jost"));
     }
 
     private final ObjectMapper mapper = new ObjectMapper();
@@ -96,6 +102,7 @@ public class ThemeService {
             }
         }
         Map<String, String> tokens = new LinkedHashMap<>(PRESETS.get(presetName));
+        tokens.put("preset", presetName); // 模板 body class 用 (结构化主题样式作用域)
         overrides.forEach(
                 (k, v) -> {
                     if ((BASE.containsKey(k) || MEDIA_KEYS.contains(k)) && valid(k, v)) {
@@ -108,6 +115,7 @@ public class ThemeService {
                 switch (tokens.get("font")) {
                     case "serif" -> "Georgia,'Times New Roman',serif";
                     case "mono" -> "ui-monospace,'SF Mono',Menlo,monospace";
+                    case "jost" -> "'Jost','Avenir Next','Futura','Segoe UI',sans-serif";
                     default ->
                             "-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif";
                 });
