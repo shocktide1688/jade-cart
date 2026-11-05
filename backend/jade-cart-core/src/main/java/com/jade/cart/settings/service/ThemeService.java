@@ -63,6 +63,12 @@ public class ThemeService {
                 Map.of(
                         "primary", "#108474", "bg", "#ffffff", "ink", "#1d1d1d", "muted", "#6f6f6f",
                         "line", "#ececec", "radius", "12", "font", "jost"));
+        // 家居风: 暖白纸感底 + 陶土主色 + 适中圆角, 契合杯具/收纳/家居品类
+        PRESETS.put(
+                "home",
+                Map.of(
+                        "primary", "#a9663f", "bg", "#faf7f2", "ink", "#2b2723", "muted", "#8c857c",
+                        "line", "#e8e2d9", "radius", "10", "font", "sans"));
     }
 
     private final ObjectMapper mapper = new ObjectMapper();
