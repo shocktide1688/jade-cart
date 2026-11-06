@@ -9,7 +9,6 @@ import com.jade.cart.trade.entity.Order;
 import com.jade.cart.trade.entity.OrderItem;
 import com.jade.common.exception.BizException;
 import io.quarkus.logging.Log;
-import io.quarkus.panache.common.Page;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
@@ -34,10 +33,18 @@ public class IntegrationService {
 
     @Inject CatalogService catalogService;
 
-    /** 订单增量 (含行项目), 按 updatedAt 升序分页 */
+    /**
+     * 订单增量 (含行项目), 按 updatedAt 升序分页。updatedAt 过滤在 Java 内存层做: SQLite 时间列为 TEXT 亲和, 与绑定参数的类型比较不可靠
+     * (见事故记录); 数据量为小店铺量级, 内存过滤足够。
+     */
     @Transactional
     public Map<String, Object> listOrdersAfter(LocalDateTime since, int page, int size) {
-        List<Order> orders = Order.find("updatedAt >= ?1", since).page(Page.of(page, size)).list();
+        List<Order> matchedOrders =
+                Order.<Order>listAll().stream()
+                        .filter(o -> o.updatedAt != null && !o.updatedAt.isBefore(since))
+                        .sorted(java.util.Comparator.comparing(o -> o.updatedAt))
+                        .toList();
+        List<Order> orders = pageSlice(matchedOrders, page, size);
         List<Map<String, Object>> records = new ArrayList<>();
         LocalDateTime max = since;
         for (Order o : orders) {
@@ -74,15 +81,19 @@ public class IntegrationService {
         Map<String, Object> out = new LinkedHashMap<>();
         out.put("orders", records);
         out.put("nextCursor", max.format(CURSOR_FMT));
-        out.put("hasMore", orders.size() == sizeOf(page, size));
+        out.put("hasMore", page * size < matchedOrders.size());
         return out;
     }
 
-    /** 商品增量 (变体粒度: 一行一个 SKU), 含可售库存 */
+    /** 商品增量 (变体粒度: 一行一个 SKU), 含可售库存。updatedAt 过滤在 Java 内存层 (同订单增量原因)。 */
     @Transactional
     public Map<String, Object> listProductsAfter(LocalDateTime since, int page, int size) {
-        List<Product> products =
-                Product.find("updatedAt >= ?1", since).page(Page.of(page, size)).list();
+        List<Product> matchedProducts =
+                Product.<Product>listAll().stream()
+                        .filter(pp -> pp.updatedAt != null && !pp.updatedAt.isBefore(since))
+                        .sorted(java.util.Comparator.comparing(pp -> pp.updatedAt))
+                        .toList();
+        List<Product> products = pageSlice(matchedProducts, page, size);
         List<Map<String, Object>> records = new ArrayList<>();
         LocalDateTime max = since;
         for (Product p : products) {
@@ -107,7 +118,7 @@ public class IntegrationService {
         Map<String, Object> out = new LinkedHashMap<>();
         out.put("products", records);
         out.put("nextCursor", max.format(CURSOR_FMT));
-        out.put("hasMore", products.size() == sizeOf(page, size));
+        out.put("hasMore", page * size < matchedProducts.size());
         return out;
     }
 
@@ -168,6 +179,7 @@ public class IntegrationService {
                             sku,
                             null,
                             null);
+            variant = Variant.findBySku(sku).orElseThrow();
             if (categoryId != null) {
                 catalogService.linkCategories(product.id, List.of(categoryId));
             }
@@ -209,7 +221,9 @@ public class IntegrationService {
         return created.id;
     }
 
-    private int sizeOf(int page, int size) {
-        return page * size;
+    private <T> List<T> pageSlice(List<T> list, int page, int size) {
+        int from = Math.min((page - 1) * size, list.size());
+        int to = Math.min(from + size, list.size());
+        return list.subList(from, to);
     }
 }

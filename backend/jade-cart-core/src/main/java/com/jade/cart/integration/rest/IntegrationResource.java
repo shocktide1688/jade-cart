@@ -2,6 +2,7 @@ package com.jade.cart.integration.rest;
 
 import com.jade.cart.integration.IntegrationService;
 import com.jade.common.api.R;
+import jakarta.annotation.security.PermitAll;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DefaultValue;
@@ -22,6 +23,7 @@ import java.util.Map;
  * 定时拉取, updated_after 游标 + 分页)。
  */
 @Path("/api/v1/integration")
+@PermitAll // 认证由 IntegrationAuthFilter 的 API-Key 负责 (不走用户 JWT)
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 public class IntegrationResource {

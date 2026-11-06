@@ -35,8 +35,8 @@ public class IntegrationAuthFilter {
             Log.warn("集成端点未配置 API-Key, 已拒绝访问 (JADE_INTEGRATION_API_KEY)");
             return Optional.of(Response.status(Response.Status.SERVICE_UNAVAILABLE).build());
         }
-        String auth = ctx.getHeaderString("Authorization");
-        if (auth != null && auth.equals("Bearer " + apiKey)) {
+        String auth = ctx.getHeaderString("X-API-Key");
+        if (auth != null && auth.equals(apiKey)) {
             return Optional.empty();
         }
         return Optional.of(
