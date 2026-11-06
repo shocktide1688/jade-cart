@@ -121,6 +121,9 @@ jade:
     master-key: "${JADE_CRYPTO_MASTER_KEY:dev-only-aes-key-32-bytes-required-please!!}"
   db:
     vendor: "${JADE_DB_VENDOR:postgresql}"
+  integration:
+    # ERP 集成端点 API-Key (空 = 集成端点整体关闭; 按店注入环境变量)
+    api-key: "${JADE_INTEGRATION_API_KEY:disabled}"
   cart:
     # 店面 (Qute SSR) 配置
     store-name: "${JADE_CART_STORE_NAME:Jade Cart Store}"
