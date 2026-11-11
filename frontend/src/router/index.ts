@@ -136,6 +136,12 @@ const routes: RouteRecordRaw[] = [
         component: () => import('@/pages/system/ldap/index.vue'),
         meta: { title: 'LDAP 配置', icon: 'Key' },
       },
+      {
+        path: 'system/config',
+        name: 'SystemConfig',
+        component: () => import('@/pages/system/config/index.vue'),
+        meta: { title: '系统配置', icon: 'Setting' },
+      },
       // ===== 系统监控 =====
       {
         path: 'monitor/operlog',

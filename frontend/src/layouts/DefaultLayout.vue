@@ -87,7 +87,10 @@ function filterUnregistered(items: any[]): any[] {
     })
 }
 
-onMounted(loadMenus)
+onMounted(() => {
+  loadMenus()
+  appStore.loadConfig()
+})
 
 const activeMenu = computed(() => router.currentRoute.value.path)
 
@@ -122,10 +125,11 @@ async function handleCommand(cmd: string) {
     >
       <div
         class="logo"
+        :title="appStore.title"
         @click="router.push('/dashboard')"
       >
-        <span v-if="!appStore.sidebarCollapsed">Jade Platform</span>
-        <span v-else>玉</span>
+        <span v-if="!appStore.sidebarCollapsed">{{ appStore.title }}</span>
+        <span v-else>{{ appStore.title.charAt(0) }}</span>
       </div>
       <el-menu
         :default-active="activeMenu"

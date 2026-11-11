@@ -1,19 +1,24 @@
 <script setup lang="ts">
-import { reactive, ref } from 'vue'
+import { onMounted, reactive, ref } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { useUserStore } from '@/stores/user'
+import { useAppStore } from '@/stores/app'
 import request, { BizError } from '@/utils/request'
 
 const router = useRouter()
 const route = useRoute()
 const userStore = useUserStore()
+const appStore = useAppStore()
 
 const form = reactive({ username: 'admin', password: 'admin123', uuid: '', code: '' })
 const loading = ref(false)
 // 失败超次（1005）或验证码错误（1006）后显示验证码行
 const captchaVisible = ref(false)
 const captchaImage = ref('')
+
+// 登录页公开读取系统配置 (品牌标题 + 欢迎语), 接口失败回落默认值
+onMounted(() => { appStore.loadConfig() })
 
 async function refreshCaptcha() {
   const res = await request({ url: '/api/v1/auth/captcha', method: 'GET' })
@@ -47,7 +52,7 @@ async function handleLogin() {
     <div class="login-bg">
       <div class="brand">
         <h1 class="title">
-          Jade Platform
+          {{ appStore.title }}
         </h1>
         <p class="subtitle">
           温润如玉 · 稳定如石
@@ -57,7 +62,7 @@ async function handleLogin() {
 
     <div class="login-box">
       <h2 class="form-title">
-        欢迎登录
+        {{ appStore.loginWelcome }}
       </h2>
       <el-form
         :model="form"

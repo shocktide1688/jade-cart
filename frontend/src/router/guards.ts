@@ -7,9 +7,7 @@ export function setupGuards(router: Router) {
   router.beforeEach((to, _from, next) => {
     const userStore = useUserStore()
 
-    if (to.meta.title) {
-      document.title = `${to.meta.title} - Jade Platform`
-    }
+    // document.title 由 App.vue 统一同步 (路由 + 应用标题双响应)
 
     if (WHITE_LIST.includes(to.path)) {
       return next()
