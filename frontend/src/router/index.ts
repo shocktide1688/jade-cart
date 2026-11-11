@@ -142,6 +142,12 @@ const routes: RouteRecordRaw[] = [
         component: () => import('@/pages/system/appconfig/index.vue'),
         meta: { title: '系统配置', icon: 'Setting' },
       },
+      {
+        path: 'system/config',
+        name: 'SystemConfig',
+        component: () => import('@/pages/system/config/index.vue'),
+        meta: { title: '参数设置', icon: 'Collection' },
+      },
       // ===== 系统监控 =====
       {
         path: 'monitor/operlog',

@@ -36,6 +36,7 @@ const ICON_MAP: Record<string, any> = {
   首页: House, 用户管理: User, 角色管理: UserFilled, 菜单管理: Menu,
   部门管理: OfficeBuilding, 字典管理: Reading, 操作日志: Document, 登录日志: Key,
   通知公告: Bell, 个人中心: UserFilled, 邮件配置: Message, 首页概览: House,
+  参数设置: Collection,
 }
 
 // 菜单 icon 解析: 优先 sys_menu.icon (Element Plus 组件 PascalCase 名), 次按名称映射, 兜底 Menu
