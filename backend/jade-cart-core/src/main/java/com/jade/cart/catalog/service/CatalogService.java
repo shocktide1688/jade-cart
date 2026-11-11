@@ -205,6 +205,28 @@ public class CatalogService {
         product.persist();
     }
 
+    /** 恢复被归档/软删的商品 (ERP 集成通道专用): ERP 重新发布存活变体下的商品时自动解除归档, 并以 ERP 侧的标题/描述/状态覆盖。变体与其库存/订单快照关联保持不动。 */
+    @Transactional
+    public Product restoreArchivedProduct(
+            Long id, String title, String description, String status) {
+        Product product = Product.findById(id);
+        if (product == null) {
+            throw new BizException("商品不存在");
+        }
+        product.deleted = false;
+        if (title != null && !title.isBlank()) {
+            product.title = title;
+        }
+        if (description != null) {
+            product.description = description;
+        }
+        if (Product.STATUS_ACTIVE.equals(status) || Product.STATUS_DRAFT.equals(status)) {
+            product.status = status;
+        }
+        product.persist();
+        return product;
+    }
+
     // ---------- 变体轴 ----------
 
     @Transactional

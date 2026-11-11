@@ -154,7 +154,11 @@ public class IntegrationService {
             action = "updated";
             product = Product.findById(variant.productId);
             if (product == null || product.deleted) {
-                throw new BizException("变体所属商品不存在: " + sku);
+                // ERP 是商品主数据: 该 SKU 仍被 ERP 发布, 说明店面归档与 ERP 状态冲突,
+                // 自动恢复归档商品并继续更新, 避免"变体在/父商品已归档"导致发布死锁。
+                product =
+                        catalogService.restoreArchivedProduct(
+                                variant.productId, title, description, normStatus);
             }
             if (!title.equals(product.title)) {
                 product.title = title;
