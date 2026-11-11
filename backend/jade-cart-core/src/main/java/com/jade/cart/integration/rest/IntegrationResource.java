@@ -67,10 +67,14 @@ public class IntegrationResource {
                         req.stock,
                         req.status,
                         req.categoryName,
-                        req.imageUrls));
+                        req.imageUrls,
+                        req.seoDescription,
+                        req.seoKeywords));
     }
 
-    /** ERP 商品推送载荷 (JSON body; 字段缺失按需校验); imageUrls 首图为主图, null = 不动图片 */
+    /**
+     * ERP 商品推送载荷 (JSON body; 字段缺失按需校验); imageUrls 首图为主图、null = 不动图片; seo 两字段 null = 不动, 非 null 即覆盖
+     */
     public static class ProductUpsertReq {
         public String sku;
         public String title;
@@ -80,6 +84,8 @@ public class IntegrationResource {
         public String status;
         public String categoryName;
         public java.util.List<String> imageUrls;
+        public String seoDescription;
+        public String seoKeywords;
     }
 
     private LocalDateTime parseSince(String updatedAfter) {

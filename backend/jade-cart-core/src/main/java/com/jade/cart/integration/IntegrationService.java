@@ -150,7 +150,9 @@ public class IntegrationService {
             Integer stock,
             String status,
             String categoryName,
-            List<String> imageUrls) {
+            List<String> imageUrls,
+            String seoDescription,
+            String seoKeywords) {
         if (sku == null || sku.isBlank()) {
             throw new BizException("sku 不能为空");
         }
@@ -182,6 +184,7 @@ public class IntegrationService {
             if (description != null) {
                 product.description = description;
             }
+            applySeo(product, seoDescription, seoKeywords);
             product.status = normStatus;
             product.persist();
         } else {
@@ -199,6 +202,8 @@ public class IntegrationService {
                             sku,
                             null,
                             null);
+            applySeo(product, seoDescription, seoKeywords);
+            product.persist();
             variant = Variant.findBySku(sku).orElseThrow();
             if (categoryId != null) {
                 catalogService.linkCategories(product.id, List.of(categoryId));
@@ -222,6 +227,16 @@ public class IntegrationService {
         out.put("slug", product.slug);
         out.put("status", product.status);
         return out;
+    }
+
+    /** SEO 同步: ERP 为商品主数据, 字段非 null 即覆盖 (可传空串清空); null = 不动 (向后兼容旧调用方)。 */
+    private void applySeo(Product product, String seoDescription, String seoKeywords) {
+        if (seoDescription != null) {
+            product.seoDescription = seoDescription;
+        }
+        if (seoKeywords != null) {
+            product.seoKeywords = seoKeywords;
+        }
     }
 
     /**
