@@ -3,8 +3,10 @@ package com.jade.cart.integration;
 import com.jade.cart.catalog.entity.Category;
 import com.jade.cart.catalog.entity.Inventory;
 import com.jade.cart.catalog.entity.Product;
+import com.jade.cart.catalog.entity.ProductImage;
 import com.jade.cart.catalog.entity.Variant;
 import com.jade.cart.catalog.service.CatalogService;
+import com.jade.cart.media.service.MediaService;
 import com.jade.cart.trade.entity.Order;
 import com.jade.cart.trade.entity.OrderItem;
 import com.jade.common.exception.BizException;
@@ -12,6 +14,12 @@ import io.quarkus.logging.Log;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
+import java.io.ByteArrayInputStream;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -31,7 +39,14 @@ public class IntegrationService {
     private static final DateTimeFormatter CURSOR_FMT =
             DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS");
 
+    /** 单次 upsert 最多同步的图片张数 (首图为主图) */
+    private static final int MAX_PUBLISH_IMAGES = 10;
+
+    private static final HttpClient IMAGE_HTTP = HttpClient.newHttpClient();
+
     @Inject CatalogService catalogService;
+
+    @Inject MediaService mediaService;
 
     /**
      * 订单增量 (含行项目), 按 updatedAt 升序分页。updatedAt 过滤在 Java 内存层做: SQLite 时间列为 TEXT 亲和, 与绑定参数的类型比较不可靠
@@ -134,7 +149,8 @@ public class IntegrationService {
             Long priceCents,
             Integer stock,
             String status,
-            String categoryName) {
+            String categoryName,
+            List<String> imageUrls) {
         if (sku == null || sku.isBlank()) {
             throw new BizException("sku 不能为空");
         }
@@ -197,6 +213,7 @@ public class IntegrationService {
             inv.quantity = stock;
             inv.persist();
         }
+        syncProductImages(product, imageUrls);
         Log.infof("集成商品 upsert: action=%s sku=%s", action, sku);
         Map<String, Object> out = new LinkedHashMap<>();
         out.put("action", action);
@@ -205,6 +222,54 @@ public class IntegrationService {
         out.put("slug", product.slug);
         out.put("status", product.status);
         return out;
+    }
+
+    /**
+     * 图片同步: imageUrls 非 null 时以 ERP 为准整体替换 (首图=主图, 其余进相册); null = 不动图片 (向后兼容旧调用方)。逐张下载进媒体库
+     * (内容哈希去重), 单张失败只跳过不阻断发布。
+     */
+    private void syncProductImages(Product product, List<String> imageUrls) {
+        if (imageUrls == null) {
+            return;
+        }
+        ProductImage.delete("productId", product.id);
+        product.mainImagePath = null;
+        int pos = 0;
+        for (String url : imageUrls) {
+            if (url == null || url.isBlank() || pos >= MAX_PUBLISH_IMAGES) {
+                continue;
+            }
+            try {
+                HttpResponse<byte[]> resp =
+                        IMAGE_HTTP.send(
+                                HttpRequest.newBuilder(URI.create(url.trim()))
+                                        .timeout(Duration.ofSeconds(30))
+                                        .build(),
+                                HttpResponse.BodyHandlers.ofByteArray());
+                if (resp.statusCode() != 200) {
+                    Log.warnf("integration image download http %d: %s", resp.statusCode(), url);
+                    continue;
+                }
+                var asset =
+                        mediaService.upload(
+                                new ByteArrayInputStream(resp.body()),
+                                url.substring(url.lastIndexOf('/') + 1),
+                                null);
+                if (pos == 0) {
+                    product.mainImagePath = asset.path;
+                } else {
+                    ProductImage pi = new ProductImage();
+                    pi.productId = product.id;
+                    pi.path = asset.path;
+                    pi.position = pos;
+                    pi.persist();
+                }
+                pos++;
+            } catch (Exception e) {
+                Log.warnf("integration image download failed: %s (%s)", url, e.getMessage());
+            }
+        }
+        product.persist();
     }
 
     private Long resolveOrCreateCategory(String categoryName) {

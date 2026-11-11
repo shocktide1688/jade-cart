@@ -66,10 +66,11 @@ public class IntegrationResource {
                         req.priceCents,
                         req.stock,
                         req.status,
-                        req.categoryName));
+                        req.categoryName,
+                        req.imageUrls));
     }
 
-    /** ERP 商品推送载荷 (JSON body; 字段缺失按需校验) */
+    /** ERP 商品推送载荷 (JSON body; 字段缺失按需校验); imageUrls 首图为主图, null = 不动图片 */
     public static class ProductUpsertReq {
         public String sku;
         public String title;
@@ -78,6 +79,7 @@ public class IntegrationResource {
         public Integer stock;
         public String status;
         public String categoryName;
+        public java.util.List<String> imageUrls;
     }
 
     private LocalDateTime parseSince(String updatedAfter) {
