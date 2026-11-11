@@ -137,9 +137,9 @@ const routes: RouteRecordRaw[] = [
         meta: { title: 'LDAP 配置', icon: 'Key' },
       },
       {
-        path: 'system/config',
-        name: 'SystemConfig',
-        component: () => import('@/pages/system/config/index.vue'),
+        path: 'system/appconfig',
+        name: 'SystemAppConfig',
+        component: () => import('@/pages/system/appconfig/index.vue'),
         meta: { title: '系统配置', icon: 'Setting' },
       },
       // ===== 系统监控 =====
