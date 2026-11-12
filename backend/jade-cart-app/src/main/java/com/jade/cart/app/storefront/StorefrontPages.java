@@ -806,6 +806,7 @@ public class StorefrontPages {
     private List<Map<String, Object>> navTree() {
         List<Category> all =
                 Category.listAllLive().stream()
+                        .filter(c -> c.status == null || c.status == 1)
                         .sorted(
                                 java.util.Comparator.comparing(
                                         c -> c.sortOrder == null ? 0 : c.sortOrder))
