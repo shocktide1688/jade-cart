@@ -5,6 +5,9 @@ import { ElMessage } from 'element-plus'
 import { useUserStore } from '@/stores/user'
 import { useAppStore } from '@/stores/app'
 import request, { BizError } from '@/utils/request'
+import {
+  loadRemembered, saveRemembered, clearRemembered, stopAutoLogin,
+} from '@/utils/remember'
 
 const router = useRouter()
 const route = useRoute()
@@ -13,12 +16,29 @@ const appStore = useAppStore()
 
 const form = reactive({ username: 'admin', password: 'admin123', uuid: '', code: '' })
 const loading = ref(false)
+// 记住账号并自动登录 (默认勾选; 手动退出登录后只停自动登, 填充保留)
+const rememberMe = ref(true)
 // 失败超次（1005）或验证码错误（1006）后显示验证码行
 const captchaVisible = ref(false)
 const captchaImage = ref('')
 
 // 登录页公开读取系统配置 (品牌标题 + 欢迎语), 接口失败回落默认值
-onMounted(() => { appStore.loadConfig() })
+onMounted(() => {
+  appStore.loadConfig()
+  applyRemembered()
+})
+
+/** 应用记住的凭据: 填充表单; auto=true 时静默自动登录 (密码已改等失败会停用 auto) */
+function applyRemembered() {
+  const saved = loadRemembered()
+  if (!saved) return
+  form.username = saved.username
+  form.password = saved.password
+  rememberMe.value = true
+  if (saved.auto) {
+    handleLogin(true)
+  }
+}
 
 async function refreshCaptcha() {
   const res = await request({ url: '/api/v1/auth/captcha', method: 'GET' })
@@ -27,14 +47,21 @@ async function refreshCaptcha() {
   form.uuid = data.uuid
 }
 
-async function handleLogin() {
+async function handleLogin(auto = false) {
   loading.value = true
   try {
     await userStore.login(form)
-    ElMessage.success('登录成功')
+    if (rememberMe.value) {
+      saveRemembered(form.username, form.password)
+    } else {
+      clearRemembered()
+    }
+    if (!auto) ElMessage.success('登录成功')
     const redirect = (route.query.redirect as string) || '/dashboard'
     router.push(redirect)
   } catch (e) {
+    // 自动登录失败 (密码改了/需要验证码等) → 停用 auto, 停在登录页由用户接管
+    if (auto) stopAutoLogin()
     // 需要验证码/验证码错误 → 显示验证码行并换图（错误提示已在 request.ts 统一弹出）
     if (e instanceof BizError && (e.code === 1005 || e.code === 1006)) {
       captchaVisible.value = true
@@ -67,7 +94,7 @@ async function handleLogin() {
       <el-form
         :model="form"
         label-position="top"
-        @submit.prevent="handleLogin"
+        @submit.prevent="handleLogin()"
       >
         <el-form-item label="用户名">
           <el-input
@@ -83,8 +110,15 @@ async function handleLogin() {
             placeholder="请输入密码"
             size="large"
             show-password
-            @keyup.enter="handleLogin"
+            @keyup.enter="handleLogin()"
           />
+          <el-checkbox
+            v-model="rememberMe"
+            class="remember"
+            title="记住后下次打开自动填充并自动登录; 手动退出登录后不再自动登, 公共电脑请勿勾选"
+          >
+            记住账号并自动登录
+          </el-checkbox>
         </el-form-item>
         <el-form-item v-if="captchaVisible" label="验证码">
           <div class="captcha-row">
@@ -93,7 +127,7 @@ async function handleLogin() {
               placeholder="请输入验证码"
               size="large"
               maxlength="4"
-              @keyup.enter="handleLogin"
+              @keyup.enter="handleLogin()"
             />
             <img
               v-if="captchaImage"
@@ -110,7 +144,7 @@ async function handleLogin() {
           size="large"
           :loading="loading"
           style="width: 100%; background: #00a86b; border-color: #00a86b;"
-          @click="handleLogin"
+          @click="handleLogin()"
         >
           登录
         </el-button>
@@ -152,4 +186,5 @@ async function handleLogin() {
 
 .captcha-row { display: flex; gap: 12px; width: 100%; }
 .captcha-img { height: 40px; border-radius: 4px; cursor: pointer; flex-shrink: 0; }
+.remember { width: 100%; margin-top: 4px; }
 </style>
