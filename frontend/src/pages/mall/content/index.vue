@@ -67,7 +67,7 @@
         >
           <template #default="{ row }">
             <a
-              :href="'http://localhost:8090/pages/' + row.slug"
+              :href="storefrontBase + '/pages/' + row.slug"
               target="_blank"
             >
               <el-button
@@ -169,6 +169,7 @@ defineOptions({ name: 'MallContent' })
 import { onMounted, reactive, ref } from 'vue'
 import { ElMessage } from 'element-plus'
 import request from '@/utils/request'
+import { initStorefrontUrl, storefrontBase } from '@/utils/storefront'
 
 const rows = ref<any[]>([])
 const loading = ref(false)
@@ -228,5 +229,5 @@ async function genPolicies() {
   } finally { generating.value = false }
 }
 
-onMounted(load)
+onMounted(() => { load(); initStorefrontUrl() })
 </script>

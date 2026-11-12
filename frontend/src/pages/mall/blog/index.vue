@@ -67,7 +67,7 @@
           <template #default="{ row }">
             <a
               v-if="row.status === 'ACTIVE'"
-              :href="'http://localhost:8090/blog/' + row.slug"
+              :href="storefrontBase + '/blog/' + row.slug"
               target="_blank"
             >
               <el-button
@@ -235,6 +235,7 @@ import { onMounted, reactive, ref } from 'vue'
 import { ElMessage } from 'element-plus'
 import request from '@/utils/request'
 import RichEditor from '@/components/RichEditor.vue'
+import { initStorefrontUrl, storefrontBase } from '@/utils/storefront'
 
 const rows = ref<any[]>([])
 const loading = ref(false)
@@ -315,5 +316,5 @@ async function remove(id: number) {
   load()
 }
 
-onMounted(load)
+onMounted(() => { load(); initStorefrontUrl() })
 </script>
