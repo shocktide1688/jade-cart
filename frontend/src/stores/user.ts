@@ -59,6 +59,12 @@ export const useUserStore = defineStore(
       disableAutoLogin()
     }
 
+    /** 滑动续期: 换发的新 token 同步内存态与 localStorage */
+    function renewToken(t: string) {
+      accessToken.value = t
+      setToken(t)
+    }
+
     function setUser(u: any) {
       userInfo.value = u
     }
@@ -70,6 +76,7 @@ export const useUserStore = defineStore(
       username,
       login,
       logout,
+      renewToken,
       setUser,
     }
   },

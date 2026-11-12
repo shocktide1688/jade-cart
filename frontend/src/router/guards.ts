@@ -1,5 +1,6 @@
 import type { Router } from 'vue-router'
 import { useUserStore } from '@/stores/user'
+import { maybeRenewToken } from '@/utils/renew'
 
 const WHITE_LIST = ['/login', '/404', '/403']
 
@@ -18,5 +19,10 @@ export function setupGuards(router: Router) {
     }
 
     next()
+  })
+
+  // 用户活跃信号 = 路由切换: token 剩余 < 3 天时静默滑动续期
+  router.afterEach(() => {
+    maybeRenewToken()
   })
 }
