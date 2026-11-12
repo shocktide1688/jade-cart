@@ -405,6 +405,24 @@
   .theme-emerald .sec-featured.overlap .card .imgwrap .quick svg { width:17px; height:17px; }
   .theme-emerald .sec-featured.overlap .card .imgwrap .quick:hover { background:#b9a5ec; }
   .theme-emerald .sec-featured.overlap .card .cardlink { display:block; color:inherit; }
+  /* 其余主题: 快速加购按钮基样式 (emerald 专属规则保留; 缺失时按钮掉出图片成空方块) */
+  .sec-featured .card .imgwrap { position:relative; display:block; }
+  .sec-featured .card .imgwrap .quick {
+    position: absolute; right: 12px; bottom: 12px; z-index:5;
+    width: 38px; height: 38px; border-radius: 999px;
+    background: var(--c-primary); color:#fff;
+    display:flex; align-items:center; justify-content:center;
+    box-shadow: 0 3px 12px rgba(0,0,0,.18);
+    overflow:hidden;
+  }
+  .sec-featured .card .imgwrap .quick button {
+    width:100%; height:100%; border:none; background:transparent;
+    color:#fff; cursor:pointer; padding:0; margin:0;
+    display:flex; align-items:center; justify-content:center;
+    appearance:none; -webkit-appearance:none;
+  }
+  .sec-featured .card .imgwrap .quick svg { width:17px; height:17px; }
+  .sec-featured .card .imgwrap .quick:hover { background:var(--c-ink); }
   .theme-emerald .sec-hero .sec-hero-img {
     position:absolute; inset:0; width:100%; height:100%; max-height:none;
     object-fit:cover; margin:0; border-radius:0; z-index:0;
