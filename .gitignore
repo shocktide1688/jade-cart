@@ -20,3 +20,4 @@ tsconfig.tsbuildinfo
 
 # vite
 frontend/.vite/
+backend/jade-cart-app/launchd-app/

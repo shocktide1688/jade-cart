@@ -15,6 +15,12 @@
 
 ⚠️ 本地 PG 与生产 SQLite 各自演化, 不要假设数据一致。
 ⚠️ 本地后端用**默认 profile 构建** (PG); 服务器镜像用 **sqlite profile 构建** (`-Dquarkus.profile=sqlite`, db-kind 构建期固化)。
+⚠️ 本机 launchd 托管的后端 (`~/Library/LaunchAgents/com.jade.cart`) 指向 `jade-cart-app/launchd-app/` (独立目录, 发行构建不会覆盖)。本地更新后端:
+```bash
+cd backend && mvn clean package -DskipTests          # 默认 PG profile
+rsync -a --delete jade-cart-app/target/quarkus-app/ jade-cart-app/launchd-app/
+launchctl bootout gui/$(id -u)/com.jade.cart; launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.jade.cart.plist
+```
 ⚠️ 生产域名/服务器 IP/凭证通过 `JADE_CORS_ORIGINS` 等**环境变量**注入, 代码默认值仅 localhost/内网正则。
 
 ## 二、本地环境启动
