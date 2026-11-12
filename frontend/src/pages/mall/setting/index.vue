@@ -44,6 +44,15 @@
                 placeholder="support@example.com"
               />
             </el-form-item>
+            <el-form-item label="店面地址">
+              <el-input
+                v-model="form.storefront_url"
+                placeholder="https://shop.example.com"
+              />
+              <div class="muted-tip">
+                店面首页完整地址, 用于"店面主题"页签的实时预览与结算回跳; 生产环境必填, 留空预览回落本地 8090。
+              </div>
+            </el-form-item>
             <el-form-item label="店面公告">
               <el-input
                 v-model="form.announcement"
@@ -287,7 +296,7 @@
 
 <script setup lang="ts">
 defineOptions({ name: 'MallSetting' })
-import { onMounted, reactive, ref } from 'vue'
+import { computed, onMounted, reactive, ref } from 'vue'
 import { ElMessage } from 'element-plus'
 import request from '@/utils/request'
 
@@ -297,6 +306,7 @@ const saving = ref(false)
 
 const form = reactive<Record<string, string>>({
   store_name: '', currency: 'USD', support_email: '', announcement: '',
+  storefront_url: '',
 })
 const pay = reactive<Record<string, any>>({
   stripe_secret_key: '', stripe_webhook_secret: '',
@@ -352,7 +362,10 @@ const themeLoading = ref(false)
 const themeSaving = ref(false)
 const logoUploading = ref(false)
 const previewKey = ref(0)
-const storefrontUrl = 'http://localhost:8090/'
+// 预览地址: 优先店面地址设置, 其次结算回跳地址, 兜底本地 8090 (开发环境)
+const storefrontUrl = computed(
+  () => form.storefront_url || pay.store_base_url || 'http://localhost:8090/',
+)
 const themeForm = reactive({
   preset: 'minimal', primary: '', bg: '', radiusNum: 8, font: 'sans', logoPath: '',
 })
@@ -409,3 +422,13 @@ async function saveTheme() {  themeSaving.value = true
 
 onMounted(() => { load(); loadTheme() })
 </script>
+
+<style scoped>
+.muted-tip {
+  font-size: 12px;
+  color: #909399;
+  line-height: 1.6;
+  margin-top: 4px;
+  width: 100%;
+}
+</style>
