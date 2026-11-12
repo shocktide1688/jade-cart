@@ -331,7 +331,7 @@
           </template>
           <iframe
             :key="previewKey"
-            :src="'http://localhost:8090/'"
+            :src="previewUrl"
             :style="{ width: previewWidth, height: '560px', border: '1px solid #ddd', borderRadius: '8px', margin: '0 auto', display: 'block' }"
           />
         </el-card>
@@ -342,9 +342,13 @@
 
 <script setup lang="ts">
 defineOptions({ name: 'MallStorefront' })
-import { onMounted, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { ElMessage } from 'element-plus'
 import request from '@/utils/request'
+
+// 预览地址: 店面地址设置 → 结算回跳地址 → 本地 8090 兜底 (与商城设置页同规则, 生产必须配店面域名)
+const storeBaseUrl = ref('')
+const previewUrl = computed(() => storeBaseUrl.value || 'http://localhost:8090/')
 
 const sections = ref<any[]>([])
 const types = ref<string[]>([])
@@ -399,6 +403,14 @@ async function load() {
   types.value = res.data.data.types
   sections.value = res.data.data.sections.map((s: any) => ({ ...s, config: s.config || {} }))
   if (editIndex.value >= sections.value.length) editIndex.value = -1
+  // 预览地址设置 (storefront_url 优先, store_base_url 次之)
+  request
+    .get('/api/v1/store-settings')
+    .then((r: any) => {
+      const d = r.data?.data || {}
+      storeBaseUrl.value = d.storefront_url || d.store_base_url || ''
+    })
+    .catch(() => {})
 }
 
 function addSection(type: string) {
