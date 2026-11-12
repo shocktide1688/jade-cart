@@ -320,6 +320,9 @@
   .nav-drop { position:relative; display:inline-block; }
   .nav-drop > a { position:relative; }
   .hot { position:absolute; top:-15px; right:-16px; background:#e9dcf7; color:#5b3d8f; font-size:9px; font-weight:700; letter-spacing:.06em; padding:2px 6px; border-radius:6px; }
+  /* classic 主题: HOT 徽标与日期角标跟主题 token (紫底是 emerald 时代残留) */
+  .theme-classic .hot { background:var(--c-primary); color:#fff; }
+  .theme-classic .date-badge { background:var(--c-bg); color:var(--c-ink); border:1px solid var(--c-line); }
   /* hover 桥: Category 与 mega 面板间隙保持 hover 链 (拉长到覆盖真空带) */
   .nav-drop::after { content:""; position:absolute; top:100%; left:-60px; right:-60px; height:110px; }
   /* nav 有 transform → fixed 相对 nav 定位: 用 vw 宽 + 负 margin 居中 */
@@ -338,6 +341,13 @@
     font-family: Georgia, 'Times New Roman', serif;
     font-style: italic; font-weight:500;
     background: linear-gradient(#e3b7dd,#e3b7dd) left 100% / 100% 4px no-repeat;
+    padding: 0 2px 6px;
+  }
+  /* 其余主题: 强调词衬线斜体 + 主色下划线 (emerald 规则特异性更高不受影响) */
+  .sec-hero h1 em.hl {
+    font-family: Georgia, 'Times New Roman', serif;
+    font-style: italic; font-weight:500;
+    background: linear-gradient(var(--c-primary),var(--c-primary)) left 100% / 100% 4px no-repeat;
     padding: 0 2px 6px;
   }
   .theme-emerald .card { border-color:transparent; box-shadow:0 1px 14px rgba(29,29,29,.08); }

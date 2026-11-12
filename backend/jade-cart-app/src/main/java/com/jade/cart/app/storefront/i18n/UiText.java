@@ -338,9 +338,8 @@ public record UiText(
         footBlurb =
                 or(
                         footBlurb,
-                        "Indulge in a nutritious and delicious experience with our latest"
-                                + " collection. Each piece is thoughtfully crafted to nourish your"
-                                + " everyday rituals.");
+                        "Wood-fired teaware and curated tea, shaped by flame and time"
+                                + " — delivered from our kiln workshop to your table.");
         ariaEmail = or(ariaEmail, "Email");
         ariaSubscribe = or(ariaSubscribe, "Subscribe");
         footOurShop = or(footOurShop, "Our Shop");
