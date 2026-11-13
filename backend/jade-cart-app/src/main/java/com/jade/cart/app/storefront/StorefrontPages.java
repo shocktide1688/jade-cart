@@ -212,7 +212,8 @@ public class StorefrontPages {
         if (entity.mainImagePath != null && !entity.mainImagePath.isBlank()) {
             gallery.add(Map.of("idx", 0, "path", entity.mainImagePath));
         }
-        List<ProductImage> extras = ProductImage.find("productId", entity.id).list();
+        List<ProductImage> extras =
+                ProductImage.find("productId = ?1 order by position asc, id asc", entity.id).list();
         int extraPos = gallery.isEmpty() ? 0 : 1;
         for (ProductImage pi : extras) {
             gallery.add(Map.of("idx", extraPos, "path", pi.path));

@@ -396,6 +396,78 @@
         <el-divider />
 
         <h4>
+          图集 <span
+            class="muted"
+            style="font-weight:400;font-size:12px"
+          >店面详情页相册 (主图 + 图集, 可拖拽排序)</span>
+        </h4>
+        <div
+          v-loading="galleryLoading"
+          style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:10px"
+        >
+          <div
+            v-for="(g, gi) in gallery"
+            :key="g.id + '-' + gi"
+            class="gal-item"
+            :class="{ main: g.main }"
+            draggable="true"
+            @dragstart="dragIndex = gi"
+            @dragover.prevent
+            @drop="dropImage(gi)"
+          >
+            <img
+              :src="'/media/' + g.path"
+              :style="{ objectPosition: g.main ? 'center' : 'center' }"
+              alt=""
+            >
+            <div class="gal-badge">
+              {{ g.main ? '主图' : gi }}
+            </div>
+            <div
+              v-if="!g.main"
+              class="gal-ops"
+            >
+              <el-button
+                link
+                type="primary"
+                size="small"
+                @click.stop="promoteImage(g)"
+              >
+                设为主图
+              </el-button>
+              <el-button
+                link
+                type="danger"
+                size="small"
+                @click.stop="deleteImage(g)"
+              >
+                删除
+              </el-button>
+            </div>
+          </div>
+          <div
+            v-if="!gallery.length"
+            style="color:#909399;font-size:13px;padding:8px 0"
+          >
+            暂无图集图片 —— 店面详情页只显示主图
+          </div>
+        </div>
+        <el-upload
+          :show-file-list="false"
+          multiple
+          accept="image/jpeg,image/png,image/webp"
+          :auto-upload="false"
+          :on-change="uploadGalleryImages"
+          :disabled="galleryUploading"
+        >
+          <el-button :loading="galleryUploading">
+            上传图集图片 (可多选)
+          </el-button>
+        </el-upload>
+
+        <el-divider />
+
+        <h4>
           变体轴 <span
             class="muted"
             style="font-size:12px;font-weight:400"
@@ -564,6 +636,11 @@ const createForm = reactive({
 const detailVisible = ref(false)
 const detail = ref<any>(null)
 const uploading = ref(false)
+// 图集 (店面详情页相册): 主图 + 补充图, 补充图可拖拽排序
+const gallery = ref<any[]>([])
+const galleryLoading = ref(false)
+const galleryUploading = ref(false)
+const dragIndex = ref(-1)
 const savingBasic = ref(false)
 const newOption = reactive({ key: '', values: '' })
 const drawerOpened = ref(false)
@@ -633,6 +710,61 @@ async function openDetail(id: number) {
   detail.value = res.data.data
   detail.value.variants.forEach((v: any) => { v.priceYuan = v.priceCents / 100 })
   detailVisible.value = true
+  loadGallery(id)
+}
+
+/** 拉取图集 (主图 + 补充图) */
+async function loadGallery(id?: number) {
+  const productId = id ?? detail.value?.id
+  if (!productId) return
+  galleryLoading.value = true
+  try {
+    const res: any = await request.get(`/api/v1/products/${productId}/images`)
+    gallery.value = res.data.data || []
+  } finally { galleryLoading.value = false }
+}
+
+/** 多选上传图集图片 */
+async function uploadGalleryImages(file: any) {
+  galleryUploading.value = true
+  try {
+    const fd = new FormData()
+    fd.append('file', file.raw)
+    const res: any = await request.post('/api/v1/media/upload', fd, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    })
+    await request.post(`/api/v1/products/${detail.value.id}/images`, { path: res.data.data.path })
+    ElMessage.success('图集图片已添加')
+    loadGallery()
+  } finally { galleryUploading.value = false }
+}
+
+async function deleteImage(g: any) {
+  await request.delete(`/api/v1/products/${detail.value.id}/images/${g.id}`)
+  ElMessage.success('已删除')
+  loadGallery()
+}
+
+async function promoteImage(g: any) {
+  await request.put(`/api/v1/products/${detail.value.id}/images/${g.id}/main`)
+  ElMessage.success('已设为主图')
+  loadGallery()
+}
+
+/** 拖拽排序: 把 dragIndex 的补充图移到目标位置 */
+async function dropImage(target: number) {
+  const from = dragIndex.value
+  dragIndex.value = -1
+  if (from < 0 || from === target) return
+  const list = [...gallery.value]
+  const moved = list.splice(from, 1)[0]
+  list.splice(target, 0, moved)
+  gallery.value = list
+  // 提交新顺序 (只含补充图, 主图固定首位)
+  const imageIds = list.filter((g) => !g.main).map((g) => g.id)
+  await request.put(`/api/v1/products/${detail.value.id}/images/order`, { imageIds })
+  ElMessage.success('顺序已保存')
+  loadGallery()
 }
 
 async function saveBasic() {
@@ -728,4 +860,42 @@ onMounted(() => { load(); loadCategories() })
 <style scoped>
 .muted { color: #999; }
 h4 { margin: 4px 0 10px; }
+
+/* 图集项: 缩略图 + 主图角标 + 悬浮操作 */
+.gal-item {
+  position: relative;
+  width: 92px;
+  height: 92px;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid #e6e6e6;
+  background: #fafafa;
+  cursor: grab;
+}
+.gal-item.main { border-color: #00a86b; box-shadow: 0 0 0 2px rgba(0, 168, 107, .18); }
+.gal-item img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.gal-badge {
+  position: absolute;
+  top: 0;
+  left: 0;
+  padding: 1px 6px;
+  font-size: 11px;
+  border-radius: 0 0 6px 0;
+  background: rgba(0, 0, 0, .55);
+  color: #fff;
+}
+.gal-item.main .gal-badge { background: #00a86b; }
+.gal-ops {
+  position: absolute;
+  inset: auto 0 0 0;
+  display: flex;
+  justify-content: space-around;
+  background: rgba(0, 0, 0, .6);
+  opacity: 0;
+  transition: opacity .15s;
+}
+.gal-item:hover .gal-ops { opacity: 1; }
+.gal-ops :deep(.el-button) { color: #fff; padding: 2px 4px; }
+.gal-ops :deep(.el-button--danger) { color: #ff7875; }
+.gal-ops :deep(.el-button--primary) { color: #7ee2b8; }
 </style>

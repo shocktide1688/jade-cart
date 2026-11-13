@@ -2,6 +2,7 @@ package com.jade.cart.catalog.rest;
 
 import com.jade.cart.catalog.dto.ProductView;
 import com.jade.cart.catalog.service.CatalogService;
+import com.jade.cart.catalog.service.ProductImageService;
 import com.jade.common.api.PageResult;
 import com.jade.common.api.R;
 import io.quarkus.security.Authenticated;
@@ -19,6 +20,7 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 import java.util.List;
+import java.util.Map;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 
@@ -31,6 +33,8 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 public class AdminProductController {
 
     @Inject CatalogService catalogService;
+
+    @Inject ProductImageService productImageService;
 
     public record CreateReq(
             String title,
@@ -157,6 +161,60 @@ public class AdminProductController {
         catalogService.linkCategories(id, req.categoryIds());
         return R.ok();
     }
+
+    // ---------- 商品图集 (相册) ----------
+
+    @GET
+    @Path("/{id}/images")
+    @RolesAllowed("admin")
+    @Operation(summary = "商品图集列表 (主图 + 补充图, 按展示顺序)")
+    public R<List<Map<String, Object>>> images(@PathParam("id") Long id) {
+        return R.ok(productImageService.gallery(id));
+    }
+
+    @POST
+    @Path("/{id}/images")
+    @RolesAllowed("admin")
+    @Transactional
+    @Operation(summary = "追加图集图片 (path 为媒体库相对路径)")
+    public R<Void> addImage(@PathParam("id") Long id, ImageReq req) {
+        productImageService.add(id, req.path());
+        return R.ok();
+    }
+
+    @DELETE
+    @Path("/{id}/images/{imageId}")
+    @RolesAllowed("admin")
+    @Transactional
+    @Operation(summary = "删除图集图片")
+    public R<Void> deleteImage(@PathParam("id") Long id, @PathParam("imageId") Long imageId) {
+        productImageService.remove(id, imageId);
+        return R.ok();
+    }
+
+    @PUT
+    @Path("/{id}/images/order")
+    @RolesAllowed("admin")
+    @Transactional
+    @Operation(summary = "调整图集顺序 (imageIds 为目标顺序)")
+    public R<Void> reorderImages(@PathParam("id") Long id, OrderReq req) {
+        productImageService.reorder(id, req.imageIds());
+        return R.ok();
+    }
+
+    @PUT
+    @Path("/{id}/images/{imageId}/main")
+    @RolesAllowed("admin")
+    @Transactional
+    @Operation(summary = "把图集图片设为主图 (原主图进图集首位)")
+    public R<Void> promoteImage(@PathParam("id") Long id, @PathParam("imageId") Long imageId) {
+        productImageService.promoteToMain(id, imageId);
+        return R.ok();
+    }
+
+    public record ImageReq(String path) {}
+
+    public record OrderReq(List<Long> imageIds) {}
 
     // ---------- 变体轴 ----------
 
