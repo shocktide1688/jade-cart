@@ -274,6 +274,7 @@ public class StorefrontPages {
                                 .data("gallery", gallery)
                                 .data("mainImg", mainImg)
                                 .data("curIdx", curIdx)
+                                .data("desc", desc)
                                 .data("storeName", storeName)
                                 .data("baseUrl", baseUrl)
                                 .data("navCats", navTree())

@@ -53,6 +53,7 @@ public record UiText(
         String soldOut,
         // 商品详情
         String lowStock,
+        String stockLabel,
         String left,
         String accShipTitle,
         String accShipBody,
@@ -212,6 +213,7 @@ public record UiText(
                 p.getProperty("nothingHere"),
                 p.getProperty("soldOut"),
                 p.getProperty("lowStock"),
+                p.getProperty("stockLabel"),
                 p.getProperty("left"),
                 p.getProperty("accShipTitle"),
                 p.getProperty("accShipBody"),
@@ -369,6 +371,7 @@ public record UiText(
         nothingHere = or(nothingHere, "Nothing here yet.");
         soldOut = or(soldOut, "SOLD OUT");
         lowStock = or(lowStock, "Low stock:");
+        stockLabel = or(stockLabel, "Stock");
         left = or(left, "left");
         accShipTitle = or(accShipTitle, "Shipping & Returns");
         accShipBody =

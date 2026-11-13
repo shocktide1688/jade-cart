@@ -12,17 +12,19 @@
   <div class="pdp-gallery">
     {#if mainImg}
     <div class="pdp-stage">
-      <img class="pdp-main" src="/media/{mainImg}" alt="{p.title}">
+      <img class="pdp-main" id="pdp-main-img" src="/media/{mainImg}" alt="{p.title}">
       {#if gallery.size > 1}
-      <span class="pdp-count">{curIdx + 1} / {gallery.size}</span>
+      <span class="pdp-count" id="pdp-count">{curIdx + 1} / {gallery.size}</span>
       {/if}
     </div>
     {#if gallery.size > 1}
-    <div class="pdp-thumbs">
+    <div class="pdp-thumbs" id="pdp-thumbs">
       {#for g in gallery}
       <a
         class="pdp-thumb {#if g.idx == curIdx}on{/if}"
         href="/products/{p.slug}?img={g.idx}"
+        data-idx="{g.idx}"
+        data-src="/media/{g.path}"
         aria-label="{p.title} {g.idx + 1}"
         {#if g.idx == curIdx}aria-current="true"{/if}
       >
@@ -40,6 +42,25 @@
     <h1>{p.title}</h1>
     <div class="pdp-price">{priceCents.money} USD</div>
     <div class="pdp-divider"></div>
+    {#if desc}
+    <p class="pdp-teaser">{desc}</p>
+    {/if}
+    <ul class="pdp-facts">
+      <li>
+        <span class="k">{t.stockLabel}</span>
+        <span class="v">{#if totalAvail > 0}{totalAvail} {t.left}{#else}{t.unavailable}{/if}</span>
+      </li>
+      {#if crumbName}
+      <li>
+        <span class="k">{t.categoryLabel}</span>
+        <span class="v"><a href="/products?category={crumbSlug}">{crumbName}</a></span>
+      </li>
+      {/if}
+      <li>
+        <span class="k">{t.shipLabel}</span>
+        <span class="v">{t.accShipTitle}</span>
+      </li>
+    </ul>
     {#if lowStock}
     <div class="pdp-stock">◎ {t.lowStock} {totalAvail} {t.left}</div>
     {/if}
@@ -159,7 +180,7 @@
 <div class="grid">
   {#for r in related}
   <a class="card" href="/products/{r.slug}">
-    {#if r.mainImagePath}<img src="/media/{r.mainImagePath}" alt="{r.title}" loading="lazy" style="width:100%;height:160px;object-fit:cover;display:block">{#else}<div class="ph">✦</div>{/if}
+    {#if r.mainImagePath}<img src="/media/{r.mainImagePath}?w=400" alt="{r.title}" loading="lazy" style="width:100%;height:160px;object-fit:cover;display:block">{#else}<div class="ph">✦</div>{/if}
     <div class="body">
       <div class="name">{r.title}</div>
       <div class="price">{t.from} {r.minPriceCents.money}</div>
@@ -168,5 +189,43 @@
   {/for}
 </div>
 {/if}
+
+<script>
+/* 图集原地切换 (渐进增强): 有 JS 时点击缩略图不整页跳转, 直接换主图 + 计数 + pushState;
+   无 JS 时退化为 <a href="?img=N"> 正常导航 (SEO 与可达性不受影响) */
+(function () {
+  var thumbs = document.getElementById('pdp-thumbs');
+  var mainImg = document.getElementById('pdp-main-img');
+  var counter = document.getElementById('pdp-count');
+  if (!thumbs || !mainImg) return;
+  thumbs.addEventListener('click', function (e) {
+    var a = e.target.closest ? e.target.closest('.pdp-thumb') : null;
+    if (!a || !a.getAttribute('data-src')) return;
+    e.preventDefault();
+    var src = a.getAttribute('data-src');
+    if (mainImg.getAttribute('src') !== src) {
+      mainImg.setAttribute('src', src);
+      var alts = thumbs.querySelectorAll('.pdp-thumb');
+      for (var i = 0; i < alts.length; i++) {
+        alts[i].classList.remove('on');
+        alts[i].removeAttribute('aria-current');
+      }
+      a.classList.add('on');
+      a.setAttribute('aria-current', 'true');
+      if (counter) counter.textContent = a.getAttribute('data-idx') + ' / ' + alts.length;
+    }
+    try {
+      history.pushState({ img: a.getAttribute('data-idx') }, '', a.getAttribute('href'));
+    } catch (err) { /* file:// 等场景忽略 */ }
+    a.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+  });
+  window.addEventListener('popstate', function () {
+    var m = /[?&]img=(\d+)/.exec(window.location.search);
+    if (!m) return;
+    var target = thumbs.querySelector('.pdp-thumb[data-idx="' + m[1] + '"]');
+    if (target) target.click();
+  });
+})();
+</script>
 
 {/storePage}

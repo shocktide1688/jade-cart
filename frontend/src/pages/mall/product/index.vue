@@ -402,6 +402,14 @@
             style="font-weight:400;font-size:12px"
           >店面详情页相册 (主图 + 图集, 可拖拽排序)</span>
         </h4>
+        <el-alert
+          type="info"
+          :closable="false"
+          show-icon
+          style="margin-bottom:12px;width:100%"
+          title="建议上传纯产品图 (不带文字的海报)"
+          description="缩略图只有 72px, 带文字的营销海报缩小后看不清, 文字会被裁切; 营销文案请放在商品描述里, 图集只放产品多角度照片。"
+        />
         <div
           v-loading="galleryLoading"
           style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:10px"

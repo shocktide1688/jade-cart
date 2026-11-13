@@ -258,6 +258,18 @@
   .pdp-price { font-size:20px; font-weight:600; }
   .pdp-divider { height:1px; background:var(--c-line); margin:20px 0; }
   .pdp-stock { font-size:14px; color:#b45309; }
+  /* 商品短描述 (服务端 teaser) + 事实清单, 填补标题价格下方的空白 */
+  .pdp-teaser { margin:0 0 18px; color:var(--c-muted); font-size:15px; line-height:1.7; }
+  .pdp-facts { list-style:none; margin:0; padding:0; display:grid; gap:10px; }
+  .pdp-facts li {
+    display:flex; gap:14px; align-items:baseline;
+    padding-bottom:10px; border-bottom:1px solid var(--c-line);
+    font-size:14px;
+  }
+  .pdp-facts li:last-child { border-bottom:none; padding-bottom:0; }
+  .pdp-facts .k { color:var(--c-muted); min-width:72px; }
+  .pdp-facts .v { color:var(--c-ink); }
+  .pdp-facts .v a { color:var(--c-primary); }
   .pdp-buy { border-left:1px solid var(--c-line); padding-left:28px; }
   .acc { border-bottom:1px solid var(--c-line); }
   .acc summary { cursor:pointer; list-style:none; display:flex; align-items:center; justify-content:space-between; padding:14px 0; font-weight:600; font-size:15px; color:var(--c-ink); }
