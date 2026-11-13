@@ -6,6 +6,11 @@ quarkus:
   http:
     # 8080 被 jade-ldap 容器占用, jade-cart 用 8090
     port: "${JADE_CART_HTTP_PORT:8090}"
+    # 响应压缩: 店面整页含 ~33KB 内联 CSS (主题变量运行时注入), 不压缩则每页明文传 50KB。
+    # 开启后 HTML/JSON/CSS 走 gzip (约 -75% 传输), 对 LCP 与移动端流量都有正向作用
+    enable-compression: "${QUARKUS_HTTP_ENABLE_COMPRESSION:true}"
+    # 1 核机器上不必压图片 (已是压缩格式, 压了纯耗 CPU)
+    compress-media-types: "text/html,text/plain,text/css,text/javascript,application/javascript,application/json,application/xml,text/xml,image/svg+xml"
     # CORS: Quarkus 内置 Vert.x 层过滤器 (jade-web 自定义 CorsFilter 已删除)。
     # 必须留在 HTTP 层: 安全层 401 也会带 CORS 头, 否则浏览器把过期 token 的
     # 401 拦截成 Network Error, 前端"登录已过期"提示失效
