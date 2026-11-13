@@ -42,6 +42,9 @@
     --font-body: {theme.fontFamily.raw ?: "-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif"};
   }
   * { box-sizing:border-box; }
+  /* 防横向滚动条: 任何元素意外超宽都不该让整页出现底部横向滚动条。
+     clip 不创建滚动容器 (hidden 会把 overflow-y 变成 auto), 因此不影响 position:sticky */
+  html, body { max-width:100%; overflow-x:clip; }
   body { margin:0; color:var(--c-ink); background:var(--c-bg); font:16px/1.6 var(--font-body); }
   a { color:inherit; text-decoration:none; }
   header { display:flex; justify-content:space-between; align-items:center; padding:18px 24px; border-bottom:1px solid var(--c-line); }
