@@ -21,6 +21,13 @@
       {/if}
     </div>
     {#if gallery.size > 1}
+    <div class="pdp-thumbs-wrap">
+    <button
+      type="button"
+      class="pdp-thumbs-nav prev"
+      id="pdp-thumbs-prev"
+      aria-label="上一张缩略图"
+    >‹</button>
     <div class="pdp-thumbs" id="pdp-thumbs">
       {#for g in gallery}
       <a
@@ -34,6 +41,13 @@
         <img src="/media/{g.path}?w=200" alt="" loading="lazy">
       </a>
       {/for}
+    </div>
+    <button
+      type="button"
+      class="pdp-thumbs-nav next"
+      id="pdp-thumbs-next"
+      aria-label="下一张缩略图"
+    >›</button>
     </div>
     {/if}
     {#else}
@@ -244,6 +258,27 @@
     var target = thumbs.querySelector('.pdp-thumb[data-idx="' + m[1] + '"]');
     if (target) target.click();
   });
+})();
+
+/* 缩略图条左右翻页: 滚动条已隐藏, 用箭头指引还有更多 */
+(function () {
+  var strip = document.getElementById('pdp-thumbs');
+  var prev = document.getElementById('pdp-thumbs-prev');
+  var next = document.getElementById('pdp-thumbs-next');
+  if (!strip || !prev || !next) return;
+  function update() {
+    var over = strip.scrollWidth - strip.clientWidth > 4;
+    prev.classList.toggle('show', over && strip.scrollLeft > 4);
+    next.classList.toggle('show', over && strip.scrollLeft < strip.scrollWidth - strip.clientWidth - 4);
+  }
+  function scrollBy(dir) {
+    strip.scrollBy({ left: dir * Math.max(200, strip.clientWidth * 0.8), behavior: 'smooth' });
+  }
+  prev.addEventListener('click', function () { scrollBy(-1); });
+  next.addEventListener('click', function () { scrollBy(1); });
+  strip.addEventListener('scroll', update);
+  window.addEventListener('resize', update);
+  update();
 })();
 
 /* 数量步进器 (渐进增强): 无 JS 时退化为可输入的 number 框 */

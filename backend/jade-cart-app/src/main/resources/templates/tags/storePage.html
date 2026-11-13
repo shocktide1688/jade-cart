@@ -245,15 +245,33 @@
   }
   /* 缩略图: 单行横向滚动, 不再换行成两排 */
   .pdp-thumbs {
-    display:flex; gap:10px; margin-top:12px;
+    display:flex; gap:8px; margin-top:12px;
     overflow-x:auto; overscroll-behavior-x:contain;
-    scroll-snap-type:x proximity; scrollbar-width:thin;
-    padding-bottom:4px;
+    scroll-snap-type:x proximity;
+    /* 隐藏滚动条: 缩略图常超出列宽, 露出的横向滚动条像页面级滚动条 (易误认/误触) */
+    scrollbar-width:none; -ms-overflow-style:none;
+    padding-bottom:2px;
+    /* 两侧渐隐提示"还有更多", 代替滚动条 */
+    -webkit-mask-image:linear-gradient(to right, transparent 0, #000 14px, #000 calc(100% - 14px), transparent 100%);
+    mask-image:linear-gradient(to right, transparent 0, #000 14px, #000 calc(100% - 14px), transparent 100%);
   }
-  .pdp-thumbs::-webkit-scrollbar { height:6px; }
-  .pdp-thumbs::-webkit-scrollbar-thumb { background:rgba(0,0,0,.18); border-radius:99px; }
+  .pdp-thumbs::-webkit-scrollbar { display:none; height:0; }
+  /* 缩略图条容器 + 左右翻页箭头 (溢出时才显示) */
+  .pdp-thumbs-wrap { position:relative; }
+  .pdp-thumbs-nav {
+    position:absolute; top:0; bottom:2px; width:30px;
+    border:none; border-radius:8px; cursor:pointer; z-index:6;
+    background:rgba(255,255,255,.92); color:var(--c-ink);
+    font-size:20px; line-height:1; display:none;
+    align-items:center; justify-content:center;
+    box-shadow:0 2px 10px rgba(0,0,0,.12);
+  }
+  .pdp-thumbs-nav.prev { left:0; }
+  .pdp-thumbs-nav.next { right:0; }
+  .pdp-thumbs-nav.show { display:flex; }
+  .pdp-thumbs-nav:hover { background:#fff; }
   .pdp-thumb {
-    width:72px; flex:0 0 72px; scroll-snap-align:start;
+    width:64px; flex:0 0 64px; scroll-snap-align:start;
     border-radius:10px; overflow:hidden; opacity:.6;
     border:2px solid transparent; display:block;
     transition:opacity .15s, border-color .15s, transform .15s;
