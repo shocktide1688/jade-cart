@@ -60,44 +60,50 @@
     {#if lowStock}
     <div class="pdp-stock">◎ {t.lowStock} {totalAvail} {t.left}</div>
     {/if}
-  </div>
 
-  <div class="pdp-buy">
-    <details class="acc">
-      <summary>{t.accShipTitle}</summary>
-      <div class="acc-body">{t.accShipBody}</div>
-    </details>
-    <details class="acc">
-      <summary>{t.accSupportTitle}</summary>
-      <div class="acc-body">{t.accSupportBodyPre}
-      <a href="/contact" style="text-decoration:underline">{t.contactLink}</a>{t.faqReturnAPost}</div>
-    </details>
-    <details class="acc">
-      <summary>{t.accBenefitsTitle}</summary>
-      <div class="acc-body">{t.accBenefitsBody}</div>
-    </details>
-
-    {#if p.variants.isEmpty()}
-    <p class="muted">{t.unavailable}</p>
-    {#else}
-    <form method="post" action="/cart/add" class="pdp-buyform">
-      {#if p.variants.size > 1}
-      <label for="pdp-variant">{t.optionLabel}</label>
-      <select name="variantId" id="pdp-variant" required>
-        {#for v in p.variants}
-        {#if v.available > 0}
-        <option value="{v.id}">{v.spec ?: t.standard} — {v.priceCents.money}</option>
-        {/if}
-        {/for}
-      </select>
+    <div class="pdp-buy">
+      {#if p.variants.isEmpty()}
+      <p class="muted">{t.unavailable}</p>
       {#else}
-      <input type="hidden" name="variantId" value="{p.variants.first.id}">
+      <form method="post" action="/cart/add" class="pdp-buyform">
+        <div class="pdp-buyrow">
+          <div class="pdp-qtybox">
+            <label for="pdp-qty">{t.quantity}</label>
+            <input type="number" id="pdp-qty" name="quantity" value="1" min="1" class="qty-input">
+          </div>
+          <button class="btn pdp-atc" type="submit">{t.addToCart}</button>
+        </div>
+        {#if p.variants.size > 1}
+        <label for="pdp-variant">{t.optionLabel}</label>
+        <select name="variantId" id="pdp-variant" required>
+          {#for v in p.variants}
+          {#if v.available > 0}
+          <option value="{v.id}">{v.spec ?: t.standard} — {v.priceCents.money}</option>
+          {/if}
+          {/for}
+        </select>
+        {#else}
+        <input type="hidden" name="variantId" value="{p.variants.first.id}">
+        {/if}
+      </form>
       {/if}
-      <label for="pdp-qty">{t.quantity}</label>
-      <input type="number" id="pdp-qty" name="quantity" value="1" min="1" class="qty-input">
-      <button class="btn pdp-atc" type="submit">{t.addToCart}</button>
-    </form>
-    {/if}
+    </div>
+
+    <div class="pdp-accs">
+      <details class="acc">
+        <summary>{t.accShipTitle}</summary>
+        <div class="acc-body">{t.accShipBody}</div>
+      </details>
+      <details class="acc">
+        <summary>{t.accSupportTitle}</summary>
+        <div class="acc-body">{t.accSupportBodyPre}
+        <a href="/contact" style="text-decoration:underline">{t.contactLink}</a>{t.faqReturnAPost}</div>
+      </details>
+      <details class="acc">
+        <summary>{t.accBenefitsTitle}</summary>
+        <div class="acc-body">{t.accBenefitsBody}</div>
+      </details>
+    </div>
   </div>
 </div>
 

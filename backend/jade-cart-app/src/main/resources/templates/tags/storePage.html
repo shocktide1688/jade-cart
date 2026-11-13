@@ -209,12 +209,12 @@
     .cart-layout { grid-template-columns: 1fr; }
   }
 
-  /* ===== 商品详情页 (对标参考站点 面包屑 + 三栏 + 灰底 Tabs + 底部吸顶购买条) ===== */
+  /* ===== 商品详情页 (面包屑 + 图集/信息两栏 + 灰底 Tabs + 底部吸顶购买条) ===== */
   .crumb { display:flex; align-items:center; gap:10px; font-size:14px; color:var(--c-muted); margin:0 0 28px; flex-wrap:wrap; }
   .crumb a:hover { color:var(--c-ink); }
   .crumb .sep { color:var(--c-muted); opacity:.6; }
   .crumb .cur { color:var(--c-ink); }
-  .pdp { display:grid; grid-template-columns: minmax(300px,470px) 1fr 300px; gap:44px; align-items:start; }
+  .pdp { display:grid; grid-template-columns: minmax(300px,460px) minmax(0,1fr); gap:56px; align-items:start; }
   /* 主图: contain 不裁切 (商家素材混用竖版营销图与方版产品图, cover 会切掉文字);
      舞台底色用浅灰, 留白区域不突兀 */
   .pdp-stage { position:relative; border-radius:14px; overflow:hidden; background:#f6f5f2; }
@@ -270,17 +270,23 @@
   .pdp-facts .k { color:var(--c-muted); min-width:72px; }
   .pdp-facts .v { color:var(--c-ink); }
   .pdp-facts .v a { color:var(--c-primary); }
-  .pdp-buy { border-left:1px solid var(--c-line); padding-left:28px; }
+  .pdp-buy { margin-top:26px; }
   .acc { border-bottom:1px solid var(--c-line); }
   .acc summary { cursor:pointer; list-style:none; display:flex; align-items:center; justify-content:space-between; padding:14px 0; font-weight:600; font-size:15px; color:var(--c-ink); }
   .acc summary::-webkit-details-marker { display:none; }
   .acc summary::after { content:"⌄"; color:var(--c-muted); font-size:14px; }
   .acc[open] summary::after { content:"⌃"; }
   .acc-body { font-size:14px; color:var(--c-muted); line-height:1.7; padding:0 0 14px; }
-  .pdp-buyform { margin-top:20px; display:flex; flex-direction:column; gap:10px; }
+  /* 购买区: 数量与加购按钮同行, 不再各占满宽 */
+  .pdp-buyform { display:flex; flex-direction:column; gap:12px; align-items:stretch; }
   .pdp-buyform label { font-size:13px; margin-bottom:2px; }
-  .qty-input { width:76px; text-align:center; }
-  .pdp-atc { width:100%; text-align:center; }
+  .pdp-buyrow { display:flex; gap:14px; align-items:flex-end; }
+  .pdp-qtybox { display:flex; flex-direction:column; gap:6px; flex:0 0 auto; }
+  .qty-input { width:96px; text-align:center; flex:0 0 auto; }
+  /* 全局 input[type=number] 是 width:100%, 这里覆盖成紧凑宽度 */
+  .pdp-qtybox input[type=number], .qty-input[type=number] { width:96px; }
+  .pdp-atc { flex:1; text-align:center; }
+  .pdp-accs { margin-top:26px; border-top:1px solid var(--c-line); }
   .pdp-tabs { background:#f4f4f3; margin:56px calc(50% - 50vw) 0; padding:56px 24px; }
   .pdp-tabs-nav { display:flex; gap:32px; justify-content:center; flex-wrap:wrap; margin-bottom:32px; }
   .pdp-tabs-nav span { font-weight:600; font-size:17px; color:var(--c-ink); opacity:.85; padding-bottom:6px; }
@@ -296,9 +302,8 @@
   .pdp-bar-form .qty-input { width:60px; }
   .pdp-bar-form .pdp-atc { width:auto; }
   main { padding-bottom:120px; }  /* 给吸顶购买条留空间 */
-  @media (max-width: 900px) {
-    .pdp { grid-template-columns: 1fr; }
-    .pdp-buy { border-left:none; padding-left:0; }
+  @media (max-width: 1024px) {
+    .pdp { grid-template-columns: 1fr; gap:32px; }
   }
   .cat-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(200px,1fr)); gap:20px; }
   .cat-card { display:block; }
