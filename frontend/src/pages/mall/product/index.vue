@@ -50,17 +50,18 @@
       >
         <el-table-column
           label="图"
-          width="96"
+          width="84"
+          align="center"
         >
           <template #default="{ row }">
             <img
               v-if="row.mainImagePath"
               :src="'/media/' + row.mainImagePath"
-              style="width:48px;height:48px;object-fit:cover;border-radius:6px"
+              style="width:48px;height:48px;object-fit:cover;border-radius:6px;display:block;margin:0 auto"
             >
             <div
               v-else
-              style="width:48px;height:48px;border-radius:6px;background:#f4f4f4;display:flex;align-items:center;justify-content:center;color:#ccc"
+              style="width:48px;height:48px;border-radius:6px;background:#f4f4f4;display:flex;align-items:center;justify-content:center;color:#ccc;margin:0 auto"
             >
               ✦
             </div>
