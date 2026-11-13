@@ -171,6 +171,16 @@ public class StorefrontPages {
     @Location("store/order")
     Template orderTpl;
 
+    /**
+     * 页面响应: 统一带 Cache-Control: no-cache。
+     *
+     * <p>店面页面 HTML 内联了整套 CSS (主题变量运行时注入), HTML 变了样式就变了; 不设缓存头时浏览器按启发式复用旧 HTML, 用户看到旧样式却查不出原因。
+     * 媒体/图片走 PublicMediaController 的 immutable 长缓存, 不受影响。
+     */
+    private Response page(String html) {
+        return Response.ok(html).header("Cache-Control", "no-cache").build();
+    }
+
     // ---------- 页面 ----------
 
     @GET
@@ -199,22 +209,19 @@ public class StorefrontPages {
                 com.jade.cart.settings.entity.StoreSetting.getValue("announcement")
                         .filter(v -> !v.isBlank())
                         .orElseGet(() -> fmt(t(headers).seoHome(), storeName));
-        return Response.ok(
-                        home.data("sections", storefrontService.renderHome())
-                                .data("featured", featured)
-                                .data("latest", latest)
-                                .data("storeName", storeName)
-                                .data("baseUrl", baseUrlOf(headers))
-                                .data("navCats", navTree())
-                                .data("theme", themeService.tokens())
-                                .data("t", t(headers))
-                                .data("langs", langs(headers))
-                                .data("seo", seo(homeDesc, homeImage, false, "website", "/"))
-                                .data(
-                                        "jsonLd",
-                                        ld(seoJsonLd.website(baseUrlOf(headers), storeName)))
-                                .render())
-                .build();
+        return page(
+                home.data("sections", storefrontService.renderHome())
+                        .data("featured", featured)
+                        .data("latest", latest)
+                        .data("storeName", storeName)
+                        .data("baseUrl", baseUrlOf(headers))
+                        .data("navCats", navTree())
+                        .data("theme", themeService.tokens())
+                        .data("t", t(headers))
+                        .data("langs", langs(headers))
+                        .data("seo", seo(homeDesc, homeImage, false, "website", "/"))
+                        .data("jsonLd", ld(seoJsonLd.website(baseUrlOf(headers), storeName)))
+                        .render());
     }
 
     @GET
@@ -248,29 +255,27 @@ public class StorefrontPages {
                 items.isEmpty() || items.get(0).mainImagePath() == null
                         ? null
                         : baseUrlOf(headers) + "/media/" + items.get(0).mainImagePath();
-        return Response.ok(
-                        products.data("items", items)
-                                .data("pageTitle", pageTitle)
-                                .data("q", q == null ? "" : q)
-                                .data("categoryName", categoryName)
-                                .data("currentSlug", categorySlug)
-                                .data("categories", Category.listActive())
-                                .data("storeName", storeName)
-                                .data("baseUrl", baseUrlOf(headers))
-                                .data("navCats", navTree())
-                                .data("theme", themeService.tokens())
-                                .data("t", t(headers))
-                                .data("langs", langs(headers))
-                                .data("seo", seo(desc, ogImage, false, "website", "/products"))
-                                .data(
-                                        "jsonLd",
-                                        ld(
-                                                seoJsonLd.itemList(
-                                                        baseUrlOf(headers),
-                                                        catalogService.activeProducts(
-                                                                q, categoryId, 20))))
-                                .render())
-                .build();
+        return page(
+                products.data("items", items)
+                        .data("pageTitle", pageTitle)
+                        .data("q", q == null ? "" : q)
+                        .data("categoryName", categoryName)
+                        .data("currentSlug", categorySlug)
+                        .data("categories", Category.listActive())
+                        .data("storeName", storeName)
+                        .data("baseUrl", baseUrlOf(headers))
+                        .data("navCats", navTree())
+                        .data("theme", themeService.tokens())
+                        .data("t", t(headers))
+                        .data("langs", langs(headers))
+                        .data("seo", seo(desc, ogImage, false, "website", "/products"))
+                        .data(
+                                "jsonLd",
+                                ld(
+                                        seoJsonLd.itemList(
+                                                baseUrlOf(headers),
+                                                catalogService.activeProducts(q, categoryId, 20))))
+                        .render());
     }
 
     @GET
@@ -342,36 +347,35 @@ public class StorefrontPages {
                         .mapToInt(v -> v.available() == null ? 0 : v.available())
                         .sum();
         boolean lowStock = totalAvail > 0 && totalAvail <= 5;
-        return Response.ok(
-                        product.data("p", view)
-                                .data("related", related)
-                                .data("crumbName", crumbName)
-                                .data("crumbSlug", crumbSlug)
-                                .data("priceCents", priceCents)
-                                .data("totalAvail", totalAvail)
-                                .data("lowStock", lowStock)
-                                .data("gallery", gallery)
-                                .data("mainImg", mainImg)
-                                .data("curIdx", curIdx)
-                                .data("desc", desc)
-                                .data("storeName", storeName)
-                                .data("baseUrl", baseUrlOf(headers))
-                                .data("navCats", navTree())
-                                .data("theme", themeService.tokens())
-                                .data("t", t(headers))
-                                .data("langs", langs(headers))
-                                .data(
-                                        "seo",
-                                        seo(
-                                                desc,
-                                                ogImage,
-                                                false,
-                                                "product",
-                                                "/products/" + entity.slug,
-                                                entity.seoKeywords))
-                                .data("jsonLd", jsonLd)
-                                .render())
-                .build();
+        return page(
+                product.data("p", view)
+                        .data("related", related)
+                        .data("crumbName", crumbName)
+                        .data("crumbSlug", crumbSlug)
+                        .data("priceCents", priceCents)
+                        .data("totalAvail", totalAvail)
+                        .data("lowStock", lowStock)
+                        .data("gallery", gallery)
+                        .data("mainImg", mainImg)
+                        .data("curIdx", curIdx)
+                        .data("desc", desc)
+                        .data("storeName", storeName)
+                        .data("baseUrl", baseUrlOf(headers))
+                        .data("navCats", navTree())
+                        .data("theme", themeService.tokens())
+                        .data("t", t(headers))
+                        .data("langs", langs(headers))
+                        .data(
+                                "seo",
+                                seo(
+                                        desc,
+                                        ogImage,
+                                        false,
+                                        "product",
+                                        "/products/" + entity.slug,
+                                        entity.seoKeywords))
+                        .data("jsonLd", jsonLd)
+                        .render());
     }
 
     @GET
@@ -386,19 +390,18 @@ public class StorefrontPages {
                 catalogService.activeProducts(null, null, 4).stream()
                         .map(catalogService::toSummary)
                         .toList();
-        return Response.ok(
-                        cart.data("cart", view)
-                                .data("cross", cross)
-                                .data("error", error)
-                                .data("storeName", storeName)
-                                .data("baseUrl", baseUrlOf(headers))
-                                .data("navCats", navTree())
-                                .data("theme", themeService.tokens())
-                                .data("t", t(headers))
-                                .data("langs", langs(headers))
-                                .data("seo", seo(fmt(t(headers).seoCart(), storeName), null, true))
-                                .render())
-                .build();
+        return page(
+                cart.data("cart", view)
+                        .data("cross", cross)
+                        .data("error", error)
+                        .data("storeName", storeName)
+                        .data("baseUrl", baseUrlOf(headers))
+                        .data("navCats", navTree())
+                        .data("theme", themeService.tokens())
+                        .data("t", t(headers))
+                        .data("langs", langs(headers))
+                        .data("seo", seo(fmt(t(headers).seoCart(), storeName), null, true))
+                        .render());
     }
 
     @GET
@@ -409,17 +412,16 @@ public class StorefrontPages {
         if (order == null) {
             return Response.status(Response.Status.NOT_FOUND).entity("Order not found").build();
         }
-        return Response.ok(
-                        payMock.data("o", order)
-                                .data("storeName", storeName)
-                                .data("baseUrl", baseUrlOf(headers))
-                                .data("navCats", navTree())
-                                .data("theme", themeService.tokens())
-                                .data("t", t(headers))
-                                .data("langs", langs(headers))
-                                .data("seo", seo(t(headers).seoPay(), null, true))
-                                .render())
-                .build();
+        return page(
+                payMock.data("o", order)
+                        .data("storeName", storeName)
+                        .data("baseUrl", baseUrlOf(headers))
+                        .data("navCats", navTree())
+                        .data("theme", themeService.tokens())
+                        .data("t", t(headers))
+                        .data("langs", langs(headers))
+                        .data("seo", seo(t(headers).seoPay(), null, true))
+                        .render());
     }
 
     @GET
@@ -432,17 +434,16 @@ public class StorefrontPages {
         if (order == null) {
             return Response.status(Response.Status.NOT_FOUND).entity("Order not found").build();
         }
-        return Response.ok(
-                        payPaypal
-                                .data("o", order)
-                                .data("paypalOrderId", paypalOrderId == null ? "" : paypalOrderId)
-                                .data("navCats", navTree())
-                                .data("theme", themeService.tokens())
-                                .data("t", t(headers))
-                                .data("langs", langs(headers))
-                                .data("seo", seo(t(headers).seoPaypal(), null, true))
-                                .render())
-                .build();
+        return page(
+                payPaypal
+                        .data("o", order)
+                        .data("paypalOrderId", paypalOrderId == null ? "" : paypalOrderId)
+                        .data("navCats", navTree())
+                        .data("theme", themeService.tokens())
+                        .data("t", t(headers))
+                        .data("langs", langs(headers))
+                        .data("seo", seo(t(headers).seoPaypal(), null, true))
+                        .render());
     }
 
     /** PayPal 回跳页"完成支付": capture → markPaid 幂等路径 */
@@ -522,26 +523,25 @@ public class StorefrontPages {
                         ? null
                         : baseUrlOf(headers) + "/media/" + posts.get(0).coverPath;
         String blogJsonLd = seoJsonLd.blogList(baseUrlOf(headers), posts);
-        return Response.ok(
-                        blogTpl.data("posts", view)
-                                .data("title", blogTitle)
-                                .data("storeName", storeName)
-                                .data("baseUrl", baseUrlOf(headers))
-                                .data("navCats", navTree())
-                                .data("theme", themeService.tokens())
-                                .data("t", t(headers))
-                                .data("langs", langs(headers))
-                                .data("jsonLd", blogJsonLd)
-                                .data(
-                                        "seo",
-                                        seo(
-                                                fmt(t(headers).seoBlog(), storeName),
-                                                blogImage,
-                                                false,
-                                                "website",
-                                                "/blog"))
-                                .render())
-                .build();
+        return page(
+                blogTpl.data("posts", view)
+                        .data("title", blogTitle)
+                        .data("storeName", storeName)
+                        .data("baseUrl", baseUrlOf(headers))
+                        .data("navCats", navTree())
+                        .data("theme", themeService.tokens())
+                        .data("t", t(headers))
+                        .data("langs", langs(headers))
+                        .data("jsonLd", blogJsonLd)
+                        .data(
+                                "seo",
+                                seo(
+                                        fmt(t(headers).seoBlog(), storeName),
+                                        blogImage,
+                                        false,
+                                        "website",
+                                        "/blog"))
+                        .render());
     }
 
     @GET
@@ -582,36 +582,35 @@ public class StorefrontPages {
                                             : when.format(
                                                     java.time.format.DateTimeFormatter.ofPattern(
                                                             "MMMM d, yyyy", Locale.ENGLISH));
-                            return Response.ok(
-                                            blogPostTpl
-                                                    .data("post", post)
-                                                    .data("dateStr", dateStr)
-                                                    .data("prevPost", prevPost)
-                                                    .data("nextPost", nextPost)
-                                                    .data("storeName", storeName)
-                                                    .data("baseUrl", baseUrlOf(headers))
-                                                    .data("navCats", navTree())
-                                                    .data("theme", themeService.tokens())
-                                                    .data("t", t(headers))
-                                                    .data("langs", langs(headers))
-                                                    .data(
-                                                            "seo",
-                                                            seo(
-                                                                    desc,
-                                                                    ogImage,
-                                                                    false,
-                                                                    "article",
-                                                                    "/blog/" + post.slug,
-                                                                    post.seoKeywords))
-                                                    .data(
-                                                            "jsonLd",
-                                                            ld(
-                                                                    seoJsonLd.blogPosting(
-                                                                            post,
-                                                                            baseUrlOf(headers),
-                                                                            storeName)))
-                                                    .render())
-                                    .build();
+                            return page(
+                                    blogPostTpl
+                                            .data("post", post)
+                                            .data("dateStr", dateStr)
+                                            .data("prevPost", prevPost)
+                                            .data("nextPost", nextPost)
+                                            .data("storeName", storeName)
+                                            .data("baseUrl", baseUrlOf(headers))
+                                            .data("navCats", navTree())
+                                            .data("theme", themeService.tokens())
+                                            .data("t", t(headers))
+                                            .data("langs", langs(headers))
+                                            .data(
+                                                    "seo",
+                                                    seo(
+                                                            desc,
+                                                            ogImage,
+                                                            false,
+                                                            "article",
+                                                            "/blog/" + post.slug,
+                                                            post.seoKeywords))
+                                            .data(
+                                                    "jsonLd",
+                                                    ld(
+                                                            seoJsonLd.blogPosting(
+                                                                    post,
+                                                                    baseUrlOf(headers),
+                                                                    storeName)))
+                                            .render());
                         })
                 .orElseGet(() -> notFoundPage(headers));
     }
@@ -638,72 +637,67 @@ public class StorefrontPages {
         return com.jade.cart.content.entity.ContentPage.activeBySlug(slug)
                 .map(
                         page ->
-                                Response.ok(
-                                                contentTpl
-                                                        .data("page", page)
-                                                        .data("storeName", storeName)
-                                                        .data("baseUrl", baseUrlOf(headers))
-                                                        .data("navCats", navTree())
-                                                        .data("theme", themeService.tokens())
-                                                        .data("t", t(headers))
-                                                        .data("langs", langs(headers))
-                                                        .data(
-                                                                "seo",
-                                                                seo(
+                                page(
+                                        contentTpl
+                                                .data("page", page)
+                                                .data("storeName", storeName)
+                                                .data("baseUrl", baseUrlOf(headers))
+                                                .data("navCats", navTree())
+                                                .data("theme", themeService.tokens())
+                                                .data("t", t(headers))
+                                                .data("langs", langs(headers))
+                                                .data(
+                                                        "seo",
+                                                        seo(
+                                                                SeoExtensions.teaser(
+                                                                        page.bodyMarkdown, 160),
+                                                                null,
+                                                                false,
+                                                                "website",
+                                                                "/pages/" + page.slug))
+                                                .data(
+                                                        "jsonLd",
+                                                        ld(
+                                                                seoJsonLd.webPage(
+                                                                        baseUrlOf(headers),
+                                                                        page.title,
                                                                         SeoExtensions.teaser(
                                                                                 page.bodyMarkdown,
                                                                                 160),
-                                                                        null,
-                                                                        false,
-                                                                        "website",
-                                                                        "/pages/" + page.slug))
-                                                        .data(
-                                                                "jsonLd",
-                                                                ld(
-                                                                        seoJsonLd.webPage(
-                                                                                baseUrlOf(headers),
-                                                                                page.title,
-                                                                                SeoExtensions
-                                                                                        .teaser(
-                                                                                                page.bodyMarkdown,
-                                                                                                160),
-                                                                                "/pages/"
-                                                                                        + page.slug)))
-                                                        .render())
-                                        .build())
+                                                                        "/pages/" + page.slug)))
+                                                .render()))
                 .orElseGet(() -> notFoundPage(headers));
     }
 
     @GET
     @Path("contact")
     public Response contactPage(@Context HttpHeaders headers) {
-        return Response.ok(
-                        contactTpl
-                                .data("sent", false)
-                                .data("error", (String) null)
-                                .data("storeName", storeName)
-                                .data("baseUrl", baseUrlOf(headers))
-                                .data("navCats", navTree())
-                                .data("theme", themeService.tokens())
-                                .data("t", t(headers))
-                                .data("langs", langs(headers))
-                                .data(
-                                        "jsonLd",
-                                        ld(
-                                                seoJsonLd.contactPage(
-                                                        baseUrlOf(headers),
-                                                        storeName,
-                                                        fmt(t(headers).seoContact(), storeName))))
-                                .data(
-                                        "seo",
-                                        seo(
-                                                fmt(t(headers).seoContact(), storeName),
-                                                null,
-                                                false,
-                                                "website",
-                                                "/contact"))
-                                .render())
-                .build();
+        return page(
+                contactTpl
+                        .data("sent", false)
+                        .data("error", (String) null)
+                        .data("storeName", storeName)
+                        .data("baseUrl", baseUrlOf(headers))
+                        .data("navCats", navTree())
+                        .data("theme", themeService.tokens())
+                        .data("t", t(headers))
+                        .data("langs", langs(headers))
+                        .data(
+                                "jsonLd",
+                                ld(
+                                        seoJsonLd.contactPage(
+                                                baseUrlOf(headers),
+                                                storeName,
+                                                fmt(t(headers).seoContact(), storeName))))
+                        .data(
+                                "seo",
+                                seo(
+                                        fmt(t(headers).seoContact(), storeName),
+                                        null,
+                                        false,
+                                        "website",
+                                        "/contact"))
+                        .render());
     }
 
     @POST
@@ -719,62 +713,46 @@ public class StorefrontPages {
         // 走与 API 相同的校验/限频 (直接复用服务层)
         try {
             if (email == null || !email.contains("@") || message == null || message.isBlank()) {
-                return Response.ok(
-                                contactTpl
-                                        .data("sent", false)
-                                        .data("error", t(headers).contactErrInvalid())
-                                        .data("storeName", storeName)
-                                        .data("baseUrl", baseUrlOf(headers))
-                                        .data("navCats", navTree())
-                                        .data("theme", themeService.tokens())
-                                        .data("t", t(headers))
-                                        .data("langs", langs(headers))
-                                        .data(
-                                                "seo",
-                                                seo(
-                                                        fmt(t(headers).seoContact(), storeName),
-                                                        null,
-                                                        true))
-                                        .render())
-                        .build();
+                return page(
+                        contactTpl
+                                .data("sent", false)
+                                .data("error", t(headers).contactErrInvalid())
+                                .data("storeName", storeName)
+                                .data("baseUrl", baseUrlOf(headers))
+                                .data("navCats", navTree())
+                                .data("theme", themeService.tokens())
+                                .data("t", t(headers))
+                                .data("langs", langs(headers))
+                                .data(
+                                        "seo",
+                                        seo(fmt(t(headers).seoContact(), storeName), null, true))
+                                .render());
             }
             contactService.submit(name, email, topic == null ? "general" : topic, message, "web");
-            return Response.ok(
-                            contactTpl
-                                    .data("sent", true)
-                                    .data("storeName", storeName)
-                                    .data("baseUrl", baseUrlOf(headers))
-                                    .data("navCats", navTree())
-                                    .data("theme", themeService.tokens())
-                                    .data("t", t(headers))
-                                    .data("langs", langs(headers))
-                                    .data(
-                                            "seo",
-                                            seo(
-                                                    fmt(t(headers).seoContact(), storeName),
-                                                    null,
-                                                    true))
-                                    .render())
-                    .build();
+            return page(
+                    contactTpl
+                            .data("sent", true)
+                            .data("storeName", storeName)
+                            .data("baseUrl", baseUrlOf(headers))
+                            .data("navCats", navTree())
+                            .data("theme", themeService.tokens())
+                            .data("t", t(headers))
+                            .data("langs", langs(headers))
+                            .data("seo", seo(fmt(t(headers).seoContact(), storeName), null, true))
+                            .render());
         } catch (Exception e) {
-            return Response.ok(
-                            contactTpl
-                                    .data("sent", false)
-                                    .data("error", t(headers).contactErrFailed())
-                                    .data("storeName", storeName)
-                                    .data("baseUrl", baseUrlOf(headers))
-                                    .data("navCats", navTree())
-                                    .data("theme", themeService.tokens())
-                                    .data("t", t(headers))
-                                    .data("langs", langs(headers))
-                                    .data(
-                                            "seo",
-                                            seo(
-                                                    fmt(t(headers).seoContact(), storeName),
-                                                    null,
-                                                    true))
-                                    .render())
-                    .build();
+            return page(
+                    contactTpl
+                            .data("sent", false)
+                            .data("error", t(headers).contactErrFailed())
+                            .data("storeName", storeName)
+                            .data("baseUrl", baseUrlOf(headers))
+                            .data("navCats", navTree())
+                            .data("theme", themeService.tokens())
+                            .data("t", t(headers))
+                            .data("langs", langs(headers))
+                            .data("seo", seo(fmt(t(headers).seoContact(), storeName), null, true))
+                            .render());
         }
     }
 
@@ -785,25 +763,23 @@ public class StorefrontPages {
         return Order.byPublicId(publicId)
                 .map(
                         o ->
-                                Response.ok(
-                                                orderTpl.data("o", orderService.toView(o))
-                                                        .data("storeName", storeName)
-                                                        .data("baseUrl", baseUrlOf(headers))
-                                                        .data("navCats", navTree())
-                                                        .data("theme", themeService.tokens())
-                                                        .data("t", t(headers))
-                                                        .data("langs", langs(headers))
-                                                        .data(
-                                                                "seo",
-                                                                seo(
-                                                                        fmt(
-                                                                                t(headers)
-                                                                                        .seoOrder(),
-                                                                                o.orderNumber),
-                                                                        null,
-                                                                        true))
-                                                        .render())
-                                        .build())
+                                page(
+                                        orderTpl.data("o", orderService.toView(o))
+                                                .data("storeName", storeName)
+                                                .data("baseUrl", baseUrlOf(headers))
+                                                .data("navCats", navTree())
+                                                .data("theme", themeService.tokens())
+                                                .data("t", t(headers))
+                                                .data("langs", langs(headers))
+                                                .data(
+                                                        "seo",
+                                                        seo(
+                                                                fmt(
+                                                                        t(headers).seoOrder(),
+                                                                        o.orderNumber),
+                                                                null,
+                                                                true))
+                                                .render()))
                 .orElseGet(
                         () ->
                                 Response.status(Response.Status.NOT_FOUND)
