@@ -25,6 +25,19 @@ public final class SeoExtensions {
                         .replace("(", " ")
                         .replace(")", "")
                         .trim();
-        return flat.length() <= max ? flat : flat.substring(0, max - 1) + "…";
+        if (flat.length() <= max) {
+            return flat;
+        }
+        // 截断到句子边界 (句号/问号/叹号), 避免半句 + 省略号看起来像内容损坏
+        String cut = flat.substring(0, max);
+        int stop =
+                Math.max(
+                        cut.lastIndexOf('.'), Math.max(cut.lastIndexOf('!'), cut.lastIndexOf('?')));
+        if (stop > max / 2) {
+            return cut.substring(0, stop + 1);
+        }
+        // 无句号可用 → 退到最后一个词边界
+        int word = cut.lastIndexOf(' ');
+        return (word > max / 2 ? cut.substring(0, word) : cut) + "…";
     }
 }
