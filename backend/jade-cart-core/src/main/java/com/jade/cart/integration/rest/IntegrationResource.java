@@ -54,11 +54,11 @@ public class IntegrationResource {
                         parseSince(updatedAfter), normPage(page), normSize(size)));
     }
 
-    /** 商品推送 upsert (按 SKU 幂等); 非法值返回明确错误码由 ERP 重试/修正 */
+    /** 商品推送 upsert (按 SKU 幂等); 非法值返回明确错误码由 ERP 重试/修正。图片为独立事务, 失败只丢图不丽数据。 */
     @POST
     @Path("/products/upsert")
     public R<Map<String, Object>> upsertProduct(ProductUpsertReq req) {
-        return R.ok(
+        Map<String, Object> out =
                 integrationService.upsertProduct(
                         req.sku,
                         req.title,
@@ -67,9 +67,11 @@ public class IntegrationResource {
                         req.stock,
                         req.status,
                         req.categoryName,
-                        req.imageUrls,
                         req.seoDescription,
-                        req.seoKeywords));
+                        req.seoKeywords);
+        // 商品事务提交后再同步图片 (独立小事务), 磁盘满/单图失败只丢图, 商品数据必达
+        integrationService.syncProductImages(req.sku, req.imageUrls);
+        return R.ok(out);
     }
 
     /**

@@ -3,7 +3,6 @@ package com.jade.cart.integration;
 import com.jade.cart.catalog.entity.Category;
 import com.jade.cart.catalog.entity.Inventory;
 import com.jade.cart.catalog.entity.Product;
-import com.jade.cart.catalog.entity.ProductImage;
 import com.jade.cart.catalog.entity.Variant;
 import com.jade.cart.catalog.service.CatalogService;
 import com.jade.cart.media.service.MediaService;
@@ -47,6 +46,8 @@ public class IntegrationService {
     @Inject CatalogService catalogService;
 
     @Inject MediaService mediaService;
+
+    @Inject IntegrationImageStore imageStore;
 
     /**
      * 订单增量 (含行项目), 按 updatedAt 升序分页。updatedAt 过滤在 Java 内存层做: SQLite 时间列为 TEXT 亲和, 与绑定参数的类型比较不可靠
@@ -150,7 +151,6 @@ public class IntegrationService {
             Integer stock,
             String status,
             String categoryName,
-            List<String> imageUrls,
             String seoDescription,
             String seoKeywords) {
         if (sku == null || sku.isBlank()) {
@@ -218,7 +218,6 @@ public class IntegrationService {
             inv.quantity = stock;
             inv.persist();
         }
-        syncProductImages(product, imageUrls);
         Log.infof("集成商品 upsert: action=%s sku=%s", action, sku);
         Map<String, Object> out = new LinkedHashMap<>();
         out.put("action", action);
@@ -240,15 +239,25 @@ public class IntegrationService {
     }
 
     /**
-     * 图片同步: imageUrls 非 null 时以 ERP 为准整体替换 (首图=主图, 其余进相册); null = 不动图片 (向后兼容旧调用方)。逐张下载进媒体库
-     * (内容哈希去重), 单张失败只跳过不阻断发布。
+     * 图片同步 (独立于商品 upsert 事务): imageUrls 非 null 时以 ERP 为准整体替换 (首图=主图, 其余进相册); null = 不动图片。
+     *
+     * <p>设计要点: 商品落库与图片入库必须隔离事务——MediaService.upload 自带 @Transactional, 磁盘满等异常若与商品同事务会污染 主事务导致商品静默回滚
+     * (2026-11-13 生产事故)。因此本方法不加 @Transactional: 清空旧图/每张写库各自独立小事务, 单张失败 (下载失败/媒体库异常) 只丢该图,
+     * 不影响已提交的商品行。
      */
-    private void syncProductImages(Product product, List<String> imageUrls) {
+    public void syncProductImages(String sku, List<String> imageUrls) {
         if (imageUrls == null) {
             return;
         }
-        ProductImage.delete("productId", product.id);
-        product.mainImagePath = null;
+        Variant variant = Variant.findBySku(sku).orElse(null);
+        if (variant == null || variant.deleted) {
+            return;
+        }
+        Product product = Product.findById(variant.productId);
+        if (product == null || product.deleted) {
+            return;
+        }
+        imageStore.clearProductImages(product.id);
         int pos = 0;
         for (String url : imageUrls) {
             if (url == null || url.isBlank() || pos >= MAX_PUBLISH_IMAGES) {
@@ -271,20 +280,15 @@ public class IntegrationService {
                                 url.substring(url.lastIndexOf('/') + 1),
                                 null);
                 if (pos == 0) {
-                    product.mainImagePath = asset.path;
+                    imageStore.setMainImage(product.id, asset.path);
                 } else {
-                    ProductImage pi = new ProductImage();
-                    pi.productId = product.id;
-                    pi.path = asset.path;
-                    pi.position = pos;
-                    pi.persist();
+                    imageStore.attachGalleryImage(product.id, asset.path, pos);
                 }
                 pos++;
             } catch (Exception e) {
                 Log.warnf("integration image download failed: %s (%s)", url, e.getMessage());
             }
         }
-        product.persist();
     }
 
     private Long resolveOrCreateCategory(String categoryName) {
