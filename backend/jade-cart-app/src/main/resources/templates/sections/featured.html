@@ -4,7 +4,7 @@
     {#for p in items}
     <div class="card">
       <span class="imgwrap">
-        {#if p.mainImagePath}<img class="pimg" src="/media/{p.mainImagePath}" alt="{p.title}" loading="lazy">{#else}<div class="ph">✦</div>{/if}
+        {#if p.mainImagePath}<img class="pimg" src="/media/{p.mainImagePath}?w=400" alt="{p.title}" loading="lazy">{#else}<div class="ph">✦</div>{/if}
         {#if p.multi}
         <a class="quick" href="/products/{p.slug}" aria-label="Choose options"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></a>
         {#else if p.variantId != null}

@@ -24,7 +24,7 @@
   {#for p in items}
   <a class="plp-card" href="/products/{p.slug}">
     <div class="plp-imgwrap">
-      {#if p.mainImagePath}<img src="/media/{p.mainImagePath}" alt="{p.title}" loading="lazy">{#else}<div class="ph">✦</div>{/if}
+      {#if p.mainImagePath}<img src="/media/{p.mainImagePath}?w=800" alt="{p.title}" loading="lazy">{#else}<div class="ph">✦</div>{/if}
       {#if p.totalAvailable == 0}<span class="soldout">{t.soldOut}</span>{/if}
     </div>
     <div class="name">{p.title}</div>

@@ -6,6 +6,7 @@ import jakarta.inject.Inject;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
+import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.Response;
 import java.nio.file.Files;
 import java.util.Locale;
@@ -19,8 +20,8 @@ public class PublicMediaController {
 
     @GET
     @Path("/{resource:.*}")
-    public Response get(@PathParam("resource") String resource) {
-        java.nio.file.Path file = mediaService.resolve(resource);
+    public Response get(@PathParam("resource") String resource, @QueryParam("w") Integer width) {
+        java.nio.file.Path file = mediaService.resolveWithWidth(resource, width);
         if (file == null) {
             return Response.status(Response.Status.NOT_FOUND).build();
         }

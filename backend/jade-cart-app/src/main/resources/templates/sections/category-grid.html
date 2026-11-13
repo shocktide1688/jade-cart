@@ -3,7 +3,7 @@
   <div class="cat-grid">
     {#for c in categories}
     <a class="cat-card" href="/products?category={c.slug}">
-      {#if c.cover}<img src="/media/{c.cover}" alt="{c.name}" loading="lazy">{#else}<div class="cat-ph">✦</div>{/if}
+      {#if c.cover}<img src="/media/{c.cover}?w=400" alt="{c.name}" loading="lazy">{#else}<div class="cat-ph">✦</div>{/if}
       <div class="cat-name">{c.name}</div>
     </a>
     {/for}

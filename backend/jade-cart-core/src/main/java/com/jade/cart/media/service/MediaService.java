@@ -27,6 +27,9 @@ public class MediaService {
     public static final long MAX_SIZE = 10L * 1024 * 1024; // 10 MiB
     public static final long MIN_USABLE_DISK = 200L * 1024 * 1024; // 200 MiB 护栏
 
+    /** 派生图尺寸档位 (上传时生成, 最长边缩到该值) */
+    private static final int[] DERIVED_SIZES = {200, 800, 1600};
+
     @ConfigProperty(name = "jade.cart.media-dir", defaultValue = "./data/media")
     String mediaDir;
 
@@ -138,6 +141,37 @@ public class MediaService {
             return null;
         }
         return target;
+    }
+
+    /**
+     * 按目标宽度读取媒体: 优先命中已生成的派生图 (200/800/1600), 否则回落原图。
+     *
+     * <p>上传时已按 {hash}_{size}.jpg 生成多尺寸派生图; 页面用 ?w=200 取小图, 避免为 76px 缩略图下载 896×1200 原图 (图集 10 张可省
+     * ~90% 带宽)。
+     */
+    public Path resolveWithWidth(String relativePath, Integer width) {
+        Path original = resolve(relativePath);
+        if (original == null || width == null || width <= 0) {
+            return original;
+        }
+        int size = pickDerivedSize(width);
+        Path derived = Path.of(original.toString().replaceFirst("(\\.[a-z]+)$", "_" + size + "$1"));
+        // 派生图未生成 (webp / 小图 / 旧数据) → 回落原图
+        return Files.isRegularFile(derived) ? derived : original;
+    }
+
+    /** 取不小于目标宽度的最小派生档位 (无更大档则取最大档) */
+    private int pickDerivedSize(int width) {
+        if (width <= DERIVED_SIZES[0]) {
+            return DERIVED_SIZES[0];
+        }
+        if (width <= DERIVED_SIZES[1]) {
+            return DERIVED_SIZES[1];
+        }
+        if (width <= DERIVED_SIZES[2]) {
+            return DERIVED_SIZES[2];
+        }
+        return DERIVED_SIZES[2];
     }
 
     // ---------- 内部 ----------

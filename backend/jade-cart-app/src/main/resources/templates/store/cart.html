@@ -15,7 +15,7 @@
     {#for p in cross}
     <a class="plp-card" href="/products/{p.slug}">
       <div class="plp-imgwrap">
-        {#if p.mainImagePath}<img src="/media/{p.mainImagePath}" alt="{p.title}" loading="lazy">{#else}<div class="ph">✦</div>{/if}
+        {#if p.mainImagePath}<img src="/media/{p.mainImagePath}?w=200" alt="{p.title}" loading="lazy">{#else}<div class="ph">✦</div>{/if}
       </div>
       <div class="name">{p.title}</div>
       <div class="price">{t.from} {p.minPriceCents.money}</div>

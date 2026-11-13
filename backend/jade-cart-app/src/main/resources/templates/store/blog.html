@@ -12,7 +12,7 @@
   {#for post in posts}
   <a class="blog-row" href="/blog/{post.slug}">
     <div class="blog-row-img">
-      {#if post.coverPath}<img src="/media/{post.coverPath}" alt="{post.title}" loading="lazy">{#else}<div class="ph">✎</div>{/if}
+      {#if post.coverPath}<img src="/media/{post.coverPath}?w=400" alt="{post.title}" loading="lazy">{#else}<div class="ph">✎</div>{/if}
       {#if post.date}<span class="date-badge">{post.date}</span>{/if}
     </div>
     <div class="blog-row-body">

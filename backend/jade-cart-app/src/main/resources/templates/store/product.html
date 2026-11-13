@@ -11,12 +11,22 @@
 <div class="pdp">
   <div class="pdp-gallery">
     {#if mainImg}
-    <img class="pdp-main" src="/media/{mainImg}" alt="{p.title}">
+    <div class="pdp-stage">
+      <img class="pdp-main" src="/media/{mainImg}" alt="{p.title}">
+      {#if gallery.size > 1}
+      <span class="pdp-count">{curIdx + 1} / {gallery.size}</span>
+      {/if}
+    </div>
     {#if gallery.size > 1}
     <div class="pdp-thumbs">
       {#for g in gallery}
-      <a class="pdp-thumb {#if g.idx == curIdx}on{/if}" href="/products/{p.slug}?img={g.idx}">
-        <img src="/media/{g.path}" alt="{p.title} {g.idx + 1}" loading="lazy">
+      <a
+        class="pdp-thumb {#if g.idx == curIdx}on{/if}"
+        href="/products/{p.slug}?img={g.idx}"
+        aria-label="{p.title} {g.idx + 1}"
+        {#if g.idx == curIdx}aria-current="true"{/if}
+      >
+        <img src="/media/{g.path}?w=200" alt="" loading="lazy">
       </a>
       {/for}
     </div>

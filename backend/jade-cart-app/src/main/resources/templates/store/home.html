@@ -14,7 +14,7 @@
   <div class="grid">
     {#for p in featured}
     <a class="card" href="/products/{p.slug}">
-      {#if p.mainImagePath}<img src="/media/{p.mainImagePath}" alt="{p.title}" loading="lazy" style="width:100%;height:160px;object-fit:cover;display:block">{#else}<div class="ph">✦</div>{/if}
+      {#if p.mainImagePath}<img src="/media/{p.mainImagePath}?w=400" alt="{p.title}" loading="lazy" style="width:100%;height:160px;object-fit:cover;display:block">{#else}<div class="ph">✦</div>{/if}
       <div class="body">
         <div class="name">{p.title}</div>
         <div class="price">{t.from} {p.minPriceCents.money}</div>
@@ -29,7 +29,7 @@
   <div class="grid">
     {#for p in latest}
     <a class="card" href="/products/{p.slug}">
-      {#if p.mainImagePath}<img src="/media/{p.mainImagePath}" alt="{p.title}" loading="lazy" style="width:100%;height:160px;object-fit:cover;display:block">{#else}<div class="ph">✦</div>{/if}
+      {#if p.mainImagePath}<img src="/media/{p.mainImagePath}?w=400" alt="{p.title}" loading="lazy" style="width:100%;height:160px;object-fit:cover;display:block">{#else}<div class="ph">✦</div>{/if}
       <div class="body">
         <div class="name">{p.title}</div>
         <div class="price">{t.from} {p.minPriceCents.money}</div>
