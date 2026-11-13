@@ -50,7 +50,7 @@
       >
         <el-table-column
           label="图"
-          width="72"
+          width="96"
         >
           <template #default="{ row }">
             <img
