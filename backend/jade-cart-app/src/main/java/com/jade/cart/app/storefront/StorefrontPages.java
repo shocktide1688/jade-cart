@@ -90,6 +90,10 @@ public class StorefrontPages {
     Template contentTpl;
 
     @Inject
+    @Location("store/notfound")
+    Template notFoundTpl;
+
+    @Inject
     @Location("store/contact")
     Template contactTpl;
 
@@ -406,9 +410,9 @@ public class StorefrontPages {
     /** Shopify 旧链接 301: mall_redirect 命中则永久跳转, 否则 404 */
     @GET
     @Path("{handle}")
-    public Response legacyHandle(@PathParam("handle") String handle) {
+    public Response legacyHandle(@Context HttpHeaders headers, @PathParam("handle") String handle) {
         if (handle.contains(".") || handle.isBlank()) {
-            return Response.status(Response.Status.NOT_FOUND).entity("Not found").build();
+            return notFoundPage(headers);
         }
         return com.jade.cart.importer.entity.Redirect.byHandle(handle)
                 .map(
@@ -416,11 +420,7 @@ public class StorefrontPages {
                                 Response.status(Response.Status.MOVED_PERMANENTLY)
                                         .location(URI.create(r.target))
                                         .build())
-                .orElseGet(
-                        () ->
-                                Response.status(Response.Status.NOT_FOUND)
-                                        .entity("Not found")
-                                        .build());
+                .orElseGet(() -> notFoundPage(headers));
     }
 
     @GET
@@ -528,11 +528,23 @@ public class StorefrontPages {
                                                     .render())
                                     .build();
                         })
-                .orElseGet(
-                        () ->
-                                Response.status(Response.Status.NOT_FOUND)
-                                        .entity("Post not found")
-                                        .build());
+                .orElseGet(() -> notFoundPage(headers));
+    }
+
+    /** 404 页面 (带 h1/说明/返回入口, 不再是裸文本) */
+    private Response notFoundPage(@Context HttpHeaders headers) {
+        return Response.status(Response.Status.NOT_FOUND)
+                .entity(
+                        notFoundTpl
+                                .data("storeName", storeName)
+                                .data("baseUrl", baseUrl)
+                                .data("navCats", navTree())
+                                .data("theme", themeService.tokens())
+                                .data("t", t(headers))
+                                .data("langs", langs(headers))
+                                .data("seo", seo(null, null, true, "website", "/"))
+                                .render())
+                .build();
     }
 
     @GET
@@ -562,11 +574,7 @@ public class StorefrontPages {
                                                                         "/pages/" + page.slug))
                                                         .render())
                                         .build())
-                .orElseGet(
-                        () ->
-                                Response.status(Response.Status.NOT_FOUND)
-                                        .entity("Page not found")
-                                        .build());
+                .orElseGet(() -> notFoundPage(headers));
     }
 
     @GET

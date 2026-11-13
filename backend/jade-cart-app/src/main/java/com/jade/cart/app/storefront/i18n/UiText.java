@@ -25,6 +25,9 @@ public record UiText(
         String ariaSubscribe,
         String footOurShop,
         String footAllProducts,
+        String notFoundTitle,
+        String notFoundBody,
+        String notFoundBackHome,
         String footBlog,
         String footContact,
         String footPrivacy,
@@ -188,6 +191,9 @@ public record UiText(
                 p.getProperty("ariaSubscribe"),
                 p.getProperty("footOurShop"),
                 p.getProperty("footAllProducts"),
+                p.getProperty("notFoundTitle"),
+                p.getProperty("notFoundBody"),
+                p.getProperty("notFoundBackHome"),
                 p.getProperty("footBlog"),
                 p.getProperty("footContact"),
                 p.getProperty("footPrivacy"),
@@ -346,6 +352,10 @@ public record UiText(
         ariaSubscribe = or(ariaSubscribe, "Subscribe");
         footOurShop = or(footOurShop, "Our Shop");
         footAllProducts = or(footAllProducts, "All Products");
+        notFoundTitle = or(notFoundTitle, "Page not found");
+        notFoundBody =
+                or(notFoundBody, "The page you are looking for may have been moved or removed.");
+        notFoundBackHome = or(notFoundBackHome, "Back to home");
         footBlog = or(footBlog, "Blog");
         footContact = or(footContact, "Contact");
         footPrivacy = or(footPrivacy, "Privacy policy");
