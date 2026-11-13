@@ -52,14 +52,10 @@
       </li>
       {#if crumbName}
       <li>
-        <span class="k">{t.categoryLabel}</span>
+        <span class="k">{t.navCategory}</span>
         <span class="v"><a href="/products?category={crumbSlug}">{crumbName}</a></span>
       </li>
       {/if}
-      <li>
-        <span class="k">{t.shipLabel}</span>
-        <span class="v">{t.accShipTitle}</span>
-      </li>
     </ul>
     {#if lowStock}
     <div class="pdp-stock">◎ {t.lowStock} {totalAvail} {t.left}</div>
@@ -212,7 +208,7 @@
       }
       a.classList.add('on');
       a.setAttribute('aria-current', 'true');
-      if (counter) counter.textContent = a.getAttribute('data-idx') + ' / ' + alts.length;
+      if (counter) counter.textContent = (parseInt(a.getAttribute('data-idx'), 10) + 1) + ' / ' + alts.length;
     }
     try {
       history.pushState({ img: a.getAttribute('data-idx') }, '', a.getAttribute('href'));

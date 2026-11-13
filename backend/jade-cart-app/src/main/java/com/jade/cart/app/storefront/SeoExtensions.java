@@ -13,7 +13,12 @@ public final class SeoExtensions {
             return "";
         }
         String flat =
-                s.replaceAll("\\s+", " ")
+                s.replaceAll("<[^>]+>", " ") // HTML 标签 (描述存的是 HTML, meta/摘要都要纯文本)
+                        .replace("&nbsp;", " ")
+                        .replace("&amp;", "&")
+                        .replace("&lt;", "<")
+                        .replace("&gt;", ">")
+                        .replaceAll("\\s+", " ")
                         .replaceAll("^#+\\s*", "") // markdown 标题符号
                         .replace("[", "")
                         .replace("]", "")
