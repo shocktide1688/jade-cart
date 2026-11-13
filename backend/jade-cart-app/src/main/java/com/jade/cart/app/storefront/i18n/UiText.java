@@ -169,6 +169,7 @@ public record UiText(
         String seoCart,
         String seoBlog,
         String seoContact,
+        String contactFormTitle,
         String seoOrder,
         String seoPay,
         String seoPaypal) {
@@ -326,6 +327,7 @@ public record UiText(
                 p.getProperty("seoCart"),
                 p.getProperty("seoBlog"),
                 p.getProperty("seoContact"),
+                p.getProperty("contactFormTitle"),
                 p.getProperty("seoOrder"),
                 p.getProperty("seoPay"),
                 p.getProperty("seoPaypal"));
@@ -531,13 +533,29 @@ public record UiText(
         seoHome =
                 or(
                         seoHome,
-                        "Shop {0} — curated products, fast worldwide shipping and easy returns.");
-        seoAllProducts = or(seoAllProducts, "All products at {0}. Curated quality, fast shipping.");
-        seoCategory = or(seoCategory, "Browse {0} products at {1}. Worldwide shipping.");
-        seoSearch = or(seoSearch, "Search results for \u201C{0}\u201D at {1}.");
+                        "Shop handcrafted wood-fired teaware and curated teas at {0} — every piece shaped by flame and time, for quiet tea moments. Worldwide shipping and 30-day returns.");
+        seoAllProducts =
+                or(
+                        seoAllProducts,
+                        "Browse all handcrafted wood-fired teaware at {0} — teapots, fairness cups, master cups and tea sets, every piece shaped by flame and time. Worldwide shipping, 30-day returns and in-store pickup.");
+        seoCategory =
+                or(
+                        seoCategory,
+                        "Discover the {1} collection at {0} — handcrafted wood-fired teaware with natural ash glaze and flame marks, each piece unique. Worldwide shipping and 30-day returns.");
+        seoSearch =
+                or(
+                        seoSearch,
+                        "Results for \u201C{0}\u201D at {1} — handcrafted wood-fired teaware and curated teas, worldwide shipping and 30-day returns.");
         seoCart = or(seoCart, "Your shopping cart at {0}.");
-        seoBlog = or(seoBlog, "Blog — news, guides and stories from {0}.");
-        seoContact = or(seoContact, "Contact {0} — we reply within one business day.");
+        seoBlog =
+                or(
+                        seoBlog,
+                        "The {0} journal — wood-firing craft, teaware care and tea-table notes on objects shaped by flame and time.");
+        seoContact =
+                or(
+                        seoContact,
+                        "Contact {0} — questions about wood-fired teaware, orders or collaborations; we reply within one business day.");
+        contactFormTitle = or(contactFormTitle, "Send us a message");
         seoOrder = or(seoOrder, "Order {0} status.");
         seoPay = or(seoPay, "Complete your payment.");
         seoPaypal = or(seoPaypal, "Complete your PayPal payment.");

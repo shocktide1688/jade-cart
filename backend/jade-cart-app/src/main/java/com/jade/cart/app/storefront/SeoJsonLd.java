@@ -127,6 +127,29 @@ public class SeoJsonLd {
         return write(g);
     }
 
+    /** ContactPage (联系页): 让搜索引擎识别站点联系方式 */
+    public String contactPage(String baseUrl, String storeName, String desc) {
+        Map<String, Object> g = base("@type", "ContactPage");
+        g.put("name", "Contact " + storeName);
+        g.put("url", baseUrl + "/contact");
+        g.put("description", desc);
+        Map<String, Object> org = new LinkedHashMap<>();
+        org.put("@type", "Organization");
+        org.put("name", storeName);
+        org.put("url", baseUrl);
+        g.put("about", org);
+        return write(g);
+    }
+
+    /** WebPage (内容/政策页) */
+    public String webPage(String baseUrl, String title, String desc, String path) {
+        Map<String, Object> g = base("@type", "WebPage");
+        g.put("name", title);
+        g.put("url", baseUrl + path);
+        g.put("description", desc);
+        return write(g);
+    }
+
     /** 博客列表 ItemList (博客列表页) */
     public String blogList(String baseUrl, List<BlogPost> posts) {
         List<Map<String, Object>> items = new ArrayList<>();

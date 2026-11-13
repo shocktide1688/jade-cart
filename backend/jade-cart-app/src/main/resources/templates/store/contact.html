@@ -1,5 +1,9 @@
 {#storePage title=t.contactTitle store=storeName seo=seo t=t langs=langs theme=theme baseUrl=baseUrl pill=false navCats=navCats}
 
+{#insert head}
+<script type="application/ld+json">{jsonLd.raw}</script>
+{/insert}
+
 <nav class="crumb">
   <a href="/">{t.crumbHome}</a><span class="sep">›</span><span class="cur">{t.contactTitle}</span>
 </nav>
@@ -11,6 +15,7 @@
     <a class="btn intro-btn" href="/products">{t.shopNow}</a>
   </div>
   <div class="contact-form-panel">
+    <h2>{t.contactFormTitle}</h2>
     {#if sent}
     <p class="ok">{t.sentOk}</p>
     {#else}

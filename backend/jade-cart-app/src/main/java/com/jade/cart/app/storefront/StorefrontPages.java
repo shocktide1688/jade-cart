@@ -657,6 +657,18 @@ public class StorefrontPages {
                                                                         false,
                                                                         "website",
                                                                         "/pages/" + page.slug))
+                                                        .data(
+                                                                "jsonLd",
+                                                                ld(
+                                                                        seoJsonLd.webPage(
+                                                                                baseUrlOf(headers),
+                                                                                page.title,
+                                                                                SeoExtensions
+                                                                                        .teaser(
+                                                                                                page.bodyMarkdown,
+                                                                                                160),
+                                                                                "/pages/"
+                                                                                        + page.slug)))
                                                         .render())
                                         .build())
                 .orElseGet(() -> notFoundPage(headers));
@@ -675,6 +687,13 @@ public class StorefrontPages {
                                 .data("theme", themeService.tokens())
                                 .data("t", t(headers))
                                 .data("langs", langs(headers))
+                                .data(
+                                        "jsonLd",
+                                        ld(
+                                                seoJsonLd.contactPage(
+                                                        baseUrlOf(headers),
+                                                        storeName,
+                                                        fmt(t(headers).seoContact(), storeName))))
                                 .data(
                                         "seo",
                                         seo(
