@@ -45,7 +45,7 @@ public class ThemeService {
         PRESETS.put(
                 "classic",
                 Map.of(
-                        "primary", "#7c2d12", "bg", "#faf6f0", "ink", "#292524", "muted", "#a8a29e",
+                        "primary", "#7c2d12", "bg", "#faf6f0", "ink", "#292524", "muted", "#6f6762",
                         "line", "#e7e0d8", "radius", "4", "font", "serif"));
         PRESETS.put(
                 "bold",
@@ -67,7 +67,7 @@ public class ThemeService {
         PRESETS.put(
                 "home",
                 Map.of(
-                        "primary", "#a9663f", "bg", "#faf7f2", "ink", "#2b2723", "muted", "#8c857c",
+                        "primary", "#a9663f", "bg", "#faf7f2", "ink", "#2b2723", "muted", "#6f6762",
                         "line", "#e8e2d9", "radius", "10", "font", "sans"));
     }
 

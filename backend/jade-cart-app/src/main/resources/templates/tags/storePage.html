@@ -254,8 +254,12 @@
   .pdp-faq .acc { border-bottom:1px solid var(--c-line); }
   .crosssell { margin-top:48px; text-align:left; }
   .crosssell-label { font-size:13px; color:var(--c-muted); margin-bottom:14px; }
-  .pdp-info h1 { font-size: clamp(24px, 2.6vw, 32px); line-height:1.25; margin:0 0 14px; }
-  .pdp-price { font-size:20px; font-weight:600; }
+  .pdp-info h1 {
+    font-size: clamp(24px, 2.6vw, 32px); line-height:1.25; margin:0 0 14px;
+    /* 多行标题均衡换行 (避免第二行只剩一两个词) */
+    text-wrap: balance;
+  }
+  .pdp-price { font-size:24px; font-weight:600; letter-spacing:-.01em; }
   .pdp-divider { height:1px; background:var(--c-line); margin:20px 0; }
   .pdp-stock { font-size:14px; color:#b45309; }
   /* 商品短描述 (服务端 teaser) + 事实清单, 填补标题价格下方的空白 */
@@ -280,12 +284,30 @@
   /* 购买区: 数量与加购按钮同行, 不再各占满宽 */
   .pdp-buyform { display:flex; flex-direction:column; gap:12px; align-items:stretch; }
   .pdp-buyform label { font-size:13px; margin-bottom:2px; }
-  .pdp-buyrow { display:flex; gap:14px; align-items:flex-end; }
+  .pdp-buyrow { display:flex; gap:12px; align-items:flex-end; }
   .pdp-qtybox { display:flex; flex-direction:column; gap:6px; flex:0 0 auto; }
-  .qty-input { width:96px; text-align:center; flex:0 0 auto; }
-  /* 全局 input[type=number] 是 width:100%, 这里覆盖成紧凑宽度 */
-  .pdp-qtybox input[type=number], .qty-input[type=number] { width:96px; }
-  .pdp-atc { flex:1; text-align:center; }
+  /* 全局 input[type=number] 是 width:100% + margin-bottom, 这里覆盖成紧凑且无下边距 */
+  .pdp-qtybox input[type=number], .qty-input[type=number] {
+    width:104px; margin-bottom:0; text-align:center; flex:0 0 auto;
+    -moz-appearance:textfield; appearance:textfield;
+  }
+  .pdp-qtybox input[type=number]::-webkit-outer-spin-button,
+  .pdp-qtybox input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0; }
+  /* 数量步进器: - N + (无 JS 时退化为可输入的 number) */
+  .qty-stepper { display:flex; align-items:stretch; border:1px solid var(--c-line); border-radius:var(--radius); overflow:hidden; background:var(--c-bg); }
+  .qty-stepper .qty-input {
+    width:52px; border:none; border-left:1px solid var(--c-line); border-right:1px solid var(--c-line);
+    margin:0; border-radius:0; text-align:center; background:transparent; height:46px; padding:0;
+  }
+  .qty-btn {
+    width:38px; border:none; background:transparent; color:var(--c-ink);
+    font-size:17px; line-height:1; cursor:pointer; padding:0;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .qty-btn:hover { background:rgba(0,0,0,.05); }
+  .qty-btn:active { background:rgba(0,0,0,.09); }
+  /* 加购按钮与数量框等高 (48px) */
+  .pdp-atc { flex:1; text-align:center; display:flex; align-items:center; justify-content:center; min-height:48px; padding:12px 18px; }
   .pdp-accs { margin-top:26px; border-top:1px solid var(--c-line); }
   .pdp-tabs { background:#f4f4f3; margin:56px calc(50% - 50vw) 0; padding:56px 24px; }
   .pdp-tabs-nav { display:flex; gap:32px; justify-content:center; flex-wrap:wrap; margin-bottom:32px; }

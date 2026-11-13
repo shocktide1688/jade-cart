@@ -69,7 +69,21 @@
         <div class="pdp-buyrow">
           <div class="pdp-qtybox">
             <label for="pdp-qty">{t.quantity}</label>
-            <input type="number" id="pdp-qty" name="quantity" value="1" min="1" class="qty-input">
+            <div class="qty-stepper">
+              <button
+                type="button"
+                class="qty-btn"
+                data-step="-1"
+                aria-label="减少数量"
+              >−</button>
+              <input type="number" id="pdp-qty" name="quantity" value="1" min="1" class="qty-input">
+              <button
+                type="button"
+                class="qty-btn"
+                data-step="1"
+                aria-label="增加数量"
+              >+</button>
+            </div>
           </div>
           <button class="btn pdp-atc" type="submit">{t.addToCart}</button>
         </div>
@@ -226,6 +240,26 @@
     if (!m) return;
     var target = thumbs.querySelector('.pdp-thumb[data-idx="' + m[1] + '"]');
     if (target) target.click();
+  });
+})();
+
+/* 数量步进器 (渐进增强): 无 JS 时退化为可输入的 number 框 */
+(function () {
+  var stepper = document.querySelector('.qty-stepper');
+  if (!stepper) return;
+  var input = stepper.querySelector('input[type=number]');
+  if (!input) return;
+  stepper.addEventListener('click', function (e) {
+    var btn = e.target.closest ? e.target.closest('.qty-btn') : null;
+    if (!btn) return;
+    e.preventDefault();
+    var min = parseInt(input.getAttribute('min'), 10) || 1;
+    var step = parseInt(btn.getAttribute('data-step'), 10) || 1;
+    var val = parseInt(input.value, 10);
+    if (isNaN(val)) val = min;
+    val = Math.max(min, val + step);
+    input.value = String(val);
+    input.dispatchEvent(new Event('change', { bubbles: true }));
   });
 })();
 </script>
