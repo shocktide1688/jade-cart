@@ -1,6 +1,9 @@
 {#storePage title=post.title store=storeName seo=seo t=t langs=langs theme=theme baseUrl=baseUrl pill=false navCats=navCats}
 
-{jsonLd.raw}
+{#insert head}
+<script type="application/ld+json">{jsonLd.raw}</script>
+{/insert}
+
 
 <nav class="crumb">
   <a href="/">{t.crumbHome}</a><span class="sep">›</span><a href="/blog">{t.journal}</a><span class="sep">›</span><span class="cur">{post.title}</span>

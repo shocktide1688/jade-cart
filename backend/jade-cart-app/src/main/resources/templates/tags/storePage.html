@@ -27,6 +27,7 @@
 {#if seo.image}<meta property="og:image" content="{seo.image}">{/if}
 
 <meta name="twitter:card" content="{seo.image ? 'summary_large_image' : 'summary'}">
+{#insert head}{/insert}
 <meta name="twitter:title" content="{title ?: t.homeTitle} · {store}">
 <meta name="twitter:description" content="{seo.desc ?: ''}">
 {#if seo.image}<meta name="twitter:image" content="{seo.image}">{/if}

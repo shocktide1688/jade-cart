@@ -127,6 +127,9 @@ jade:
   cart:
     # 店面 (Qute SSR) 配置
     store-name: "${JADE_CART_STORE_NAME:Jade Cart Store}"
+    # 站点对外域名 (canonical / og:url / sitemap / robots.txt 的 Sitemap / JSON-LD 全依赖它)
+    # 生产必须配置, 否则爬虫收到 localhost 的 canonical → 整站索引失效
+    store-base-url: "${JADE_CART_STORE_BASE_URL:http://localhost:8090}"
     currency: "${JADE_CART_CURRENCY:USD}"
     # 店面语言注册表: CODE:Label 逗号分隔, 首个为默认 (翻资产 = classpath i18n/store_<code>.properties)
     locales: "${JADE_CART_LOCALES:en:English,de:Deutsch,fr:Français}"

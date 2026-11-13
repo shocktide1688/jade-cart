@@ -15,6 +15,7 @@ import com.jade.common.exception.BizException;
 import io.quarkus.logging.Log;
 import io.quarkus.qute.Location;
 import io.quarkus.qute.Template;
+import jakarta.annotation.PostConstruct;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
 import jakarta.ws.rs.Consumes;
@@ -51,9 +52,58 @@ public class StorefrontPages {
     @ConfigProperty(name = "jade.cart.store-name", defaultValue = "Jade Cart Store")
     String storeName;
 
+    /** 未配置时的默认值 (等于此值视为未配置, 走请求头推导) */
+    private static final String DEFAULT_BASE_URL = "http://localhost:8090";
+
     @Inject
-    @ConfigProperty(name = "jade.cart.store-base-url", defaultValue = "http://localhost:8090")
-    String baseUrl;
+    @ConfigProperty(name = "jade.cart.store-base-url", defaultValue = DEFAULT_BASE_URL)
+    String configuredBaseUrl;
+
+    /** 站点对外域名: 优先显式配置 (JADE_CART_STORE_BASE_URL), 否则按请求头推导 (反代需保留 Host) */
+    private String baseUrlOf(HttpHeaders headers) {
+        if (configuredBaseUrl != null
+                && !configuredBaseUrl.isBlank()
+                && !DEFAULT_BASE_URL.equals(configuredBaseUrl.trim())) {
+            return trimSlash(configuredBaseUrl);
+        }
+        String host = headers == null ? null : headers.getHeaderString("Host");
+        if (host != null && !host.isBlank() && !host.contains(":")) {
+            String proto = headers.getHeaderString("X-Forwarded-Proto");
+            if (proto == null || proto.isBlank()) {
+                proto = "https";
+            }
+            return proto + "://" + host;
+        }
+        return "http://localhost:8090";
+    }
+
+    private static String trimSlash(String s) {
+        String v = s.trim();
+        while (v.endsWith("/")) {
+            v = v.substring(0, v.length() - 1);
+        }
+        return v;
+    }
+
+    /** 启动自检: 站点域名仍是 localhost → canonical/sitemap 会指向本机, 搜索引擎索引失效 */
+    @PostConstruct
+    void warnIfBaseUrlUnset() {
+        if (configuredBaseUrl == null
+                || configuredBaseUrl.isBlank()
+                || DEFAULT_BASE_URL.equals(configuredBaseUrl.trim())) {
+            Log.warnf(
+                    "jade.cart.store-base-url 未配置: canonical/og:url/sitemap 按请求头推导, "
+                            + "若反代未保留 Host 头会回落到 localhost —— 生产请显式设置 "
+                            + "JADE_CART_STORE_BASE_URL");
+            return;
+        }
+        if (configuredBaseUrl.contains("localhost")) {
+            Log.errorf(
+                    "jade.cart.store-base-url 指向 localhost (%s): canonical/sitemap 无效, "
+                            + "搜索引擎无法索引该站",
+                    configuredBaseUrl);
+        }
+    }
 
     @Inject CatalogService catalogService;
 
@@ -131,6 +181,20 @@ public class StorefrontPages {
                 catalogService.activeProducts(null, null, 12).stream()
                         .map(catalogService::toSummary)
                         .toList();
+
+        // og:image (社交分享预览图): 取首张精选商品主图, 没有则用最新
+        String homeImage = null;
+        for (List<ProductView.Summary> pool : List.of(featured, latest)) {
+            for (ProductView.Summary cand : pool) {
+                if (cand.mainImagePath() != null && !cand.mainImagePath().isBlank()) {
+                    homeImage = baseUrlOf(headers) + "/media/" + cand.mainImagePath();
+                    break;
+                }
+            }
+            if (homeImage != null) {
+                break;
+            }
+        }
         String homeDesc =
                 com.jade.cart.settings.entity.StoreSetting.getValue("announcement")
                         .filter(v -> !v.isBlank())
@@ -140,13 +204,15 @@ public class StorefrontPages {
                                 .data("featured", featured)
                                 .data("latest", latest)
                                 .data("storeName", storeName)
-                                .data("baseUrl", baseUrl)
+                                .data("baseUrl", baseUrlOf(headers))
                                 .data("navCats", navTree())
                                 .data("theme", themeService.tokens())
                                 .data("t", t(headers))
                                 .data("langs", langs(headers))
-                                .data("seo", seo(homeDesc, null, false, "website", "/"))
-                                .data("jsonLd", ld(seoJsonLd.website(baseUrl, storeName)))
+                                .data("seo", seo(homeDesc, homeImage, false, "website", "/"))
+                                .data(
+                                        "jsonLd",
+                                        ld(seoJsonLd.website(baseUrlOf(headers), storeName)))
                                 .render())
                 .build();
     }
@@ -176,24 +242,31 @@ public class StorefrontPages {
                         : q != null && !q.isBlank()
                                 ? fmt(t(headers).seoSearch(), q, storeName)
                                 : fmt(t(headers).seoAllProducts(), storeName);
+        // SEO: 页面标题 (此前未传 title → 回落 homeTitle, 与首页标题重复) + og:image 取首图
+        String pageTitle = categoryName != null ? categoryName : t(headers).footAllProducts();
+        String ogImage =
+                items.isEmpty() || items.get(0).mainImagePath() == null
+                        ? null
+                        : baseUrlOf(headers) + "/media/" + items.get(0).mainImagePath();
         return Response.ok(
                         products.data("items", items)
+                                .data("pageTitle", pageTitle)
                                 .data("q", q == null ? "" : q)
                                 .data("categoryName", categoryName)
                                 .data("currentSlug", categorySlug)
                                 .data("categories", Category.listActive())
                                 .data("storeName", storeName)
-                                .data("baseUrl", baseUrl)
+                                .data("baseUrl", baseUrlOf(headers))
                                 .data("navCats", navTree())
                                 .data("theme", themeService.tokens())
                                 .data("t", t(headers))
                                 .data("langs", langs(headers))
-                                .data("seo", seo(desc, null, false, "website", "/products"))
+                                .data("seo", seo(desc, ogImage, false, "website", "/products"))
                                 .data(
                                         "jsonLd",
                                         ld(
                                                 seoJsonLd.itemList(
-                                                        baseUrl,
+                                                        baseUrlOf(headers),
                                                         catalogService.activeProducts(
                                                                 q, categoryId, 20))))
                                 .render())
@@ -238,13 +311,15 @@ public class StorefrontPages {
                                 : entity.description,
                         160);
         String ogImage =
-                entity.mainImagePath == null ? null : baseUrl + "/media/" + entity.mainImagePath;
+                entity.mainImagePath == null
+                        ? null
+                        : baseUrlOf(headers) + "/media/" + entity.mainImagePath;
         String jsonLd =
-                ld(seoJsonLd.product(entity, baseUrl))
+                ld(seoJsonLd.product(entity, baseUrlOf(headers)))
                         + "\n"
                         + ld(
                                 seoJsonLd.breadcrumb(
-                                        baseUrl,
+                                        baseUrlOf(headers),
                                         t(headers).crumbHome(),
                                         "/",
                                         t(headers).crumbProducts(),
@@ -280,7 +355,7 @@ public class StorefrontPages {
                                 .data("curIdx", curIdx)
                                 .data("desc", desc)
                                 .data("storeName", storeName)
-                                .data("baseUrl", baseUrl)
+                                .data("baseUrl", baseUrlOf(headers))
                                 .data("navCats", navTree())
                                 .data("theme", themeService.tokens())
                                 .data("t", t(headers))
@@ -316,7 +391,7 @@ public class StorefrontPages {
                                 .data("cross", cross)
                                 .data("error", error)
                                 .data("storeName", storeName)
-                                .data("baseUrl", baseUrl)
+                                .data("baseUrl", baseUrlOf(headers))
                                 .data("navCats", navTree())
                                 .data("theme", themeService.tokens())
                                 .data("t", t(headers))
@@ -337,7 +412,7 @@ public class StorefrontPages {
         return Response.ok(
                         payMock.data("o", order)
                                 .data("storeName", storeName)
-                                .data("baseUrl", baseUrl)
+                                .data("baseUrl", baseUrlOf(headers))
                                 .data("navCats", navTree())
                                 .data("theme", themeService.tokens())
                                 .data("t", t(headers))
@@ -440,19 +515,28 @@ public class StorefrontPages {
             m.put("date", when == null ? "" : when.format(fmt));
             view.add(m);
         }
+        // SEO: 标题 + og:image (首篇封面) + 文章列表 ItemList 结构化数据
+        String blogTitle = t(headers).navBlog();
+        String blogImage =
+                posts.isEmpty() || posts.get(0).coverPath == null
+                        ? null
+                        : baseUrlOf(headers) + "/media/" + posts.get(0).coverPath;
+        String blogJsonLd = seoJsonLd.blogList(baseUrlOf(headers), posts);
         return Response.ok(
                         blogTpl.data("posts", view)
+                                .data("title", blogTitle)
                                 .data("storeName", storeName)
-                                .data("baseUrl", baseUrl)
+                                .data("baseUrl", baseUrlOf(headers))
                                 .data("navCats", navTree())
                                 .data("theme", themeService.tokens())
                                 .data("t", t(headers))
                                 .data("langs", langs(headers))
+                                .data("jsonLd", blogJsonLd)
                                 .data(
                                         "seo",
                                         seo(
                                                 fmt(t(headers).seoBlog(), storeName),
-                                                null,
+                                                blogImage,
                                                 false,
                                                 "website",
                                                 "/blog"))
@@ -490,7 +574,7 @@ public class StorefrontPages {
                             String ogImage =
                                     post.coverPath == null
                                             ? null
-                                            : baseUrl + "/media/" + post.coverPath;
+                                            : baseUrlOf(headers) + "/media/" + post.coverPath;
                             var when = post.publishedAt != null ? post.publishedAt : post.updatedAt;
                             String dateStr =
                                     when == null
@@ -505,7 +589,7 @@ public class StorefrontPages {
                                                     .data("prevPost", prevPost)
                                                     .data("nextPost", nextPost)
                                                     .data("storeName", storeName)
-                                                    .data("baseUrl", baseUrl)
+                                                    .data("baseUrl", baseUrlOf(headers))
                                                     .data("navCats", navTree())
                                                     .data("theme", themeService.tokens())
                                                     .data("t", t(headers))
@@ -523,7 +607,8 @@ public class StorefrontPages {
                                                             "jsonLd",
                                                             ld(
                                                                     seoJsonLd.blogPosting(
-                                                                            post, baseUrl,
+                                                                            post,
+                                                                            baseUrlOf(headers),
                                                                             storeName)))
                                                     .render())
                                     .build();
@@ -537,7 +622,7 @@ public class StorefrontPages {
                 .entity(
                         notFoundTpl
                                 .data("storeName", storeName)
-                                .data("baseUrl", baseUrl)
+                                .data("baseUrl", baseUrlOf(headers))
                                 .data("navCats", navTree())
                                 .data("theme", themeService.tokens())
                                 .data("t", t(headers))
@@ -557,7 +642,7 @@ public class StorefrontPages {
                                                 contentTpl
                                                         .data("page", page)
                                                         .data("storeName", storeName)
-                                                        .data("baseUrl", baseUrl)
+                                                        .data("baseUrl", baseUrlOf(headers))
                                                         .data("navCats", navTree())
                                                         .data("theme", themeService.tokens())
                                                         .data("t", t(headers))
@@ -585,7 +670,7 @@ public class StorefrontPages {
                                 .data("sent", false)
                                 .data("error", (String) null)
                                 .data("storeName", storeName)
-                                .data("baseUrl", baseUrl)
+                                .data("baseUrl", baseUrlOf(headers))
                                 .data("navCats", navTree())
                                 .data("theme", themeService.tokens())
                                 .data("t", t(headers))
@@ -620,7 +705,7 @@ public class StorefrontPages {
                                         .data("sent", false)
                                         .data("error", t(headers).contactErrInvalid())
                                         .data("storeName", storeName)
-                                        .data("baseUrl", baseUrl)
+                                        .data("baseUrl", baseUrlOf(headers))
                                         .data("navCats", navTree())
                                         .data("theme", themeService.tokens())
                                         .data("t", t(headers))
@@ -639,7 +724,7 @@ public class StorefrontPages {
                             contactTpl
                                     .data("sent", true)
                                     .data("storeName", storeName)
-                                    .data("baseUrl", baseUrl)
+                                    .data("baseUrl", baseUrlOf(headers))
                                     .data("navCats", navTree())
                                     .data("theme", themeService.tokens())
                                     .data("t", t(headers))
@@ -658,7 +743,7 @@ public class StorefrontPages {
                                     .data("sent", false)
                                     .data("error", t(headers).contactErrFailed())
                                     .data("storeName", storeName)
-                                    .data("baseUrl", baseUrl)
+                                    .data("baseUrl", baseUrlOf(headers))
                                     .data("navCats", navTree())
                                     .data("theme", themeService.tokens())
                                     .data("t", t(headers))
@@ -684,7 +769,7 @@ public class StorefrontPages {
                                 Response.ok(
                                                 orderTpl.data("o", orderService.toView(o))
                                                         .data("storeName", storeName)
-                                                        .data("baseUrl", baseUrl)
+                                                        .data("baseUrl", baseUrlOf(headers))
                                                         .data("navCats", navTree())
                                                         .data("theme", themeService.tokens())
                                                         .data("t", t(headers))

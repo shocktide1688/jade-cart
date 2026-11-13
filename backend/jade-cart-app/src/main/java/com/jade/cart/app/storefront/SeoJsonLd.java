@@ -127,6 +127,23 @@ public class SeoJsonLd {
         return write(g);
     }
 
+    /** 博客列表 ItemList (博客列表页) */
+    public String blogList(String baseUrl, List<BlogPost> posts) {
+        List<Map<String, Object>> items = new ArrayList<>();
+        int pos = 1;
+        for (BlogPost p : posts) {
+            Map<String, Object> item = new LinkedHashMap<>();
+            item.put("@type", "ListItem");
+            item.put("position", pos++);
+            item.put("name", p.title);
+            item.put("url", baseUrl + "/blog/" + p.slug);
+            items.add(item);
+        }
+        Map<String, Object> g = base("@type", "ItemList");
+        g.put("itemListElement", items);
+        return write(g);
+    }
+
     /** BlogPosting (博客文章页) */
     public String blogPosting(BlogPost post, String baseUrl, String storeName) {
         Map<String, Object> g = base("@type", "BlogPosting");

@@ -1,6 +1,9 @@
 {#storePage title=t.homeTitle store=storeName seo=seo t=t langs=langs theme=theme baseUrl=baseUrl pill=true navCats=navCats}
 
-{jsonLd.raw}
+{#insert head}
+<script type="application/ld+json">{jsonLd.raw}</script>
+{/insert}
+
 
 {#if sections.isEmpty()}
 

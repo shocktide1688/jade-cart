@@ -1,4 +1,8 @@
-{#storePage title=categoryName store=storeName seo=seo t=t langs=langs theme=theme baseUrl=baseUrl pill=true navCats=navCats}
+{#storePage title=pageTitle store=storeName seo=seo t=t langs=langs theme=theme baseUrl=baseUrl pill=true navCats=navCats}
+
+{#insert head}
+<script type="application/ld+json">{jsonLd.raw}</script>
+{/insert}
 
 <section class="plp-banner">
   <nav class="crumb crumb-light">
