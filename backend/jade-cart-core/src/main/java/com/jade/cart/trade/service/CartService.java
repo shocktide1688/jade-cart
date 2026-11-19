@@ -62,7 +62,8 @@ public class CartService {
                             unitPrice,
                             item.quantity,
                             available,
-                            lineTotal));
+                            lineTotal,
+                            product == null ? null : product.mainImagePath));
         }
         String currency = StoreSetting.getValue("currency").orElse("USD");
         return new CartView(cart.publicId, currency, lines, subtotal);

@@ -15,5 +15,7 @@ public record CartView(
             Long unitPriceCents,
             Integer quantity,
             Integer available,
-            Long lineTotalCents) {}
+            Long lineTotalCents,
+            /** 商品主图相对路径 (移动端购物车展示图, 前端拼 /media/{path}) */
+            String mainImagePath) {}
 }
