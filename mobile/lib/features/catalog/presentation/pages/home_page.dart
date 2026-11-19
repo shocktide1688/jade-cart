@@ -70,7 +70,8 @@ class HomePage extends ConsumerWidget {
                           crossAxisCount: 2,
                           mainAxisSpacing: 14,
                           crossAxisSpacing: 14,
-                          childAspectRatio: 0.62,
+                          // 固定项高: 比宽高比更可控 (图片 4:5 + 两行标题 + 价格), 避免 RenderFlex 溢出
+                          mainAxisExtent: 330,
                         ),
                     delegate: SliverChildBuilderDelegate((context, index) {
                       final product = products[index];

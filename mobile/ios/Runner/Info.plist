@@ -32,6 +32,21 @@
 		<key>NSAllowsLocalNetworking</key>
 		<true/>
 	</dict>
+	<!-- 深链: jadecart://shop/jade-tee 等, 供分享链接与支付回跳 -->
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>com.jadecart.jadeCartMobile</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>jadecart</string>
+			</array>
+		</dict>
+	</array>
+	<!-- go_router 深链: jadecart:///shop/jade-tee -->
+	<key>FlutterDeepLinkingEnabled</key>
+	<true/>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>

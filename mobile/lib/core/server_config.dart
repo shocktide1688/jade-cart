@@ -18,22 +18,36 @@ final class SecureServerConfigStore implements ServerConfigStore {
 
   static const _key = 'jadecart.server_url';
 
+  /// 内存兜底: Keychain/Keystore 不可用时 (如 iOS 缺 entitlement、无签名构建) 至少让 App 能跑起来
+  String? _memoryFallback;
+
   @override
   Future<String?> readUrl() async {
-    final raw = await _storage.read(key: _key);
-    if (raw == null || raw.isEmpty) return null;
     try {
-      return normalizeServerUrl(raw);
-    } on FormatException {
-      // 存的是非法值 (旧版本/手工改动) → 清掉走平台默认
-      await _storage.delete(key: _key);
-      return null;
+      final raw = await _storage.read(key: _key);
+      if (raw == null || raw.isEmpty) return _memoryFallback;
+      try {
+        return normalizeServerUrl(raw);
+      } on FormatException {
+        // 存的是非法值 (旧版本/手工改动) → 清掉走平台默认
+        await _storage.delete(key: _key);
+        return null;
+      }
+    } on Exception {
+      // 安全存储不可用 → 降级到内存
+      return _memoryFallback;
     }
   }
 
   @override
-  Future<void> writeUrl(String url) {
-    return _storage.write(key: _key, value: normalizeServerUrl(url));
+  Future<void> writeUrl(String url) async {
+    final normalized = normalizeServerUrl(url);
+    _memoryFallback = normalized;
+    try {
+      await _storage.write(key: _key, value: normalized);
+    } on Exception {
+      // 落盘失败不阻断切换 (内存里已生效)
+    }
   }
 }
 

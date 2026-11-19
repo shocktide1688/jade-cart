@@ -12,6 +12,9 @@ import 'package:jade_cart_mobile/features/orders/presentation/pages/order_detail
 import 'package:jade_cart_mobile/ui/app_theme.dart';
 
 /// 路由: 底部四页签 (StatefulShellRoute 各分支独立栈) + 详情页
+///
+/// 深链: jadecart:///shop/jade-tee → /shop/jade-tee (三斜杠, path 完整对齐路由);
+/// 需在 iOS Info.plist 开 FlutterDeepLinkingEnabled, Android Manifest 开 flutter_deeplinking_enabled。
 final routerProvider = Provider<GoRouter>((ref) {
   return GoRouter(
     initialLocation: '/home',

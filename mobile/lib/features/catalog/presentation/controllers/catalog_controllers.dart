@@ -112,9 +112,12 @@ final productListControllerProvider =
       return ProductListController(ref.watch(catalogRepositoryProvider));
     });
 
-/// 首页精选商品 (独立加载, 与商品列表页筛选互不干扰)
-final featuredProductsProvider = FutureProvider<List<ProductSummary>>((ref) {
-  return ref
-      .watch(catalogRepositoryProvider)
-      .products(featured: true, limit: 10);
+/// 首页商品 (优先精选; 商家没设精选时回落最新, 首页不留白)
+final featuredProductsProvider = FutureProvider<List<ProductSummary>>((
+  ref,
+) async {
+  final repository = ref.watch(catalogRepositoryProvider);
+  final featured = await repository.products(featured: true, limit: 10);
+  if (featured.isNotEmpty) return featured;
+  return repository.products(limit: 10);
 });

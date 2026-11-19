@@ -63,7 +63,8 @@ class _CartPageState extends ConsumerState<CartPage> {
       );
     }
     return ListView.separated(
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+      // 底部留出结算栏高度, 否则最后一行被遮住
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 100),
       itemCount: state.items.length,
       separatorBuilder: (_, _) => const SizedBox(height: 12),
       itemBuilder: (context, index) {
