@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- 品牌色: 玉绿 (与店面 emerald 主题一致), 用于启动屏 -->
+    <color name="jade_brand">#0E3B32</color>
+</resources>

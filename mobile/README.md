@@ -68,6 +68,15 @@ flutter build apk
 
 Android 构建需要 JDK 17 或更新版本。
 
+## 应用图标
+
+图标母版为 `assets/branding/jade-cart-app-icon.svg`（玉叶 + 墨绿，与店面 emerald 主题同源）。
+修改母版后执行以下命令重新生成 iOS / Android 全部图标尺寸：
+
+```bash
+bash tool/generate_app_icons.sh
+```
+
 ## 目录
 
 ```text
@@ -89,8 +98,20 @@ lib/
 - 切换服务器 = 改一个 provider，整条链重建，cookie 与订单历史随之隔离
 - 状态唯一真源：筛选/购物车/订单历史各有自己的 State + Controller，不在 widget 里散落状态
 
+## 深链
+
+App 注册 `jadecart://` scheme，用于分享链接与支付回跳（路径与网页路由一致，需三斜杠）：
+
+```bash
+xcrun simctl openurl booted "jadecart:///shop/ice-smoke-fair-cup-master-cup"
+adb shell am start -a android.intent.action.VIEW -d "jadecart:///shop"
+```
+
 ## 已知限制
 
 - 无账号体系：订单历史靠本地存储的订单 publicId，换设备不可见
 - 支付只实测过 mock 网关；Stripe / PayPal 需配置真实密钥后联调
 - App 端文案固定英文；后端没有面向客户端的 i18n 接口
+- `path_provider_android` 锁定 2.2.x：2.3.x 改用 jni 直连 Android Context，在本机抛
+  `ClassNotFoundException` 导致启动即崩；待 jni 方案可用后可解除 override
+- iOS 无签名构建时 Keychain 权限不可用，服务器地址会降级为内存存储（App 内仍可切换，重启后丢失）
