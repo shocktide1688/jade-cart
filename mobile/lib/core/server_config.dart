@@ -1,0 +1,61 @@
+import 'package:dio/dio.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+
+import 'api_client.dart';
+import 'app_config.dart';
+
+/// 服务器地址持久化 (运行时可切换, 单 key; 购物车 cookie 随 ApiClient 重建天然隔离)
+abstract interface class ServerConfigStore {
+  Future<String?> readUrl();
+  Future<void> writeUrl(String url);
+}
+
+final class SecureServerConfigStore implements ServerConfigStore {
+  SecureServerConfigStore({FlutterSecureStorage? storage})
+    : _storage = storage ?? const FlutterSecureStorage();
+
+  final FlutterSecureStorage _storage;
+
+  static const _key = 'jadecart.server_url';
+
+  @override
+  Future<String?> readUrl() async {
+    final raw = await _storage.read(key: _key);
+    if (raw == null || raw.isEmpty) return null;
+    try {
+      return normalizeServerUrl(raw);
+    } on FormatException {
+      // 存的是非法值 (旧版本/手工改动) → 清掉走平台默认
+      await _storage.delete(key: _key);
+      return null;
+    }
+  }
+
+  @override
+  Future<void> writeUrl(String url) {
+    return _storage.write(key: _key, value: normalizeServerUrl(url));
+  }
+}
+
+/// 测试连接: GET /q/health 返回耗时; 网络失败抛 [ApiFailure], 非 200 视为不可用
+Future<Duration> testServerConnection(String serverUrl, {Dio? dio}) async {
+  final client = dio ?? Dio();
+  final stopwatch = Stopwatch()..start();
+  try {
+    final response = await client.get<String>(
+      '$serverUrl/q/health',
+      options: Options(
+        responseType: ResponseType.plain,
+        receiveTimeout: const Duration(seconds: 8),
+      ),
+    );
+    if (response.statusCode != 200) {
+      throw ApiFailure('健康检查返回 HTTP ${response.statusCode}');
+    }
+    return stopwatch.elapsed;
+  } on DioException catch (error) {
+    throw ApiFailure.fromDio(error);
+  } finally {
+    if (dio == null) client.close();
+  }
+}
