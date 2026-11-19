@@ -64,7 +64,7 @@ Future<Duration> testServerConnection(String serverUrl, {Dio? dio}) async {
       ),
     );
     if (response.statusCode != 200) {
-      throw ApiFailure('健康检查返回 HTTP ${response.statusCode}');
+      throw ApiFailure('Health check returned HTTP ${response.statusCode}');
     }
     return stopwatch.elapsed;
   } on DioException catch (error) {

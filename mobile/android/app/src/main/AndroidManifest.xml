@@ -1,4 +1,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- release 构建必须显式声明: Flutter 模板只在 debug/profile 的 manifest 里给了 INTERNET,
+         导致 release 包无法联网 (线上会表现为"无法连接服务器") -->
+    <uses-permission android:name="android.permission.INTERNET"/>
     <application
         android:label="Jade Cart"
         android:name="${applicationName}"

@@ -1,5 +1,7 @@
 import 'dart:io';
 
+import 'package:flutter/foundation.dart';
+
 /// 编译期 (--dart-define) 与平台默认服务器地址, 外加 URL 规范化
 abstract final class AppConfig {
   /// 构建期注入: --dart-define=API_BASE_URL=https://your-store.example.com
@@ -7,11 +9,16 @@ abstract final class AppConfig {
     'API_BASE_URL',
   );
 
-  /// 默认 API 基址: Android 模拟器访问宿主机必须走 10.0.2.2, iOS 模拟器/桌面用 localhost
+  /// 默认 API 基址
+  ///
+  /// release 构建返回空串表示"未配置": 上架包若漏传 --dart-define, 必须让用户
+  /// 在 App 里填店铺地址, 而不是静默连到 localhost / 10.0.2.2 (用户会拿到一个用不了的 App)。
+  /// debug 构建用平台默认地址, 方便本地开发。
   static String get apiBaseUrl {
     if (configuredApiBaseUrl.isNotEmpty) {
       return normalizeServerUrl(configuredApiBaseUrl);
     }
+    if (kReleaseMode) return '';
     if (Platform.isAndroid) return 'http://10.0.2.2:8090';
     return 'http://localhost:8090';
   }
@@ -26,7 +33,7 @@ String normalizeServerUrl(String raw) {
   try {
     uri = Uri.parse(trimmed);
   } on FormatException {
-    throw const FormatException('服务器地址无效');
+    throw const FormatException('Invalid server address');
   }
   final isHttp = uri.scheme == 'http' || uri.scheme == 'https';
   final hasBarePath = uri.path.isNotEmpty && uri.path != '/';
@@ -36,7 +43,9 @@ String normalizeServerUrl(String raw) {
       uri.hasQuery ||
       uri.hasFragment ||
       hasBarePath) {
-    throw const FormatException('服务器地址需形如 http(s)://host:port');
+    throw const FormatException(
+      'Server address must look like http(s)://host:port',
+    );
   }
   final port = uri.hasPort ? ':${uri.port}' : '';
   return '${uri.scheme}://${uri.host}$port';

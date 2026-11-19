@@ -44,4 +44,27 @@ void main() {
     // 占位首页带 AppBar 标题
     expect(find.byType(AppBar), findsOneWidget);
   });
+
+  testWidgets('应该跳到配置引导页 当店铺地址未配置', (tester) async {
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          serverConfigStoreProvider.overrideWithValue(
+            _InMemoryServerConfigStore(),
+          ),
+          // release 包漏传 --dart-define 时的状态: 空地址
+          initialServerUrlProvider.overrideWithValue(''),
+          cookieDirProvider.overrideWithValue('/tmp/jadecart-test-cookies'),
+        ],
+        child: const JadeCartApp(),
+      ),
+    );
+    await tester.pump();
+    await tester.pump(const Duration(seconds: 1));
+
+    expect(find.text('Connect your store'), findsOneWidget);
+    expect(find.text('Store address'), findsOneWidget);
+    // 底部页签不该出现 (还在配置流程里)
+    expect(find.text('Home'), findsNothing);
+  });
 }

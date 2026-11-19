@@ -48,8 +48,8 @@ class _ProductDetailPageState extends ConsumerState<ProductDetailPage> {
         ? [product.mainImagePath]
         : product.imagePaths;
     return ListView(
-      // 底部留出吸底"Add to cart"按钮的高度, 否则内容被遮住
-      padding: const EdgeInsets.only(bottom: 100),
+      // 底部留出吸底"Add to cart"按钮 + 数量步进器的高度, 否则内容被遮住
+      padding: const EdgeInsets.only(bottom: 160),
       children: [
         // 4:5 + contain: 与 SSR 端 PDP 一致, 不裁切商家素材 (竖版营销图顶部常带文字)
         AspectRatio(

@@ -38,12 +38,15 @@ void main() {
 
   group('端到端购买链路', () {
     test('应该走完 列表→详情→加购→结算→支付→订单PAID', () async {
-      // 1. 商品列表
-      final products = await catalog.products(limit: 5);
+      // 1. 商品列表 (优先挑库存充足的, 否则测试会因库存被前面的运行耗尽而失败)
+      final products = await catalog.products(limit: 20);
       expect(products, isNotEmpty, reason: '后端应有可售商品');
       final target = products.firstWhere(
-        (product) => !product.isSoldOut,
-        orElse: () => products.first,
+        (product) => product.totalAvailable >= 3,
+        orElse: () => products.firstWhere(
+          (product) => product.totalAvailable > 0,
+          orElse: () => products.first,
+        ),
       );
 
       // 2. 商品详情 (拿到变体 id)
@@ -53,21 +56,24 @@ void main() {
         (v) => v.inStock,
         orElse: () => detail.variants.first,
       );
+      // 后端会把加购数量裁剪到可用库存, 断言按实际可用量算
+      final addQty = variant.available >= 2 ? 2 : variant.available;
+      final updateQty = variant.available >= 3 ? 3 : variant.available;
 
       // 3. 加购
-      final afterAdd = await cart.addItem(variant.id, quantity: 2);
+      final afterAdd = await cart.addItem(variant.id, quantity: addQty);
       expect(afterAdd.items, isNotEmpty);
       final addedLine = afterAdd.items.firstWhere(
         (line) => line.variantId == variant.id,
       );
-      expect(addedLine.quantity, 2);
+      expect(addedLine.quantity, addQty);
 
-      // 4. 改数量 (+1)
-      final afterUpdate = await cart.updateItem(variant.id, 3);
+      // 4. 改数量
+      final afterUpdate = await cart.updateItem(variant.id, updateQty);
       final updatedLine = afterUpdate.items.firstWhere(
         (line) => line.variantId == variant.id,
       );
-      expect(updatedLine.quantity, 3);
+      expect(updatedLine.quantity, updateQty);
 
       // 5. 结算建单
       final result = await checkout.checkout(

@@ -76,7 +76,7 @@ class CheckoutController extends StateNotifier<CheckoutState> {
       mode: LaunchMode.externalApplication,
     );
     if (!launched) {
-      state = state.copyWith(error: '无法打开支付页面');
+      state = state.copyWith(error: 'Could not open the payment page');
     }
   }
 }

@@ -21,9 +21,13 @@ class ApiFailure implements Exception {
     return switch (error.type) {
       DioExceptionType.connectionTimeout ||
       DioExceptionType.sendTimeout ||
-      DioExceptionType.receiveTimeout => const ApiFailure('连接超时, 请稍后重试'),
-      DioExceptionType.connectionError => const ApiFailure('无法连接服务器, 请检查地址或网络'),
-      _ => const ApiFailure('网络异常, 请稍后重试'),
+      DioExceptionType.receiveTimeout => const ApiFailure(
+        'Connection timed out, please try again',
+      ),
+      DioExceptionType.connectionError => const ApiFailure(
+        'Cannot reach the store, check the address or your network',
+      ),
+      _ => const ApiFailure('Network error, please try again'),
     };
   }
 
@@ -92,14 +96,17 @@ class ApiClient {
   Object? _unwrap(Response<Object?> response) {
     final body = response.data;
     if (body is! Map) {
-      throw const ApiFailure('服务器响应格式不正确');
+      throw const ApiFailure('Unexpected server response');
     }
     final code = body['code'];
     if (code is! int) {
-      throw const ApiFailure('服务器响应格式不正确');
+      throw const ApiFailure('Unexpected server response');
     }
     if (code != 0) {
-      throw ApiFailure(body['message']?.toString() ?? '请求失败', code: code);
+      throw ApiFailure(
+        body['message']?.toString() ?? 'Request failed',
+        code: code,
+      );
     }
     return body['data'];
   }

@@ -106,8 +106,8 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
               ),
               validator: (value) {
                 final text = value?.trim() ?? '';
-                if (text.isEmpty) return '请填写邮箱';
-                if (!text.contains('@')) return '邮箱格式不正确';
+                if (text.isEmpty) return 'Email is required';
+                if (!text.contains('@')) return 'Enter a valid email address';
                 return null;
               },
             ),

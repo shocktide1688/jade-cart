@@ -7,7 +7,7 @@ JsonMap asJsonMap(Object? value) {
   if (value is Map) {
     return value.map((key, item) => MapEntry(key.toString(), item));
   }
-  throw const FormatException('服务器数据格式不正确');
+  throw const FormatException('Unexpected server response format');
 }
 
 /// 断言值是 JSON 对象数组
@@ -15,7 +15,7 @@ List<JsonMap> asJsonMapList(Object? value) {
   if (value is List) {
     return value.map(asJsonMap).toList(growable: false);
   }
-  throw const FormatException('服务器数据格式不正确');
+  throw const FormatException('Unexpected server response format');
 }
 
 String stringOf(JsonMap json, String key, [String fallback = '']) {

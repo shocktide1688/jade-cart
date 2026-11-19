@@ -60,7 +60,7 @@ class CartRepository {
     final data = await _api.getData('/api/store/cart/count');
     if (data is num) return data.toInt();
     if (data == null) return 0;
-    throw const FormatException('服务器数据格式不正确');
+    throw const FormatException('Unexpected server response format');
   }
 
   Future<CartView> addItem(int variantId, {int quantity = 1}) async {

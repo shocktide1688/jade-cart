@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import 'package:jade_cart_mobile/app_providers.dart';
 import 'package:jade_cart_mobile/features/account/presentation/pages/account_page.dart';
+import 'package:jade_cart_mobile/features/account/presentation/pages/setup_page.dart';
 import 'package:jade_cart_mobile/features/cart/presentation/pages/cart_page.dart';
 import 'package:jade_cart_mobile/features/catalog/presentation/pages/home_page.dart';
 import 'package:jade_cart_mobile/features/catalog/presentation/pages/product_detail_page.dart';
@@ -16,9 +18,25 @@ import 'package:jade_cart_mobile/ui/app_theme.dart';
 /// 深链: jadecart:///shop/jade-tee → /shop/jade-tee (三斜杠, path 完整对齐路由);
 /// 需在 iOS Info.plist 开 FlutterDeepLinkingEnabled, Android Manifest 开 flutter_deeplinking_enabled。
 final routerProvider = Provider<GoRouter>((ref) {
+  final serverUrl = ref.watch(serverUrlProvider);
   return GoRouter(
     initialLocation: '/home',
+    // 未配置店铺地址 (release 包漏传 --dart-define) → 强制走配置引导页
+    redirect: (context, state) {
+      if (serverUrl.isEmpty && state.matchedLocation != '/setup') {
+        return '/setup';
+      }
+      if (serverUrl.isNotEmpty && state.matchedLocation == '/setup') {
+        return '/home';
+      }
+      return null;
+    },
     routes: [
+      GoRoute(
+        path: '/setup',
+        name: 'setup',
+        builder: (context, state) => const SetupPage(),
+      ),
       StatefulShellRoute.indexedStack(
         builder: (context, state, shell) => HomeShell(shell: shell),
         branches: [

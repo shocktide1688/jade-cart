@@ -99,7 +99,7 @@ void main() {
         isA<ApiFailure>().having(
           (failure) => failure.message,
           'message',
-          contains('无法连接服务器'),
+          contains('Cannot reach the store'),
         ),
       ),
     );
