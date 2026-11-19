@@ -43,7 +43,7 @@ dependencies:
   url_launcher: ^6.3.3
   cached_network_image: ^4.0.3
   intl: ^0.20.2
-  path_provider: ^2.1.6
+  path_provider: 2.1.5
 
 dev_dependencies:
   flutter_test:
@@ -97,3 +97,9 @@ flutter:
   #
   # For details regarding fonts from package dependencies,
   # see https://flutter.dev/to/font-from-package
+
+# path_provider_android 2.3.x 改用 jni 包直连 Android Context, 在当前 Flutter 配置下
+# 抛 ClassNotFoundException (android/content/Context) 导致 App 启动即崩溃;
+# 锁定 2.2.x (MethodChannel 实现) 直到 jni 方案在本机可用。
+dependency_overrides:
+  path_provider_android: 2.2.15
