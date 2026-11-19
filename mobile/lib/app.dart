@@ -2,9 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import 'ui/app_theme.dart';
+import 'package:jade_cart_mobile/features/account/presentation/pages/account_page.dart';
+import 'package:jade_cart_mobile/features/cart/presentation/pages/cart_page.dart';
+import 'package:jade_cart_mobile/features/catalog/presentation/pages/home_page.dart';
+import 'package:jade_cart_mobile/features/catalog/presentation/pages/product_detail_page.dart';
+import 'package:jade_cart_mobile/features/catalog/presentation/pages/shop_page.dart';
+import 'package:jade_cart_mobile/features/checkout/presentation/pages/checkout_page.dart';
+import 'package:jade_cart_mobile/features/orders/presentation/pages/order_detail_page.dart';
+import 'package:jade_cart_mobile/ui/app_theme.dart';
 
-/// 底部页签路由 (StatefulShellRoute 各分支独立导航栈)
+/// 路由: 底部四页签 (StatefulShellRoute 各分支独立栈) + 详情页
 final routerProvider = Provider<GoRouter>((ref) {
   return GoRouter(
     initialLocation: '/home',
@@ -27,6 +34,14 @@ final routerProvider = Provider<GoRouter>((ref) {
                 path: '/shop',
                 name: 'shop',
                 builder: (context, state) => const ShopPage(),
+                routes: [
+                  GoRoute(
+                    path: ':slug',
+                    name: 'product',
+                    builder: (context, state) =>
+                        ProductDetailPage(slug: state.pathParameters['slug']!),
+                  ),
+                ],
               ),
             ],
           ),
@@ -49,6 +64,17 @@ final routerProvider = Provider<GoRouter>((ref) {
             ],
           ),
         ],
+      ),
+      GoRoute(
+        path: '/checkout',
+        name: 'checkout',
+        builder: (context, state) => const CheckoutPage(),
+      ),
+      GoRoute(
+        path: '/orders/:publicId',
+        name: 'order',
+        builder: (context, state) =>
+            OrderDetailPage(publicId: state.pathParameters['publicId']!),
       ),
     ],
   );
@@ -94,60 +120,6 @@ class HomeShell extends StatelessWidget {
           for (final (label, icon) in _tabs)
             NavigationDestination(icon: Icon(icon), label: label),
         ],
-      ),
-    );
-  }
-}
-
-// ---------- 页签占位 (各 feature 提交逐个替换) ----------
-
-class HomePage extends StatelessWidget {
-  const HomePage({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return _StubPage('Home');
-  }
-}
-
-class ShopPage extends StatelessWidget {
-  const ShopPage({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return _StubPage('Shop');
-  }
-}
-
-class CartPage extends StatelessWidget {
-  const CartPage({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return _StubPage('Cart');
-  }
-}
-
-class AccountPage extends StatelessWidget {
-  const AccountPage({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return _StubPage('Account');
-  }
-}
-
-class _StubPage extends StatelessWidget {
-  const _StubPage(this.title);
-
-  final String title;
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: Text(title)),
-      body: Center(
-        child: Text(title, style: Theme.of(context).textTheme.headlineMedium),
       ),
     );
   }

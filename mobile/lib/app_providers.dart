@@ -4,6 +4,8 @@ import 'core/api_client.dart';
 import 'core/app_config.dart';
 import 'core/repositories.dart';
 import 'core/server_config.dart';
+import 'features/orders/data/order_history_store.dart';
+import 'features/orders/presentation/controllers/order_history_controller.dart';
 
 /// main() 启动前注入的初始服务器地址 (持久化值; null → 平台默认)
 final initialServerUrlProvider = Provider<String?>((ref) => null);
@@ -60,4 +62,9 @@ final cartRepositoryProvider = Provider<CartRepository>((ref) {
 
 final checkoutRepositoryProvider = Provider<CheckoutRepository>((ref) {
   return CheckoutRepository(ref.watch(apiClientProvider));
+});
+
+/// 订单历史存储: per-server key (切服务器后历史隔离)
+final orderHistoryStoreProvider = Provider<OrderHistoryStore>((ref) {
+  return SecureOrderHistoryStore(serverUrl: ref.watch(serverUrlProvider));
 });

@@ -12,6 +12,7 @@ final class CartLine {
     required this.quantity,
     required this.available,
     required this.lineTotalCents,
+    required this.mainImagePath,
   });
 
   final int variantId;
@@ -24,6 +25,9 @@ final class CartLine {
   final int available;
   final int lineTotalCents;
 
+  /// 商品主图相对路径 (后端补字段, 供购物车列表展示)
+  final String mainImagePath;
+
   factory CartLine.fromJson(JsonMap json) {
     return CartLine(
       variantId: intOf(json, 'variantId'),
@@ -35,6 +39,7 @@ final class CartLine {
       quantity: intOf(json, 'quantity'),
       available: intOf(json, 'available'),
       lineTotalCents: intOf(json, 'lineTotalCents'),
+      mainImagePath: stringOf(json, 'mainImagePath'),
     );
   }
 }
