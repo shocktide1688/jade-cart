@@ -71,6 +71,8 @@ public class StoreCheckoutController {
         Order order = orderService.checkout(token, req.email(), req.shipName(), req.country());
         PaymentProvider provider = orderService.providerOf(order);
         PaymentProvider.Initiation initiation = provider.createPayment(order);
+        // 网关会话号落库 (对账/排查用)
+        orderService.attachPaymentSession(order.publicId, initiation.providerRef());
 
         return Response.ok(
                         R.ok(

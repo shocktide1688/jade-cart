@@ -22,7 +22,15 @@ public interface PaymentProvider {
     /** 网关退款; 抛异常 = 退款失败 (订单状态不变) */
     RefundResult refund(Order order);
 
+    /** 主动查询网关支付状态 (对账用, 按 order.paymentSessionRef 查); 默认不支持 */
+    default java.util.Optional<PaymentStatus> queryPayment(Order order) {
+        return java.util.Optional.empty();
+    }
+
     record Initiation(String redirectUrl, String providerRef) {}
 
     record RefundResult(String providerRefundId, String raw) {}
+
+    /** 网关侧支付状态: paid=true 且金额/币种经 markPaid 复核后入账 */
+    record PaymentStatus(boolean paid, long amountCents, String currency, String paymentRef) {}
 }

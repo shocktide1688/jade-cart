@@ -161,6 +161,30 @@ class OrderFlowTest {
     }
 
     @Test
+    void reAddAfterCheckout_sameTokenSucceeds() throws Exception {
+        // 回归: 结算后旧购物车转 CONVERTED, 但 token 必须释放;
+        // 否则顾客用同 token 再加购会撞 mall_cart.token 唯一约束 (500)
+        Long variantId = seedProduct(10);
+        String token = cartService.newToken();
+        cartService.addItem(token, variantId, 2);
+        orderService.checkout(token, "t5@example.com", null, "US");
+
+        // 同 token 再次加购 → 必须成功, 且落在新建的 ACTIVE 购物车上
+        com.jade.cart.trade.dto.CartView view = cartService.addItem(token, variantId, 1);
+        assertEquals(1, view.items().size());
+        assertEquals(1, view.items().get(0).quantity());
+        // 旧 token 已被释放: 该 token 下不应再有 CONVERTED 购物车
+        assertEquals(
+                0,
+                Cart.count("token = ?1 and status = ?2", token, Cart.STATUS_CONVERTED),
+                "CONVERTED 购物车必须释放 token");
+        assertEquals(
+                1,
+                Cart.count("token = ?1 and status = ?2", token, Cart.STATUS_ACTIVE),
+                "同 token 应有且仅有一个 ACTIVE 购物车");
+    }
+
+    @Test
     void webhook_idempotent_doubleMarkPaid_commitsStockOnce() throws Exception {
         Long variantId = seedProduct(10);
         String token = cartService.newToken();

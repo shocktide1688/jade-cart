@@ -29,6 +29,8 @@ public class StripeProvider implements PaymentProvider {
 
     @Inject PaymentSettings settings;
 
+    @Inject com.jade.cart.settings.service.MarketService marketService;
+
     private final HttpClient http =
             HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(10)).build();
     private final ObjectMapper mapper = new ObjectMapper();
@@ -47,23 +49,46 @@ public class StripeProvider implements PaymentProvider {
     public Initiation createPayment(Order order) {
         String secret = settings.stripeSecret().orElseThrow();
         String base = settings.storeBaseUrl();
-        String form =
-                "mode=payment"
-                        + "&client_reference_id="
-                        + order.publicId
-                        + "&success_url="
-                        + enc(base + "/orders/" + order.publicId + "?paid=1")
-                        + "&cancel_url="
-                        + enc(base + "/orders/" + order.publicId)
-                        + "&line_items[0][quantity]=1"
-                        + "&line_items[0][price_data][currency]="
-                        + enc(order.currency.toLowerCase(Locale.ROOT))
-                        + "&line_items[0][price_data][unit_amount]="
-                        + order.totalCents
-                        + "&line_items[0][price_data][product_data][name]="
-                        + enc("Order " + order.orderNumber);
-        JsonNode resp = post(API + "/checkout/sessions", secret, form);
+        // 按经营市场路由支付方式 (默认 card; Apple Pay / Google Pay 随 card 自动出现)
+        java.util.List<String> methods =
+                settings.stripeMethods(marketService.current().code(), order.currency);
+        StringBuilder form = new StringBuilder("mode=payment");
+        for (int i = 0; i < methods.size(); i++) {
+            form.append("&payment_method_types[").append(i).append("]=").append(methods.get(i));
+        }
+        form.append("&client_reference_id=")
+                .append(order.publicId)
+                .append("&success_url=")
+                .append(enc(base + "/orders/" + order.publicId + "?paid=1"))
+                .append("&cancel_url=")
+                .append(enc(base + "/orders/" + order.publicId))
+                .append("&line_items[0][quantity]=1")
+                .append("&line_items[0][price_data][currency]=")
+                .append(enc(order.currency.toLowerCase(Locale.ROOT)))
+                .append("&line_items[0][price_data][unit_amount]=")
+                .append(order.totalCents)
+                .append("&line_items[0][price_data][product_data][name]=")
+                .append(enc("Order " + order.orderNumber));
+        JsonNode resp = post(API + "/checkout/sessions", secret, form.toString());
         return new Initiation(resp.path("url").asText(), resp.path("id").asText());
+    }
+
+    /** 对账: 按 Checkout Session id 查支付状态 (webhook 丢失兜底) */
+    @Override
+    public java.util.Optional<PaymentStatus> queryPayment(Order order) {
+        if (order.paymentSessionRef == null || order.paymentSessionRef.isBlank()) {
+            return java.util.Optional.empty();
+        }
+        JsonNode session =
+                get(
+                        API + "/checkout/sessions/" + order.paymentSessionRef,
+                        settings.stripeSecret().orElseThrow());
+        return java.util.Optional.of(
+                new PaymentStatus(
+                        "paid".equals(session.path("payment_status").asText()),
+                        session.path("amount_total").asLong(0),
+                        session.path("currency").asText("usd").toUpperCase(Locale.ROOT),
+                        session.path("payment_intent").asText("")));
     }
 
     /** 验签 (Stripe-Signature: t=...,v1=...), 返回解析后的事件 JSON; 失败抛异常拒绝处理 */
@@ -125,13 +150,7 @@ public class StripeProvider implements PaymentProvider {
                             .POST(HttpRequest.BodyPublishers.ofString(form, StandardCharsets.UTF_8))
                             .timeout(Duration.ofSeconds(30))
                             .build();
-            HttpResponse<String> resp = http.send(request, HttpResponse.BodyHandlers.ofString());
-            JsonNode json = mapper.readTree(resp.body());
-            if (resp.statusCode() >= 300) {
-                String msg = json.path("error").path("message").asText(resp.body());
-                throw new BizException("Stripe API 错误: " + msg);
-            }
-            return json;
+            return send(request);
         } catch (BizException e) {
             throw e;
         } catch (Exception e) {
@@ -139,6 +158,34 @@ public class StripeProvider implements PaymentProvider {
             ex.initCause(e);
             throw ex;
         }
+    }
+
+    private JsonNode get(String url, String secret) {
+        try {
+            HttpRequest request =
+                    HttpRequest.newBuilder(URI.create(url))
+                            .header("Authorization", "Bearer " + secret)
+                            .GET()
+                            .timeout(Duration.ofSeconds(30))
+                            .build();
+            return send(request);
+        } catch (BizException e) {
+            throw e;
+        } catch (Exception e) {
+            BizException ex = new BizException("Stripe 请求失败: " + e.getMessage());
+            ex.initCause(e);
+            throw ex;
+        }
+    }
+
+    private JsonNode send(HttpRequest request) throws Exception {
+        HttpResponse<String> resp = http.send(request, HttpResponse.BodyHandlers.ofString());
+        JsonNode json = mapper.readTree(resp.body());
+        if (resp.statusCode() >= 300) {
+            String msg = json.path("error").path("message").asText(resp.body());
+            throw new BizException("Stripe API 错误: " + msg);
+        }
+        return json;
     }
 
     private String hmac(String secret, String payload) {

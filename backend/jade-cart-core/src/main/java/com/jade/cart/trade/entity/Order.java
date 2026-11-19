@@ -83,6 +83,10 @@ public class Order extends PanacheEntityBase {
     @Column(name = "payment_ref", length = 120)
     public String paymentRef;
 
+    /** 网关会话号 (Stripe Checkout Session id / PayPal order id), 结算发起时落库, 对账/排查用 */
+    @Column(name = "payment_session_ref", length = 120)
+    public String paymentSessionRef;
+
     @Column(name = "reservation_expires_at")
     public LocalDateTime reservationExpiresAt;
 

@@ -52,6 +52,11 @@ public class Cart extends PanacheEntityBase {
         return find("token = ?1 and status = ?2", token, STATUS_ACTIVE).firstResultOptional();
     }
 
+    /** token 是否已被任意购物车占用 (含历史 CONVERTED 行); 用于新建购物车前的冲突预判 */
+    public static boolean tokenTaken(String token) {
+        return count("token = ?1", token) > 0;
+    }
+
     public List<CartItem> items() {
         return CartItem.listByCart(id);
     }

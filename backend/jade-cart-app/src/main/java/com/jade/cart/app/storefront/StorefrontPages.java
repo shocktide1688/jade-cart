@@ -8,6 +8,7 @@ import com.jade.cart.catalog.entity.Product;
 import com.jade.cart.catalog.entity.ProductImage;
 import com.jade.cart.catalog.service.CatalogService;
 import com.jade.cart.trade.dto.CartView;
+import com.jade.cart.trade.entity.Cart;
 import com.jade.cart.trade.entity.Order;
 import com.jade.cart.trade.service.CartService;
 import com.jade.cart.trade.service.OrderService;
@@ -39,7 +40,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Optional;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 
 /** 店面 SSR 页面 (Qute, 英文, 无 JS 可用 — kartwo 理念): 首页 / 商品列表 / 详情 / 购物车 / Mock 收银台 / 订单状态 */
@@ -381,16 +381,18 @@ public class StorefrontPages {
     @GET
     @Path("cart")
     public Response cartPage(@Context HttpHeaders headers, @QueryParam("error") String error) {
+        String requestToken = CartService.readToken(headers).orElse(null);
+        Cart cartEntity = requestToken == null ? null : cartService.getOrCreate(requestToken);
         CartView view =
-                Optional.ofNullable(CartService.readToken(headers).orElse(null))
-                        .map(token -> cartService.view(cartService.getOrCreate(token)))
-                        .orElseGet(() -> new CartView(null, "USD", List.of(), 0L));
+                cartEntity == null
+                        ? new CartView(null, "USD", List.of(), 0L)
+                        : cartService.view(cartEntity);
         // Cross-Sell: 空购物车时展示在售商品 (对标 Shopify 空车推荐位)
         List<ProductView.Summary> cross =
                 catalogService.activeProducts(null, null, 4).stream()
                         .map(catalogService::toSummary)
                         .toList();
-        return page(
+        String html =
                 cart.data("cart", view)
                         .data("cross", cross)
                         .data("error", error)
@@ -401,7 +403,15 @@ public class StorefrontPages {
                         .data("t", t(headers))
                         .data("langs", langs(headers))
                         .data("seo", seo(fmt(t(headers).seoCart(), storeName), null, true))
-                        .render());
+                        .render();
+        // token 冲突时服务端换了新 token → 回写 cookie, 否则顾客会看到空购物车
+        if (cartEntity != null && !cartEntity.token.equals(requestToken)) {
+            return Response.ok(html)
+                    .header("Cache-Control", "no-cache")
+                    .cookie(cartCookie(cartEntity.token))
+                    .build();
+        }
+        return page(html);
     }
 
     @GET
@@ -956,6 +966,16 @@ public class StorefrontPages {
     }
 
     private record TokenBox(String token, boolean isNew) {}
+
+    /** cart_token cookie (30 天, httpOnly) */
+    private NewCookie cartCookie(String token) {
+        return new NewCookie.Builder(CartService.CART_COOKIE)
+                .value(token)
+                .path("/")
+                .maxAge(60 * 60 * 24 * 30)
+                .httpOnly(true)
+                .build();
+    }
 
     private TokenBox tokenBox(HttpHeaders headers) {
         return CartService.readToken(headers)

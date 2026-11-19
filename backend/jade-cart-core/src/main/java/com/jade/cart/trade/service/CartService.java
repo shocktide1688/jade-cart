@@ -25,14 +25,19 @@ public class CartService {
 
     @Inject CatalogService catalogService;
 
-    /** 取 ACTIVE 购物车, 无则新建 (token 保持不变, 结算 CONVERTED 后下次重建) */
+    /**
+     * 取 ACTIVE 购物车, 无则新建 (token 保持不变, 结算 CONVERTED 后下次重建)
+     *
+     * <p>防御: 若 token 已被历史购物车占用 (旧版本结算后未释放 token, 或并发竞态), 直接用同 token 新建 会撞 mall_cart.token 唯一约束 →
+     * 此时改用新 token 建车, 由调用方回写 cookie (顾客无感)。
+     */
     @Transactional
     public Cart getOrCreate(String token) {
         return Cart.activeByToken(token)
                 .orElseGet(
                         () -> {
                             Cart cart = new Cart();
-                            cart.token = token;
+                            cart.token = Cart.tokenTaken(token) ? newToken() : token;
                             cart.persist();
                             return cart;
                         });

@@ -164,7 +164,11 @@ public class OrderService {
         }
 
         // ⑥ 购物车 CONVERTED
+        // 同时释放 token: mall_cart.token 是唯一约束, 若 CONVERTED 购物车继续占用原 token,
+        // 顾客下次加购会用同 token 新建 ACTIVE 购物车 → 唯一约束冲突 (500)。
+        // 改为历史占位 token (按 publicId 唯一), 原 token 即可被新购物车复用, cookie 无需变更。
         cart.status = Cart.STATUS_CONVERTED;
+        cart.token = "conv-" + cart.publicId;
         cart.persist();
 
         // ⑦ 下单确认邮件入队 (同事务, outbox 唯一约束幂等)
@@ -356,6 +360,70 @@ public class OrderService {
             }
         }
         return expired.size();
+    }
+
+    // ---------- 支付对账 ----------
+
+    /** 结算发起后记录网关会话号 (Stripe session / PayPal order id), 对账与人工排查用 */
+    @Transactional
+    public void attachPaymentSession(String orderPublicId, String sessionRef) {
+        Order order = mustFind(orderPublicId);
+        order.paymentSessionRef = sessionRef;
+        order.persist();
+    }
+
+    /**
+     * 支付对账 (webhook 丢失兜底): 扫有网关会话号的 PENDING 订单 + 近 24h 内取消的订单, 主动问网关; 已支付则走 markPaid 幂等路径
+     * (PENDING→PAID / 迟到款自动转 PAYMENT_REVIEW); 单笔失败不拖垮整批
+     */
+    @Transactional
+    public int reconcilePayments() {
+        List<Order> candidates = new java.util.ArrayList<>();
+        candidates.addAll(
+                Order.<Order>find(
+                                "status = ?1 and paymentSessionRef is not null",
+                                Order.STATUS_PENDING)
+                        .list());
+        candidates.addAll(
+                Order.<Order>find(
+                                "status = ?1 and paymentSessionRef is not null and cancelledAt > ?2",
+                                Order.STATUS_CANCELLED,
+                                LocalDateTime.now().minusHours(24))
+                        .list());
+        int reconciled = 0;
+        for (Order order : candidates) {
+            if (reconcileOne(order)) {
+                reconciled++;
+            }
+        }
+        return reconciled;
+    }
+
+    private boolean reconcileOne(Order order) {
+        try {
+            Optional<PaymentProvider> gateway =
+                    provider(order.paymentProvider == null ? "mock" : order.paymentProvider);
+            if (gateway.isEmpty()) {
+                return false;
+            }
+            Optional<PaymentProvider.PaymentStatus> status = gateway.get().queryPayment(order);
+            if (status.isEmpty() || !status.get().paid()) {
+                return false;
+            }
+            Log.warnf(
+                    "reconcile: webhook missed order=%s via %s, recovering",
+                    order.orderNumber, gateway.get().name());
+            return markPaid(
+                    gateway.get().name(),
+                    "recon_" + order.paymentSessionRef,
+                    order.publicId,
+                    status.get().amountCents(),
+                    status.get().currency(),
+                    status.get().paymentRef());
+        } catch (Exception e) {
+            Log.errorf(e, "reconcile failed: order=%s", order.orderNumber);
+            return false;
+        }
     }
 
     // ---------- 查询/视图 ----------

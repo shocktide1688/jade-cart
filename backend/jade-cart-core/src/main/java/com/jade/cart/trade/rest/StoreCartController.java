@@ -44,7 +44,8 @@ public class StoreCartController {
     @Operation(summary = "查看购物车 (无 cookie 时建新会话)")
     public Response get(@Context HttpHeaders headers) {
         TokenBox box = resolve(headers);
-        return wrap(box, cartService.view(cartService.getOrCreate(box.token)));
+        Cart cart = cartService.getOrCreate(box.token);
+        return wrap(box, cartService.view(cart), cart);
     }
 
     @GET
@@ -68,7 +69,8 @@ public class StoreCartController {
             return Response.ok(R.fail(400, "variantId 不能为空")).build();
         }
         int qty = req.quantity() == null ? 1 : req.quantity();
-        return wrap(box, cartService.addItem(box.token, req.variantId(), qty));
+        Cart cart = cartService.getOrCreate(box.token);
+        return wrap(box, cartService.addItem(cart.token, req.variantId(), qty), cart);
     }
 
     @PUT
@@ -79,7 +81,8 @@ public class StoreCartController {
             @Context HttpHeaders headers, @PathParam("variantId") Long variantId, UpdateReq req) {
         TokenBox box = resolve(headers);
         int qty = req.quantity() == null ? 1 : req.quantity();
-        return wrap(box, cartService.updateItem(box.token, variantId, qty));
+        Cart cart = cartService.getOrCreate(box.token);
+        return wrap(box, cartService.updateItem(cart.token, variantId, qty), cart);
     }
 
     @DELETE
@@ -88,7 +91,8 @@ public class StoreCartController {
     @Operation(summary = "移除")
     public Response remove(@Context HttpHeaders headers, @PathParam("variantId") Long variantId) {
         TokenBox box = resolve(headers);
-        return wrap(box, cartService.removeItem(box.token, variantId));
+        Cart cart = cartService.getOrCreate(box.token);
+        return wrap(box, cartService.removeItem(cart.token, variantId), cart);
     }
 
     // ---------- 内部 ----------
@@ -101,12 +105,18 @@ public class StoreCartController {
                 .orElseGet(() -> new TokenBox(CartService.newToken(), true));
     }
 
-    private Response wrap(TokenBox box, CartView view) {
+    /**
+     * 写回 cookie
+     *
+     * <p>两种情况需要回写: 新会话 (isNew); 或 token 冲突时服务端换了新 token (cart.token 与请求 token 不同)。
+     */
+    private Response wrap(TokenBox box, CartView view, Cart cart) {
         Response.ResponseBuilder builder = Response.ok(R.ok(view));
-        if (box.isNew()) {
+        String effectiveToken = cart == null ? box.token() : cart.token;
+        if (box.isNew() || !effectiveToken.equals(box.token())) {
             builder.cookie(
                     new NewCookie.Builder(CartService.CART_COOKIE)
-                            .value(box.token())
+                            .value(effectiveToken)
                             .path("/")
                             .maxAge(COOKIE_MAX_AGE)
                             .httpOnly(true)

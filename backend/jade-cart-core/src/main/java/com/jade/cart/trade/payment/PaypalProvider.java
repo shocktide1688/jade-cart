@@ -86,6 +86,30 @@ public class PaypalProvider implements PaymentProvider {
         return post("/v2/checkout/orders/" + paypalOrderId + "/capture", "{}");
     }
 
+    /** 对账: 按 PayPal order id 查状态 (webhook 丢失兜底); COMPLETED 时取 capture id 作 paymentRef */
+    @Override
+    public java.util.Optional<PaymentStatus> queryPayment(Order order) {
+        if (order.paymentSessionRef == null || order.paymentSessionRef.isBlank()) {
+            return java.util.Optional.empty();
+        }
+        JsonNode resp = get("/v2/checkout/orders/" + order.paymentSessionRef);
+        JsonNode unit = resp.path("purchase_units").path(0);
+        JsonNode amount = unit.path("amount");
+        long amountCents = Math.round(amount.path("value").asDouble(0) * 100);
+        String currency = amount.path("currency_code").asText(order.currency);
+        String captureId = "";
+        JsonNode captures = unit.path("payments").path("captures");
+        if (captures.isArray() && !captures.isEmpty()) {
+            captureId = captures.get(0).path("id").asText("");
+        }
+        return java.util.Optional.of(
+                new PaymentStatus(
+                        "COMPLETED".equals(resp.path("status").asText()),
+                        amountCents,
+                        currency,
+                        captureId));
+    }
+
     /** webhook 验签: 调 verify-webhook-signature API, true = 可信 */
     public boolean verifyWebhook(
             String body,
@@ -202,13 +226,7 @@ public class PaypalProvider implements PaymentProvider {
                             .POST(HttpRequest.BodyPublishers.ofString(body, StandardCharsets.UTF_8))
                             .timeout(Duration.ofSeconds(30))
                             .build();
-            HttpResponse<String> resp = http.send(request, HttpResponse.BodyHandlers.ofString());
-            JsonNode json = mapper.readTree(resp.body());
-            if (resp.statusCode() >= 300) {
-                String msg = json.path("message").asText(resp.body());
-                throw new BizException("PayPal API 错误: " + msg);
-            }
-            return json;
+            return send(request);
         } catch (BizException e) {
             throw e;
         } catch (Exception e) {
@@ -216,6 +234,34 @@ public class PaypalProvider implements PaymentProvider {
             ex.initCause(e);
             throw ex;
         }
+    }
+
+    private JsonNode get(String path) {
+        try {
+            HttpRequest request =
+                    HttpRequest.newBuilder(URI.create(settings.paypalApiBase() + path))
+                            .header("Authorization", "Bearer " + token())
+                            .GET()
+                            .timeout(Duration.ofSeconds(30))
+                            .build();
+            return send(request);
+        } catch (BizException e) {
+            throw e;
+        } catch (Exception e) {
+            BizException ex = new BizException("PayPal 请求失败: " + e.getMessage());
+            ex.initCause(e);
+            throw ex;
+        }
+    }
+
+    private JsonNode send(HttpRequest request) throws Exception {
+        HttpResponse<String> resp = http.send(request, HttpResponse.BodyHandlers.ofString());
+        JsonNode json = mapper.readTree(resp.body());
+        if (resp.statusCode() >= 300) {
+            String msg = json.path("message").asText(resp.body());
+            throw new BizException("PayPal API 错误: " + msg);
+        }
+        return json;
     }
 
     private String decimal(long cents) {
