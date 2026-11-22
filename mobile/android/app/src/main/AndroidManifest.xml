@@ -3,7 +3,7 @@
          导致 release 包无法联网 (线上会表现为"无法连接服务器") -->
     <uses-permission android:name="android.permission.INTERNET"/>
     <application
-        android:label="Jade Cart"
+        android:label="${appLabel}"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher"
         android:usesCleartextTraffic="true">

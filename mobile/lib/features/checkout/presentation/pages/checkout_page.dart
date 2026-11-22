@@ -69,7 +69,12 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
                                   overflow: TextOverflow.ellipsis,
                                 ),
                               ),
-                              Text(formatMoney(line.lineTotalCents)),
+                              Text(
+                                formatMoney(
+                                  line.lineTotalCents,
+                                  currency: cartState.currency,
+                                ),
+                              ),
                             ],
                           ),
                         ),
@@ -84,7 +89,10 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
                           ),
                           const Spacer(),
                           Text(
-                            formatMoney(cartState.subtotalCents),
+                            formatMoney(
+                              cartState.subtotalCents,
+                              currency: cartState.currency,
+                            ),
                             style: theme.textTheme.titleMedium?.copyWith(
                               fontWeight: FontWeight.w700,
                             ),

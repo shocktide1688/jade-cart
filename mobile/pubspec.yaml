@@ -44,6 +44,9 @@ dependencies:
   cached_network_image: ^4.0.3
   intl: ^0.20.2
   path_provider: 2.1.5
+  # 玻璃组件全家桶; 底栏曾用 liquid_glass_bottom_navbar_plus (胶囊错位 bug), 已弃用
+  liquid_glass_widgets: ^1.18.0
+  flutter_html: ^3.0.0
 
 dev_dependencies:
   flutter_test:
@@ -103,3 +106,5 @@ flutter:
 # 锁定 2.2.x (MethodChannel 实现) 直到 jni 方案在本机可用。
 dependency_overrides:
   path_provider_android: 2.2.15
+  # html 0.15.7 删了内部顶层 matches(), flutter_html 3.0.0 依赖它 (//ignore: implementation_imports)
+  html: 0.15.6

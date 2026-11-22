@@ -2,41 +2,27 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import 'package:jade_cart_mobile/app_providers.dart';
+import 'package:jade_cart_mobile/core/brand.dart';
 import 'package:jade_cart_mobile/features/account/presentation/pages/account_page.dart';
-import 'package:jade_cart_mobile/features/account/presentation/pages/setup_page.dart';
 import 'package:jade_cart_mobile/features/cart/presentation/pages/cart_page.dart';
 import 'package:jade_cart_mobile/features/catalog/presentation/pages/home_page.dart';
 import 'package:jade_cart_mobile/features/catalog/presentation/pages/product_detail_page.dart';
 import 'package:jade_cart_mobile/features/catalog/presentation/pages/shop_page.dart';
+import 'package:jade_cart_mobile/features/catalog/presentation/controllers/catalog_controllers.dart';
 import 'package:jade_cart_mobile/features/checkout/presentation/pages/checkout_page.dart';
 import 'package:jade_cart_mobile/features/orders/presentation/pages/order_detail_page.dart';
 import 'package:jade_cart_mobile/ui/app_theme.dart';
+import 'package:jade_cart_mobile/ui/glass_tab_bar.dart';
 
 /// 路由: 底部四页签 (StatefulShellRoute 各分支独立栈) + 详情页
 ///
 /// 深链: jadecart:///shop/jade-tee → /shop/jade-tee (三斜杠, path 完整对齐路由);
 /// 需在 iOS Info.plist 开 FlutterDeepLinkingEnabled, Android Manifest 开 flutter_deeplinking_enabled。
+/// 后端地址写死在 Brand (构建期 STORE_KEY 选店), 不存在未配置/切服状态, 无需守卫。
 final routerProvider = Provider<GoRouter>((ref) {
-  final serverUrl = ref.watch(serverUrlProvider);
   return GoRouter(
     initialLocation: '/home',
-    // 未配置店铺地址 (release 包漏传 --dart-define) → 强制走配置引导页
-    redirect: (context, state) {
-      if (serverUrl.isEmpty && state.matchedLocation != '/setup') {
-        return '/setup';
-      }
-      if (serverUrl.isNotEmpty && state.matchedLocation == '/setup') {
-        return '/home';
-      }
-      return null;
-    },
     routes: [
-      GoRoute(
-        path: '/setup',
-        name: 'setup',
-        builder: (context, state) => const SetupPage(),
-      ),
       StatefulShellRoute.indexedStack(
         builder: (context, state, shell) => HomeShell(shell: shell),
         branches: [
@@ -107,7 +93,7 @@ class JadeCartApp extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return MaterialApp.router(
-      title: 'Jade Cart',
+      title: brand.name,
       theme: AppTheme.light(),
       darkTheme: AppTheme.dark(),
       themeMode: ThemeMode.system,
@@ -116,32 +102,34 @@ class JadeCartApp extends ConsumerWidget {
   }
 }
 
-/// 底部四页签壳: 首页 / 商店 / 购物车 / 我的
-class HomeShell extends StatelessWidget {
+/// 底部四页签壳: 首页 / 商店 / 购物车 / 我的 + 液态玻璃底栏 (搜索胶囊)
+///
+/// extendBody: 让内容滚到玻璃底栏下方产生折射; 各分支页底部已留玻璃条高度的边距。
+class HomeShell extends ConsumerWidget {
   const HomeShell({required this.shell, super.key});
 
   final StatefulNavigationShell shell;
 
-  static const _tabs = <(String, IconData)>[
-    ('Home', Icons.home_outlined),
-    ('Shop', Icons.storefront_outlined),
-    ('Cart', Icons.shopping_cart_outlined),
-    ('Account', Icons.person_outline),
-  ];
+  /// 商店分支在 branches 里的序号
+  static const _shopBranchIndex = 1;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return Scaffold(
+      extendBody: true,
       body: shell,
-      bottomNavigationBar: NavigationBar(
+      bottomNavigationBar: GlassTabBar(
         selectedIndex: shell.currentIndex,
         onDestinationSelected: (index) =>
             shell.goBranch(index, initialLocation: index == shell.currentIndex),
-        destinations: [
-          for (final (label, icon) in _tabs)
-            NavigationDestination(icon: Icon(icon), label: label),
-        ],
+        onSearchSubmitted: (query) => _search(ref, query),
       ),
     );
+  }
+
+  /// 底栏搜索提交 → 切到商店分支并按关键词刷新列表
+  void _search(WidgetRef ref, String query) {
+    ref.read(productListControllerProvider.notifier).search(query);
+    shell.goBranch(_shopBranchIndex);
   }
 }

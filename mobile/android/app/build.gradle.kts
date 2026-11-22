@@ -27,11 +27,26 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.jadecart.jade_cart_mobile"
         minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
+    }
+
+    // 双店 flavor: 一个代码库出两个店专属的包 (地址写死在 Dart Brand 配置, 由
+    // --dart-define=STORE_KEY 与 flavor 对应; applicationId/应用名按店区分)
+    flavorDimensions += "store"
+    productFlavors {
+        create("teawone") {
+            dimension = "store"
+            applicationId = "com.teawone.shop"
+            manifestPlaceholders["appLabel"] = "Tea One"
+        }
+        create("sinivora") {
+            dimension = "store"
+            applicationId = "com.sinivora.shop"
+            manifestPlaceholders["appLabel"] = "Sinivora"
+        }
     }
 
     signingConfigs {

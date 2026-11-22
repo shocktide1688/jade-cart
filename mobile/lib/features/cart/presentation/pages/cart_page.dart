@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:liquid_glass_widgets/liquid_glass_widgets.dart';
 
 import 'package:jade_cart_mobile/app_providers.dart';
 import 'package:jade_cart_mobile/core/trade_models.dart';
@@ -41,7 +42,13 @@ class _CartPageState extends ConsumerState<CartPage> {
         ],
       ),
       body: _body(context, state, baseUrl),
-      bottomNavigationBar: state.isEmpty ? null : _checkoutBar(context, state),
+      // 抬高结算栏, 避开壳层悬浮玻璃底栏 (extendBody)
+      bottomNavigationBar: state.isEmpty
+          ? null
+          : Padding(
+              padding: const EdgeInsets.only(bottom: 104),
+              child: _checkoutBar(context, state),
+            ),
     );
   }
 
@@ -56,15 +63,17 @@ class _CartPageState extends ConsumerState<CartPage> {
       );
     }
     if (state.isEmpty) {
-      return const EmptyView(
+      return EmptyView(
         title: 'Your cart is empty',
         subtitle: 'Browse the shop to add products.',
         icon: Icons.shopping_cart_outlined,
+        actionLabel: 'Browse products',
+        onAction: () => context.go('/shop'),
       );
     }
     return ListView.separated(
-      // 底部留出结算栏高度, 否则最后一行被遮住
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 100),
+      // 底部留出结算栏 + 悬浮玻璃底栏高度, 否则最后一行被遮住
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 220),
       itemCount: state.items.length,
       separatorBuilder: (_, _) => const SizedBox(height: 12),
       itemBuilder: (context, index) {
@@ -87,15 +96,12 @@ class _CartPageState extends ConsumerState<CartPage> {
 
   Widget _checkoutBar(BuildContext context, CartState state) {
     final theme = Theme.of(context);
-    return SafeArea(
-      child: Container(
-        padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
-        decoration: BoxDecoration(
-          color: theme.colorScheme.surface,
-          border: Border(
-            top: BorderSide(color: theme.colorScheme.outlineVariant),
-          ),
-        ),
+    // 悬浮玻璃结算栏, 与壳层玻璃底栏同风格
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+      child: GlassContainer(
+        padding: const EdgeInsets.fromLTRB(16, 10, 10, 10),
+        shape: const LiquidRoundedSuperellipse(borderRadius: 18),
         child: Row(
           children: [
             Expanded(
@@ -110,7 +116,7 @@ class _CartPageState extends ConsumerState<CartPage> {
                     ),
                   ),
                   Text(
-                    formatMoney(state.subtotalCents),
+                    formatMoney(state.subtotalCents, currency: state.currency),
                     style: theme.textTheme.titleMedium?.copyWith(
                       fontWeight: FontWeight.w700,
                     ),
@@ -118,9 +124,13 @@ class _CartPageState extends ConsumerState<CartPage> {
                 ],
               ),
             ),
-            FilledButton(
-              onPressed: () => context.push('/checkout'),
-              child: const Text('Checkout'),
+            GlassButton.custom(
+              onTap: () => context.push('/checkout'),
+              width: 128,
+              height: 44,
+              style: GlassButtonStyle.prominent,
+              shape: const LiquidRoundedSuperellipse(borderRadius: 12),
+              child: Text('Checkout', style: glassProminentTextStyle(theme)),
             ),
           ],
         ),
@@ -207,7 +217,7 @@ class _CartLineCard extends StatelessWidget {
                       ),
                       const Spacer(),
                       Text(
-                        formatMoney(line.lineTotalCents),
+                        formatMoney(line.lineTotalCents, currency: currency),
                         style: theme.textTheme.titleSmall?.copyWith(
                           fontWeight: FontWeight.w700,
                         ),

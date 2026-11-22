@@ -1,48 +1,23 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'core/api_client.dart';
-import 'core/app_config.dart';
+import 'core/brand.dart';
 import 'core/repositories.dart';
-import 'core/server_config.dart';
 import 'features/orders/data/order_history_store.dart';
 import 'features/orders/presentation/controllers/order_history_controller.dart';
-
-/// main() 启动前注入的初始服务器地址 (持久化值; null → 平台默认)
-final initialServerUrlProvider = Provider<String?>((ref) => null);
 
 /// cookie 持久化目录 (main() 用 path_provider 算好后 override)
 final cookieDirProvider = Provider<String>((ref) {
   throw UnimplementedError('cookieDirProvider 必须在 main() 中 override');
 });
 
-/// 服务器地址持久化 store (测试注入内存实现)
-final serverConfigStoreProvider = Provider<ServerConfigStore>((ref) {
-  return SecureServerConfigStore();
-});
-
-/// 当前服务器地址: 唯一写入点 = ServerUrlController.update (写持久化 + 切状态)
-///
-/// 状态变化 → apiClientProvider 及其下游全部重建, cookie jar 随实例隔离, 不会串用。
-final serverUrlProvider = StateNotifierProvider<ServerUrlController, String>((
-  ref,
-) {
-  final initial = ref.watch(initialServerUrlProvider) ?? AppConfig.apiBaseUrl;
-  return ServerUrlController(ref.watch(serverConfigStoreProvider), initial);
-});
-
-class ServerUrlController extends StateNotifier<String> {
-  ServerUrlController(this._store, String initial) : super(initial);
-
-  final ServerConfigStore _store;
-
-  Future<void> update(String url) async {
-    final normalized = normalizeServerUrl(url);
-    await _store.writeUrl(normalized);
-    state = normalized;
-  }
-}
+/// 当前店的后端地址: 写死在 Brand 配置里 (构建期 STORE_KEY 选店), 无运行时入口
+final serverUrlProvider = Provider<String>((ref) => brand.apiUrl);
 
 /// DI 链: serverUrl → apiClient → repositories
+///
+/// 地址是编译期写死的常量, 不会中途变化; ApiClient 的 cookie jar 仍持久化
+/// cart_token (购物车跨启动保留), 订单历史按地址隔离 (per-server key)。
 final apiClientProvider = Provider<ApiClient>((ref) {
   final client = ApiClient(
     baseUrl: ref.watch(serverUrlProvider),
@@ -64,7 +39,7 @@ final checkoutRepositoryProvider = Provider<CheckoutRepository>((ref) {
   return CheckoutRepository(ref.watch(apiClientProvider));
 });
 
-/// 订单历史存储: per-server key (切服务器后历史隔离)
+/// 订单历史存储: per-server key (同机多店各看各的订单)
 final orderHistoryStoreProvider = Provider<OrderHistoryStore>((ref) {
   return SecureOrderHistoryStore(serverUrl: ref.watch(serverUrlProvider));
 });

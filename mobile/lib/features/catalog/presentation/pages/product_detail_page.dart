@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_html/flutter_html.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:liquid_glass_widgets/liquid_glass_widgets.dart';
 
 import 'package:jade_cart_mobile/app_providers.dart';
 import 'package:jade_cart_mobile/core/catalog_models.dart';
@@ -18,8 +20,16 @@ class ProductDetailPage extends ConsumerStatefulWidget {
 }
 
 class _ProductDetailPageState extends ConsumerState<ProductDetailPage> {
+  final _pageController = PageController();
+  int _page = 0;
   int _quantity = 1;
   bool _adding = false;
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -54,17 +64,32 @@ class _ProductDetailPageState extends ConsumerState<ProductDetailPage> {
         // 4:5 + contain: 与 SSR 端 PDP 一致, 不裁切商家素材 (竖版营销图顶部常带文字)
         AspectRatio(
           aspectRatio: 4 / 5,
-          child: PageView.builder(
-            itemCount: images.length,
-            itemBuilder: (context, index) {
-              return ColoredBox(
-                color: Theme.of(context).colorScheme.surfaceContainerHighest,
-                child: StoreImage(
-                  url: mediaUrl(baseUrl, images[index], width: 1600),
-                  fit: BoxFit.contain,
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              PageView.builder(
+                controller: _pageController,
+                onPageChanged: (index) => setState(() => _page = index),
+                itemCount: images.length,
+                itemBuilder: (context, index) {
+                  return ColoredBox(
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.surfaceContainerHighest,
+                    child: StoreImage(
+                      url: mediaUrl(baseUrl, images[index], width: 1600),
+                      fit: BoxFit.contain,
+                    ),
+                  );
+                },
+              ),
+              if (images.length > 1)
+                Positioned(
+                  right: 12,
+                  bottom: 12,
+                  child: _PageIndicator(current: _page, total: images.length),
                 ),
-              );
-            },
+            ],
           ),
         ),
         Padding(
@@ -106,6 +131,27 @@ class _ProductDetailPageState extends ConsumerState<ProductDetailPage> {
                 quantity: _quantity,
                 onChanged: (value) => setState(() => _quantity = value),
               ),
+              // 富文本描述 (后端 HtmlSanitizer 消毒过): 与 SSR 一致, 空则整块不渲染
+              if (product.description.isNotEmpty) ...[
+                const SizedBox(height: 24),
+                Text(
+                  'Description',
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                Html(
+                  data: product.description,
+                  style: {
+                    'body': Style(
+                      margin: Margins.zero,
+                      padding: HtmlPaddings.zero,
+                      fontSize: FontSize(14),
+                      lineHeight: const LineHeight(1.6),
+                    ),
+                  },
+                ),
+              ],
             ],
           ),
         ),
@@ -117,20 +163,32 @@ class _ProductDetailPageState extends ConsumerState<ProductDetailPage> {
     final selection = ref.watch(variantSelectionProvider);
     final needsSelection =
         product.variants.length > 1 && !selection.hasSelection;
+    final enabled = !_adding && !needsSelection && product.totalAvailable > 0;
+    // 悬浮玻璃加购栏, 与玻璃底栏同风格
     return SafeArea(
       child: Padding(
         padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
-        child: FilledButton(
-          onPressed: (_adding || needsSelection || product.totalAvailable <= 0)
-              ? null
-              : () => _addToCart(product),
-          child: _adding
-              ? const SizedBox(
-                  height: 20,
-                  width: 20,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                )
-              : Text(needsSelection ? 'Select an option' : 'Add to cart'),
+        child: GlassContainer(
+          padding: const EdgeInsets.all(8),
+          shape: const LiquidRoundedSuperellipse(borderRadius: 18),
+          child: GlassButton.custom(
+            onTap: enabled ? () => _addToCart(product) : () {},
+            enabled: enabled,
+            width: double.infinity,
+            height: 48,
+            style: GlassButtonStyle.prominent,
+            shape: const LiquidRoundedSuperellipse(borderRadius: 12),
+            child: _adding
+                ? const SizedBox(
+                    height: 20,
+                    width: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : Text(
+                    needsSelection ? 'Select an option' : 'Add to cart',
+                    style: glassProminentTextStyle(Theme.of(context)),
+                  ),
+          ),
         ),
       ),
     );
@@ -197,6 +255,33 @@ class _VariantPicker extends ConsumerWidget {
           ],
         ),
       ],
+    );
+  }
+}
+
+/// 图集页码角标 ("2 / 5")
+class _PageIndicator extends StatelessWidget {
+  const _PageIndicator({required this.current, required this.total});
+
+  final int current;
+  final int total;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surface.withValues(alpha: 0.85),
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: theme.colorScheme.outlineVariant),
+      ),
+      child: Text(
+        '${current + 1} / $total',
+        style: theme.textTheme.labelSmall?.copyWith(
+          fontWeight: FontWeight.w600,
+        ),
+      ),
     );
   }
 }

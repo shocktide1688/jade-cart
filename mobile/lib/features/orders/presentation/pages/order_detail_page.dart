@@ -49,6 +49,8 @@ class _OrderDetailPageState extends ConsumerState<OrderDetailPage> {
     return Scaffold(
       appBar: AppBar(title: const Text('Order')),
       body: order.when(
+        // 轮询刷新时保留旧数据, 不再整页闪菊花
+        skipLoadingOnRefresh: true,
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (error, _) => ErrorView(
           message: '$error',
@@ -57,17 +59,27 @@ class _OrderDetailPageState extends ConsumerState<OrderDetailPage> {
         data: (view) {
           // 到终态就停轮询
           if (view.status.isSettled) _pollTimer?.cancel();
-          return _content(context, view);
+          return _content(context, view, refreshing: order.isRefreshing);
         },
       ),
     );
   }
 
-  Widget _content(BuildContext context, OrderView view) {
+  Widget _content(
+    BuildContext context,
+    OrderView view, {
+    required bool refreshing,
+  }) {
     final theme = Theme.of(context);
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
       children: [
+        // 轮询中的细进度条, 不打断内容
+        if (refreshing)
+          const Padding(
+            padding: EdgeInsets.only(bottom: 8),
+            child: LinearProgressIndicator(minHeight: 2),
+          ),
         _StatusBanner(status: view.status),
         const SizedBox(height: 16),
         Card(
@@ -96,17 +108,30 @@ class _OrderDetailPageState extends ConsumerState<OrderDetailPage> {
                             style: theme.textTheme.bodyMedium,
                           ),
                         ),
-                        Text(formatMoney(item.lineTotalCents)),
+                        Text(
+                          formatMoney(
+                            item.lineTotalCents,
+                            currency: view.currency,
+                          ),
+                        ),
                       ],
                     ),
                   ),
                 const Divider(height: 24),
-                _row(context, 'Subtotal', formatMoney(view.subtotalCents)),
-                _row(context, 'Shipping', formatMoney(view.shippingCents)),
+                _row(
+                  context,
+                  'Subtotal',
+                  formatMoney(view.subtotalCents, currency: view.currency),
+                ),
+                _row(
+                  context,
+                  'Shipping',
+                  formatMoney(view.shippingCents, currency: view.currency),
+                ),
                 _row(
                   context,
                   'Total',
-                  formatMoney(view.totalCents),
+                  formatMoney(view.totalCents, currency: view.currency),
                   emphasize: true,
                 ),
               ],

@@ -121,3 +121,8 @@ final featuredProductsProvider = FutureProvider<List<ProductSummary>>((
   if (featured.isNotEmpty) return featured;
   return repository.products(limit: 10);
 });
+
+/// 分类树 (首页分类入口; 与商品列表筛选共用仓储)
+final categoriesProvider = FutureProvider<List<CategoryNode>>((ref) {
+  return ref.watch(catalogRepositoryProvider).categories();
+});

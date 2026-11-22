@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:jade_cart_mobile/app_providers.dart';
 import 'package:jade_cart_mobile/features/catalog/presentation/controllers/catalog_controllers.dart';
 import 'package:jade_cart_mobile/ui/common.dart';
+import 'package:jade_cart_mobile/ui/skeleton.dart';
 
 /// 商品列表页: 搜索 + 分类筛选 + 商品网格
 class ShopPage extends ConsumerStatefulWidget {
@@ -84,7 +85,7 @@ class _ShopPageState extends ConsumerState<ShopPage> {
     String baseUrl,
   ) {
     if (state.loading && state.items.isEmpty) {
-      return const Center(child: CircularProgressIndicator());
+      return const ProductGridSkeleton();
     }
     if (state.error.isNotEmpty && state.items.isEmpty) {
       return ErrorView(message: state.error, onRetry: controller.load);
@@ -97,7 +98,8 @@ class _ShopPageState extends ConsumerState<ShopPage> {
       );
     }
     return GridView.builder(
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+      // 底部留悬浮玻璃底栏高度, 避免最后一排被遮住
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 128),
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 2,
         mainAxisSpacing: 14,

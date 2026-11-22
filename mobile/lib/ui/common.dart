@@ -2,6 +2,18 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
 import 'package:jade_cart_mobile/core/catalog_models.dart';
+import 'package:jade_cart_mobile/ui/app_theme.dart';
+import 'package:jade_cart_mobile/ui/money.dart';
+
+export 'package:jade_cart_mobile/ui/money.dart' show formatMoney;
+
+/// prominent 玻璃按钮的文字样式
+///
+/// GlassButtonStyle.prominent 的药丸在浅/深色模式下都渲染成浅色玻璃,
+/// 深色主题的 colorScheme.primary 是浅绿, 落在浅玻璃上对比度不足,
+/// 故固定用深玉绿 (seedColor), 两种模式下都清晰。
+TextStyle glassProminentTextStyle(ThemeData theme) =>
+    const TextStyle(fontWeight: FontWeight.w700, color: AppTheme.seedColor);
 
 /// 媒体基址 (后端图片走 /media/{path}?w=, 仅 200/800/1600 三档派生图)
 String mediaUrl(String baseUrl, String path, {int width = 800}) {
@@ -9,9 +21,6 @@ String mediaUrl(String baseUrl, String path, {int width = 800}) {
   final normalized = path.startsWith('/') ? path.substring(1) : path;
   return '$baseUrl/media/$normalized?w=$width';
 }
-
-/// 分 → 展示金额 ("19.90")
-String formatMoney(int cents) => (cents / 100).toStringAsFixed(2);
 
 /// 商店图片 (带占位与淡入)
 class StoreImage extends StatelessWidget {
@@ -183,11 +192,17 @@ class EmptyView extends StatelessWidget {
     super.key,
     this.subtitle,
     this.icon = Icons.inbox_outlined,
+    this.actionLabel,
+    this.onAction,
   });
 
   final String title;
   final String? subtitle;
   final IconData icon;
+
+  /// 可选 CTA (如空购物车的"去逛逛"), 与 onAction 成对出现
+  final String? actionLabel;
+  final VoidCallback? onAction;
 
   @override
   Widget build(BuildContext context) {
@@ -209,6 +224,14 @@ class EmptyView extends StatelessWidget {
                 style: theme.textTheme.bodySmall?.copyWith(
                   color: theme.colorScheme.onSurfaceVariant,
                 ),
+              ),
+            ],
+            if (actionLabel != null && onAction != null) ...[
+              const SizedBox(height: 20),
+              FilledButton.icon(
+                onPressed: onAction,
+                icon: const Icon(Icons.storefront_outlined, size: 18),
+                label: Text(actionLabel!),
               ),
             ],
           ],
