@@ -53,7 +53,7 @@ flutter run -d android
 App 内没有任何服务器地址入口（release 缺 STORE_KEY 直接启动失败，宁可不起、不可连错店）：
 
 ```bash
-# teawone (Tea One / shop.teawone.com / com.teawone.shop)
+# teawone (TeaWone / shop.teawone.com / com.teawone.shop)
 flutter build apk --flavor teawone --release --dart-define=STORE_KEY=teawone
 flutter build ipa --flavor teawone --release --dart-define=STORE_KEY=teawone
 

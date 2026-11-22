@@ -56,7 +56,7 @@ BrandConfig resolveBrand() {
 /// 两店配置 (写死; 新增店 = 加一个条目 + 对应原生 flavor)
 const Map<String, BrandConfig> _all = {
   'teawone': BrandConfig(
-    name: 'Tea One',
+    name: 'TeaWone',
     apiUrl: 'https://shop.teawone.com',
     tagline: 'Wood-fired handmade tea wares',
   ),

@@ -40,7 +40,7 @@ android {
         create("teawone") {
             dimension = "store"
             applicationId = "com.teawone.shop"
-            manifestPlaceholders["appLabel"] = "Tea One"
+            manifestPlaceholders["appLabel"] = "TeaWone"
         }
         create("sinivora") {
             dimension = "store"
