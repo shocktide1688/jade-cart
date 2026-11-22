@@ -175,7 +175,7 @@ async function save() {
   saving.value = true
   try {
     const body = { name: form.name, slug: form.slug || undefined, parentId: form.parentId, sortOrder: form.sortOrder, status: form.enabled ? 1 : 0 }
-    if (form.id) await request.put(`/categories/${form.id}`, body)
+    if (form.id) await request.put(`/api/v1/categories/${form.id}`, body)
     else await request.post('/api/v1/categories', body)
     ElMessage.success('已保存')
     dialogVisible.value = false
@@ -184,7 +184,7 @@ async function save() {
 }
 
 async function remove(id: number) {
-  await request.delete(`/categories/${id}`)
+  await request.delete(`/api/v1/categories/${id}`)
   ElMessage.success('已删除')
   load()
 }
