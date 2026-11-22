@@ -252,7 +252,23 @@
                 <el-radio value="jost">
                   Jost (几何无衬线)
                 </el-radio>
+                <el-radio value="serif-sc">
+                  思源宋体标题 + 黑体正文 (中文品牌)
+                </el-radio>
+                <el-radio value="sans-sc">
+                  思源黑体 (中文品牌)
+                </el-radio>
               </el-radio-group>
+            </el-form-item>
+            <el-form-item label="点缀色">
+              <el-color-picker
+                v-model="themeForm.accent"
+                show-alpha
+              />
+              <span
+                class="muted"
+                style="margin-left:10px;font-size:12px"
+              >价格/小标题用色 (茶金 #B08D57 / 雾霭蓝 #7B9AA6 等); 留空 = 跟随正文弱化色</span>
             </el-form-item>
             <el-form-item label="Logo">
               <div style="display:flex;gap:12px;align-items:center">
@@ -319,7 +335,7 @@ const form = reactive<Record<string, string>>({
   storefront_url: '',
 })
 const pay = reactive<Record<string, any>>({
-  stripe_secret_key: '', stripe_webhook_secret: '',
+  stripe_secret_key: '', stripe_webhook_secret: '', stripe_payment_methods: '',
   paypal_client_id: '', paypal_client_secret: '', paypal_env: 'sandbox',
   paypal_webhook_id: '', store_base_url: 'http://localhost:8090',
   stripeConfigured: false, stripeWebhookConfigured: false, paypalSecretConfigured: false,
@@ -332,7 +348,7 @@ async function load() {
     const data = res.data.data
     Object.keys(form).forEach((k) => { form[k] = data[k] || (k === 'currency' ? 'USD' : '') })
     // 非密钥字段回显; 密钥只标记已配置, 不回显
-    ;['paypal_env', 'store_base_url', 'paypal_client_id', 'paypal_webhook_id'].forEach((k) => {
+    ;['paypal_env', 'store_base_url', 'paypal_client_id', 'paypal_webhook_id', 'stripe_payment_methods'].forEach((k) => {
       if (data[k]) pay[k] = data[k]
     })
     pay.stripeConfigured = !!data.stripe_secret_key
@@ -380,7 +396,7 @@ const storefrontUrl = computed(
   () => form.storefront_url || pay.store_base_url || 'http://localhost:8090/',
 )
 const themeForm = reactive({
-  preset: 'minimal', primary: '', bg: '', radiusNum: 8, font: 'sans', logoPath: '',
+  preset: 'minimal', primary: '', bg: '', accent: '', radiusNum: 8, font: 'sans', logoPath: '',
 })
 
 async function loadTheme() {
@@ -392,6 +408,7 @@ async function loadTheme() {
     themeForm.preset = res.data.data.preset || 'minimal'
     themeForm.primary = o.primary || ''
     themeForm.bg = o.bg || ''
+    themeForm.accent = o.accent || ''
     themeForm.radiusNum = o.radius ? parseInt(o.radius) : 8
     themeForm.font = o.font || 'sans'
     themeForm.logoPath = (res.data.data.tokens || {}).logoPath || ''
@@ -417,6 +434,7 @@ function selectPreset(p: any) {
   themeForm.radiusNum = parseInt(p.radius) || 8
   themeForm.primary = ''
   themeForm.bg = ''
+  themeForm.accent = ''
 }
 
 async function saveTheme() {  themeSaving.value = true
@@ -424,6 +442,7 @@ async function saveTheme() {  themeSaving.value = true
     const overrides: Record<string, string> = {}
     if (themeForm.primary) overrides.primary = themeForm.primary
     if (themeForm.bg) overrides.bg = themeForm.bg
+    if (themeForm.accent) overrides.accent = themeForm.accent
     overrides.radius = String(themeForm.radiusNum)
     overrides.font = themeForm.font
     await request.put('/api/v1/theme', { preset: themeForm.preset, overrides })

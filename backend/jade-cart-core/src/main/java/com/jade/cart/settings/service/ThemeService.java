@@ -21,10 +21,14 @@ public class ThemeService {
 
     public static final String KV_KEY = "theme_config";
     private static final Pattern COLOR = Pattern.compile("^#[0-9a-fA-F]{3,8}$");
-    private static final List<String> FONTS = List.of("sans", "serif", "mono", "jost");
+    private static final List<String> FONTS =
+            List.of("sans", "serif", "mono", "jost", "serif-sc", "sans-sc");
 
     /** 非 token 附加键: 媒体路径 (不可 blank 之外无格式校验) */
     private static final List<String> MEDIA_KEYS = List.of("logoPath", "faviconPath");
+
+    /** 可选覆盖键 (不在预设内, 缺省 = 跟随现状): accent 点缀色 (价格/小标题) */
+    private static final List<String> EXTRA_KEYS = List.of("accent");
 
     /** token 键 → 预设值 (minimal 为基线) */
     private static final Map<String, String> BASE =
@@ -69,6 +73,32 @@ public class ThemeService {
                 Map.of(
                         "primary", "#a9663f", "bg", "#faf7f2", "ink", "#2b2723", "muted", "#6f6762",
                         "line", "#e8e2d9", "radius", "10", "font", "sans"));
+        // tea 茶室 (裏千家/侘寂参考): 米白底 + 深茶绿 + 茶金价格 + 宋体标题; 结构: 双层细线导航/分屏 hero/四图块
+        PRESETS.put(
+                "tea",
+                Map.of(
+                        "primary",
+                        "#2F5D50",
+                        "bg",
+                        "#F7F5EF",
+                        "ink",
+                        "#2C332F",
+                        "muted",
+                        "#6B726D",
+                        "line",
+                        "#DCE8D9",
+                        "accent",
+                        "#B08D57",
+                        "radius",
+                        "4",
+                        "font",
+                        "serif-sc"));
+        // living 家居 (Fellow/Parachute 主流生活方式参考): 奶油白 + 暖陶棕 + 雾霭蓝点缀; 黑体粗标题
+        PRESETS.put(
+                "living",
+                Map.of(
+                        "primary", "#A96647", "bg", "#FBF7F0", "ink", "#3B342D", "muted", "#8A8078",
+                        "line", "#E9DFCE", "accent", "#7B9AA6", "radius", "12", "font", "sans-sc"));
     }
 
     private final ObjectMapper mapper = new ObjectMapper();
@@ -111,7 +141,8 @@ public class ThemeService {
         tokens.put("preset", presetName); // 模板 body class 用 (结构化主题样式作用域)
         overrides.forEach(
                 (k, v) -> {
-                    if ((BASE.containsKey(k) || MEDIA_KEYS.contains(k)) && valid(k, v)) {
+                    if ((BASE.containsKey(k) || MEDIA_KEYS.contains(k) || EXTRA_KEYS.contains(k))
+                            && valid(k, v)) {
                         tokens.put(k, v);
                     }
                 });
@@ -122,9 +153,17 @@ public class ThemeService {
                     case "serif" -> "Georgia,'Times New Roman',serif";
                     case "mono" -> "ui-monospace,'SF Mono',Menlo,monospace";
                     case "jost" -> "'Jost','Avenir Next','Futura','Segoe UI',sans-serif";
+                    case "serif-sc", "sans-sc" ->
+                            "'Noto Sans SC','Source Han Sans SC','PingFang SC',-apple-system,'Segoe UI',sans-serif";
                     default ->
                             "-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif";
                 });
+        // 派生: 标题字体 (serif-sc = 思源宋体标题 + 思源黑体正文; 其余标题随正文, 不改变既有主题观感)
+        tokens.put(
+                "fontHeading",
+                "serif-sc".equals(tokens.get("font"))
+                        ? "'Noto Serif SC','Source Han Serif SC','Songti SC',Georgia,serif"
+                        : tokens.get("fontFamily"));
         // 媒体路径键: 模板 {#if} 需要显式键存在, 无值置 null
         for (String k : MEDIA_KEYS) {
             tokens.put(
@@ -171,7 +210,10 @@ public class ThemeService {
         if (overrides != null) {
             overrides.forEach(
                     (k, v) -> {
-                        if ((BASE.containsKey(k) || MEDIA_KEYS.contains(k)) && valid(k, v)) {
+                        if ((BASE.containsKey(k)
+                                        || MEDIA_KEYS.contains(k)
+                                        || EXTRA_KEYS.contains(k))
+                                && valid(k, v)) {
                             clean.put(k, v);
                         }
                     });
