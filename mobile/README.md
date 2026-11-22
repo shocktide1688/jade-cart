@@ -47,12 +47,27 @@ flutter run -d ios
 flutter run -d android
 ```
 
-运行时可在「我的 → API 服务」修改服务器地址（先点 Test 测连通性），无需重新打包。
-构建参数仍可设置首次安装的默认地址：
+## 双店构建（flavor）
+
+一套代码出**两个店专属的包**，后端地址与店名写死在 `lib/core/brand.dart`，
+App 内没有任何服务器地址入口（release 缺 STORE_KEY 直接启动失败，宁可不起、不可连错店）：
 
 ```bash
-flutter run --dart-define=API_BASE_URL=https://your-store.example.com
+# teawone (Tea One / shop.teawone.com / com.teawone.shop)
+flutter build apk --flavor teawone --release --dart-define=STORE_KEY=teawone
+flutter build ipa --flavor teawone --release --dart-define=STORE_KEY=teawone
+
+# sinivora (Sinivora / sinivora.teawone.com / com.sinivora.shop)
+flutter build apk --flavor sinivora --release --dart-define=STORE_KEY=sinivora
+flutter build ipa --flavor sinivora --release --dart-define=STORE_KEY=sinivora
+
+# 本地开发 (debug 不带 STORE_KEY → Dev Store, Android 模拟器自动走 10.0.2.2:8090)
+flutter run --flavor teawone
 ```
+
+新增店 = `brand.dart` 加一个条目 + Android `productFlavors` 加一块 + iOS 加一组
+configuration/scheme。iOS 注意：`--flavor` 对应同名 Xcode scheme 与
+`<flavor>-Debug|Release|Profile` configuration（已建 teawone/sinivora 两套）。
 
 Android 模拟器访问宿主机必须用 `10.0.2.2`（`localhost` 指向模拟器自身）。
 

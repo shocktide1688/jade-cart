@@ -87,9 +87,9 @@ Jade Cart 是我们独立站的官方 App。
 支付：走店面既有的 Stripe / PayPal 收银台，App 只跳转到网关页面完成支付，
 不接触也不存储任何卡号信息。
 
-后端地址：App 支持在「我的 → API 服务」里切换服务器地址，
-测试时可填入店铺正式域名。默认构建使用正式域名（如需改为测试地址，
-用 --dart-define=API_BASE_URL=https://... 构建）。
+后端地址：按店写死在构建配置里（无任何运行时入口）。
+teawone 包连 https://shop.teawone.com，sinivora 包连 https://sinivora.teawone.com，
+两个包用 --flavor 区分（见 README「双店构建」）。
 
 功能受限说明：若店铺未配置 Stripe / PayPal 密钥，下单流程会自动走测试收银台。
 ```
