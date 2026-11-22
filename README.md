@@ -79,6 +79,10 @@ mvn test -pl jade-cart-app -Dtest=OrderFlowTest
 - Stripe: `{store_base_url}/api/store/webhooks/stripe` (事件: checkout.session.completed)
 - PayPal: `{store_base_url}/api/store/webhooks/paypal` (事件: PAYMENT.CAPTURE.COMPLETED)
 
+**支付方式路由 (P4)**: 支付配置的「支付方式路由」按市场配置 Stripe 收银台方式, 格式 `US=card,klarna;EU=card,ideal,bancontact,klarna`; 留空 = 仅 card (Apple Pay / Google Pay 随 card 自动出现); iDEAL/Bancontact 等 EUR-only 方式在非 EUR 订单自动剔除, 需先在 Stripe Dashboard 启用
+
+**支付对账 (P4)**: 结算时网关会话号落库 (`mall_order.payment_session_ref`); PaymentReconcileJob 每 5 分钟主动查询 Stripe/PayPal — webhook 丢失的已支付订单走 markPaid 幂等路径补账, 已取消订单的迟到款自动转 PAYMENT_REVIEW 人工处理
+
 ### 邮件
 SMTP 配置 (系统管理→邮件配置) 指向 localhost:1025 (Mailpit) 即可本地验证; outbox 见 mall_email_outbox 表。
 

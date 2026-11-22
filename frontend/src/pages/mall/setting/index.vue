@@ -113,6 +113,16 @@
                 disabled
               />
             </el-form-item>
+            <el-form-item label="支付方式路由">
+              <el-input
+                v-model="pay.stripe_payment_methods"
+                placeholder="US=card,klarna;EU=card,ideal,bancontact,klarna"
+              />
+              <div class="muted-tip">
+                按市场配置 Stripe 收银台方式, 留空 = 仅 card (Apple Pay / Google Pay 随 card 自动出现, 无需配置);
+                iDEAL/Bancontact 等仅限 EUR 订单, 非 EUR 自动剔除; 需先在 Stripe Dashboard 启用对应方式
+              </div>
+            </el-form-item>
 
             <h4 style="margin-top:20px">
               PayPal
@@ -342,8 +352,11 @@ async function save() {
 async function savePayment() {
   saving.value = true
   try {
-    // 留空的密钥不覆盖已存值
-    const body: Record<string, string> = { paypal_env: pay.paypal_env, store_base_url: pay.store_base_url }
+    // 留空的密钥不覆盖已存值; 支付方式路由允许清空 (清空 = 回退仅 card)
+    const body: Record<string, string> = {
+      paypal_env: pay.paypal_env, store_base_url: pay.store_base_url,
+      stripe_payment_methods: pay.stripe_payment_methods,
+    }
     if (pay.paypal_client_id) body.paypal_client_id = pay.paypal_client_id
     if (pay.paypal_webhook_id) body.paypal_webhook_id = pay.paypal_webhook_id
     if (pay.stripe_secret_key) body.stripe_secret_key = pay.stripe_secret_key
