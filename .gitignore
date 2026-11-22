@@ -18,6 +18,9 @@ tsconfig.tsbuildinfo
 *.iml
 .vscode/
 
+# ai 助手本地配置
+.zcode/
+
 # vite
 frontend/.vite/
 backend/jade-cart-app/launchd-app/
