@@ -96,9 +96,17 @@ void main() {
     }, timeout: const Timeout(Duration(minutes: 2)));
 
     test('应该清空购物车 当把数量设为 0', () async {
-      final products = await catalog.products(limit: 1);
-      final detail = await catalog.product(products.first.slug);
-      final variant = detail.variants.first;
+      // 与主链路用例同款选品: 优先库存充足的, 避免库存被历史运行耗尽后误报
+      final products = await catalog.products(limit: 20);
+      final target = products.firstWhere(
+        (product) => product.totalAvailable > 0,
+        orElse: () => products.first,
+      );
+      final detail = await catalog.product(target.slug);
+      final variant = detail.variants.firstWhere(
+        (v) => v.inStock,
+        orElse: () => detail.variants.first,
+      );
 
       await cart.addItem(variant.id, quantity: 1);
       final afterRemove = await cart.updateItem(variant.id, 0);
