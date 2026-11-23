@@ -74,6 +74,7 @@ class OrderFlowTest {
                         1900L,
                         null,
                         null,
+                        null,
                         null);
         Variant v = Variant.listByProduct(p.id).get(0);
         // createVariant 已自动建库存行, 这里只改数量

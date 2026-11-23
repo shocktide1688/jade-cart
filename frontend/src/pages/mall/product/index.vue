@@ -240,6 +240,12 @@
             placeholder="逗号分隔: jade, necklace, jewelry"
           />
         </el-form-item>
+        <el-form-item label="标签">
+          <el-input
+            v-model="createForm.tags"
+            placeholder="逗号分隔, ERP 发布商品时整体同步"
+          />
+        </el-form-item>
         <el-form-item label="直接上架">
           <el-switch v-model="createForm.active" />
         </el-form-item>
@@ -321,6 +327,12 @@
             <el-input
               v-model="detail.seoKeywords"
               placeholder="逗号分隔: jade, necklace, jewelry"
+            />
+          </el-form-item>
+          <el-form-item label="标签">
+            <el-input
+              v-model="detail.tags"
+              placeholder="逗号分隔, ERP 发布商品时整体同步"
             />
           </el-form-item>
           <el-form-item label="状态 / 精选">
@@ -640,7 +652,7 @@ const saving = ref(false)
 const createUploading = ref(false)
 const createForm = reactive({
   title: '', categoryIds: [] as number[], priceYuan: 0, defaultSku: '',
-  description: '', seoDescription: '', seoKeywords: '', mainImagePath: '', active: true,
+  description: '', seoDescription: '', seoKeywords: '', tags: '', mainImagePath: '', active: true,
 })
 const detailVisible = ref(false)
 const detail = ref<any>(null)
@@ -673,7 +685,7 @@ async function loadCategories() {
 function openCreate() {
   Object.assign(createForm, {
     title: '', categoryIds: [], priceYuan: 0, defaultSku: '',
-    description: '', seoDescription: '', seoKeywords: '', mainImagePath: '', active: true,
+    description: '', seoDescription: '', seoKeywords: '', tags: '', mainImagePath: '', active: true,
   })
   createVisible.value = true
 }
@@ -699,6 +711,7 @@ async function create() {
       description: createForm.description || undefined,
       seoDescription: createForm.seoDescription || undefined,
       seoKeywords: createForm.seoKeywords || undefined,
+      tags: createForm.tags || undefined,
       defaultPriceCents: Math.round(createForm.priceYuan * 100),
       defaultSku: createForm.defaultSku || undefined,
       mainImagePath: createForm.mainImagePath || undefined,
@@ -784,6 +797,7 @@ async function saveBasic() {
       description: detail.value.description,
       seoDescription: detail.value.seoDescription,
       seoKeywords: detail.value.seoKeywords,
+      tags: detail.value.tags,
       status: detail.value.status,
       featured: detail.value.featured,
     })

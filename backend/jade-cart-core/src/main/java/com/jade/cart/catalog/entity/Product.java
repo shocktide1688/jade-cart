@@ -48,6 +48,10 @@ public class Product extends PanacheEntityBase {
     @Column(name = "seo_keywords", length = 300)
     public String seoKeywords;
 
+    /** 商品标签 (逗号分隔; ERP 发布时整体同步, 后台可编辑) */
+    @Column(name = "tags", length = 500)
+    public String tags;
+
     @Column(nullable = false, length = 20)
     public String status = STATUS_DRAFT;
 

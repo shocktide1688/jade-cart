@@ -46,7 +46,8 @@ public class AdminProductController {
             Long defaultPriceCents,
             String defaultSku,
             String mainImagePath,
-            String seoKeywords) {}
+            String seoKeywords,
+            String tags) {}
 
     public record UpdateReq(
             String title,
@@ -56,7 +57,8 @@ public class AdminProductController {
             String status,
             Boolean featured,
             String mainImagePath,
-            String seoKeywords) {}
+            String seoKeywords,
+            String tags) {}
 
     public record OptionReq(String optionKey, String displayName, List<String> values) {}
 
@@ -105,7 +107,8 @@ public class AdminProductController {
                                 req.defaultPriceCents(),
                                 req.defaultSku(),
                                 req.mainImagePath(),
-                                req.seoKeywords())));
+                                req.seoKeywords(),
+                                req.tags())));
     }
 
     @GET
@@ -138,7 +141,8 @@ public class AdminProductController {
                                 req.status(),
                                 req.featured(),
                                 req.mainImagePath(),
-                                req.seoKeywords())));
+                                req.seoKeywords(),
+                                req.tags())));
     }
 
     @DELETE

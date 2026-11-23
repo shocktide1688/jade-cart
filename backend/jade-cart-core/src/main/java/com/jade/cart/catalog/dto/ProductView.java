@@ -12,6 +12,7 @@ public record ProductView(
         String description,
         String seoDescription,
         String seoKeywords,
+        String tags,
         String status,
         boolean featured,
         String mainImagePath,

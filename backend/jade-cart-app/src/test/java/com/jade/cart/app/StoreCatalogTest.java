@@ -88,6 +88,7 @@ class StoreCatalogTest {
                         1900L,
                         null,
                         mainImagePath,
+                        null,
                         null);
         if (categoryId != null) {
             catalogService.linkCategories(product.id, List.of(categoryId));

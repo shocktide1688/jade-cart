@@ -23,8 +23,10 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * ERP 集成服务: 订单增量查询 / 商品增量查询 / 商品 upsert。
@@ -152,7 +154,8 @@ public class IntegrationService {
             String status,
             String categoryName,
             String seoDescription,
-            String seoKeywords) {
+            String seoKeywords,
+            List<String> tags) {
         if (sku == null || sku.isBlank()) {
             throw new BizException("sku 不能为空");
         }
@@ -164,6 +167,8 @@ public class IntegrationService {
         }
         String normStatus =
                 "ACTIVE".equalsIgnoreCase(status) ? Product.STATUS_ACTIVE : Product.STATUS_DRAFT;
+
+        String tagStr = joinTags(tags);
 
         Variant variant = Variant.findBySku(sku).orElse(null);
         String action;
@@ -185,6 +190,7 @@ public class IntegrationService {
                 product.description = description;
             }
             applySeo(product, seoDescription, seoKeywords);
+            applyTags(product, tagStr);
             product.status = normStatus;
             product.persist();
         } else {
@@ -201,7 +207,8 @@ public class IntegrationService {
                             priceCents,
                             sku,
                             null,
-                            null);
+                            null,
+                            tagStr);
             applySeo(product, seoDescription, seoKeywords);
             product.persist();
             variant = Variant.findBySku(sku).orElseThrow();
@@ -236,6 +243,35 @@ public class IntegrationService {
         if (seoKeywords != null) {
             product.seoKeywords = seoKeywords;
         }
+    }
+
+    /** 标签同步: ERP 为商品主数据, 非 null 即整体替换 (空串=清空); null = 不动 (向后兼容旧调用方)。 */
+    private void applyTags(Product product, String tags) {
+        if (tags != null) {
+            product.tags = tags.isBlank() ? null : tags;
+        }
+    }
+
+    /** 标签列表 → 逗号分隔串: 去空白、去重; null 透传 = 不动, 空列表返回空串 = 清空; 超长按码点截断到列上限。 */
+    private String joinTags(List<String> tags) {
+        if (tags == null) {
+            return null;
+        }
+        Set<String> uniq = new LinkedHashSet<>();
+        for (String tag : tags) {
+            if (tag == null) {
+                continue;
+            }
+            String v = tag.trim();
+            if (!v.isEmpty()) {
+                uniq.add(v);
+            }
+        }
+        String joined = String.join(",", uniq);
+        if (joined.length() > 500) {
+            joined = joined.substring(0, joined.offsetByCodePoints(0, 500));
+        }
+        return joined;
     }
 
     /**

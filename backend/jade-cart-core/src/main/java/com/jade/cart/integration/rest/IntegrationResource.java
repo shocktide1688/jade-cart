@@ -68,7 +68,8 @@ public class IntegrationResource {
                         req.status,
                         req.categoryName,
                         req.seoDescription,
-                        req.seoKeywords);
+                        req.seoKeywords,
+                        req.tags);
         // 商品事务提交后再同步图片 (独立小事务), 磁盘满/单图失败只丢图, 商品数据必达
         integrationService.syncProductImages(req.sku, req.imageUrls);
         return R.ok(out);
@@ -88,6 +89,7 @@ public class IntegrationResource {
         public java.util.List<String> imageUrls;
         public String seoDescription;
         public String seoKeywords;
+        public java.util.List<String> tags;
     }
 
     private LocalDateTime parseSince(String updatedAfter) {

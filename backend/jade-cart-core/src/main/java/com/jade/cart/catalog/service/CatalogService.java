@@ -127,7 +127,8 @@ public class CatalogService {
             Long defaultPriceCents,
             String defaultSku,
             String mainImagePath,
-            String seoKeywords) {
+            String seoKeywords,
+            String tags) {
         Product product = new Product();
         product.title = title;
         product.slug = uniqueSlug(slug, title, s -> Product.findBySlug(s) != null);
@@ -138,6 +139,7 @@ public class CatalogService {
         product.mainImagePath =
                 (mainImagePath == null || mainImagePath.isBlank()) ? null : mainImagePath;
         product.seoKeywords = seoKeywords;
+        product.tags = (tags == null || tags.isBlank()) ? null : tags;
         product.description = HtmlSanitizer.sanitize(product.description);
         product.persist();
 
@@ -160,7 +162,8 @@ public class CatalogService {
             String status,
             Boolean featured,
             String mainImagePath,
-            String seoKeywords) {
+            String seoKeywords,
+            String tags) {
         Product product = Product.findById(id);
         if (product == null || product.deleted) {
             throw new BizException("商品不存在");
@@ -188,6 +191,9 @@ public class CatalogService {
         }
         if (seoKeywords != null) {
             product.seoKeywords = seoKeywords.isBlank() ? null : seoKeywords;
+        }
+        if (tags != null) {
+            product.tags = tags.isBlank() ? null : tags;
         }
         product.persist();
         return product;
@@ -507,6 +513,7 @@ public class CatalogService {
                 product.description,
                 product.seoDescription,
                 product.seoKeywords,
+                product.tags,
                 product.status,
                 product.featured,
                 product.mainImagePath,

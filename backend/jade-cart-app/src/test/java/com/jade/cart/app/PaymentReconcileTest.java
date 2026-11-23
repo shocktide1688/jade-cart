@@ -109,6 +109,7 @@ class PaymentReconcileTest {
                         1900L,
                         null,
                         null,
+                        null,
                         null);
         Variant v = Variant.listByProduct(p.id).get(0);
         catalogService.setInventory(v.id, 5);
